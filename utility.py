@@ -1,8 +1,11 @@
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-Utility functions for use in lithosphere_prior
-
+Utility functions by Mikkel Otzen
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+
 import matplotlib.pyplot as plt
+import os
+
+utility_abs_path = os.path.dirname(__file__)
 
 def dict_save(path, name, variable ):
     import pickle
@@ -443,6 +446,106 @@ def plot_power_spectrum(p_spec, figsize=(14,8)):
     plt.xticks(n_ticks, fontsize="small")
     plt.grid(alpha=0.3)
     plt.show()
+
+def plot_p_spec(g_spec, p_spec_height, nmax, model_dict = None, figsize = (14,8), lwidth = 2, step = 5, ensemble = False, label = "ensemble", color = "lightgray", legend_loc = "best", r_ref = 6371.2):
+
+    import matplotlib.pyplot as plt
+    import numpy as np
+    import scipy as sp
+    import pyshtools
+
+    # ChaosMagPy modules
+    from chaosmagpy import load_CHAOS_matfile
+    from chaosmagpy.model_utils import synth_values
+    from chaosmagpy.data_utils import mjd2000
+
+    plt.figure(figsize=figsize)
+
+    ns = np.arange(1,nmax+1)
+    n_ticks = np.append(np.array([1, 5, 10,]),np.arange(15,np.max(ns)+step,step=step))
+
+    if ensemble == False:
+        ens_cilm = np.array(pyshtools.shio.SHVectorToCilm(np.hstack((np.zeros(1,),g_spec))))
+        p_spec = pyshtools.gravmag.mag_spectrum(ens_cilm, r_ref, p_spec_height, degrees = np.arange(1,np.shape(ens_cilm)[1])) # degrees to skip zeroth degree
+        p_spec = p_spec[:nmax]
+    else:
+        N_ensembles = np.shape(g_spec)[-1]
+
+        for i in np.arange(0,N_ensembles):
+            ens_cilm = np.array(pyshtools.shio.SHVectorToCilm(np.hstack((np.zeros(1,),g_spec[:,i]))))
+            p_spec = pyshtools.gravmag.mag_spectrum(ens_cilm, r_ref, p_spec_height, degrees = np.arange(1,np.shape(ens_cilm)[1]))
+            p_spec = p_spec[:nmax]
+            if i == 0:
+                plt.plot(ns, p_spec[:nmax], color=color, label = label)
+            else:
+                plt.plot(ns, p_spec[:nmax], color=color)
+
+    if model_dict is not None: # Load models
+        WDMAM2 = sp.io.loadmat('lithosphere_prior/grids/models/WDMAM2.mat')
+        LCS1 = load_shc("lithosphere_prior/grids/models/LCS-1.shc")
+        MF7 = load_shc("lithosphere_prior/grids/models/MF7.shc")
+        EMM2017 = np.loadtxt('lithosphere_prior/grids/models/EMM2017.COF',comments="%",skiprows=1)
+
+        # Add zero coefficient to comply with SHTOOLS methods
+        g_LCS1 = np.hstack((np.zeros(1,),LCS1[:,2]))
+        g_WDMAM2 = np.hstack((np.zeros(1,),WDMAM2["gh_wdmam"][:,0]))
+        g_EMM2017 = np.hstack((np.zeros(1,),gauss_vector(EMM2017, 790, i_n = 2, i_m = 3)))
+
+        # Also add "missing" coefficients for degree 0-15
+        g_MF7 = np.hstack((np.zeros(shc_vec_len(15,include_n_zero = True),),MF7[:,2])) 
+
+        # cilm
+        cilm_LCS1 = pyshtools.shio.SHVectorToCilm(g_LCS1)
+        cilm_MF7 = pyshtools.shio.SHVectorToCilm(g_MF7)
+        cilm_WDMAM2 = pyshtools.shio.SHVectorToCilm(g_WDMAM2)
+        cilm_EMM2017 = pyshtools.shio.SHVectorToCilm(g_EMM2017)
+
+        # Pomme
+        Gauss_in_pomme = np.loadtxt('lithosphere_prior/grids/models/POMME_6_main_field.txt')
+        g_pomme = np.hstack((np.zeros(1,), gauss_vector(Gauss_in_pomme, 60, i_n = 2, i_m = 3)))
+        cilm_pomme = pyshtools.shio.SHVectorToCilm(g_pomme)
+
+        # CHAOS 7
+        N_chaos = 20
+        CHAOS7 = load_CHAOS_matfile('lithosphere_prior/grids/models/CHAOS-7.mat')
+        chaos_time = mjd2000(2020, 1, 1)
+        g_CHAOS7 = np.hstack((np.zeros(1,),CHAOS7.synth_coeffs_tdep(chaos_time, nmax=20, deriv=0)))
+        cilm_CHAOS7 = pyshtools.shio.SHVectorToCilm(g_CHAOS7)
+        model_dict_def = {"LCS-1":cilm_LCS1, "MF7":cilm_MF7, "WDMAM2":cilm_WDMAM2, "EMM2017":cilm_EMM2017, "POMME-6":cilm_pomme, "CHAOS-7":cilm_CHAOS7}
+
+    if type(model_dict) is set or model_dict=="default":
+        if model_dict=="default":
+            model_dict = model_dict_def
+
+        i = 0
+        for key in model_dict:
+            ens_cilm = model_dict_def[key]
+            p_spec = pyshtools.gravmag.mag_spectrum(ens_cilm, r_ref, p_spec_height, degrees = np.arange(1,np.shape(ens_cilm)[1]))
+
+            if key == "EMM2017" or key == "CHAOS-7":
+                use_ns = ns[:20]
+                use_p_spec = p_spec[:len(use_ns)]
+            elif key == "MF7":
+                use_ns = ns[16-1:]
+                use_p_spec = p_spec[16-1:nmax]
+            elif key == "POMME-6":
+                use_ns = ns[:60]
+                use_p_spec = p_spec[:len(use_ns)]
+            else:
+                use_ns = ns
+                use_p_spec = p_spec[:nmax]
+
+            plt.plot(use_ns, use_p_spec, color="C{}".format(i), label = key, linewidth = lwidth)
+            i += 1
+
+    plt.yscale('log')
+    plt.xlabel("degree n")
+    plt.ylabel("Power [nt²]")
+    plt.xticks(n_ticks, fontsize="small")
+    plt.grid(alpha=0.3)
+    plt.legend(loc = legend_loc)
+    plt.show()
+
 
 def plot_ensemble_histogram(ensemble, N_ensemble, target = None, figsize=(10,10), unit = "", savefig = False, savepath = "./", filename = "file", fontsize = 10, dpi = 100):
     import numpy as np

@@ -124,21 +124,25 @@ class MiClass(object):
             self.grid_even_radial = self.wgs84_a*(1-self.wgs84_f*np.sin(self.grid_even_theta)**2)
     
     
-    def grid_glq(self, lmax = 14):
+    def grid_glq(self, nmax = 14, r_at = None):
+
+        if r_at is None:
+            r_at = self.a
 
         # Gauss-Legendre Quadrature Grid
-        lat_glq, lon_glq = pyshtools.expand.GLQGridCoord(lmax)
+        lat_glq, lon_glq = pyshtools.expand.GLQGridCoord(nmax)
         
         self.grid_glq_theta_len = len(lat_glq)
         self.grid_glq_phi_len = len(lon_glq)
         
         lat_glq, lon_glq = np.meshgrid(lat_glq,lon_glq)
         
-        self.grid_glq_radial  = np.ones((len(lat_glq.ravel()),1))*self.r_sat
-        self.grid_glq_theta = 90 - np.ravel(lat_glq).reshape(-1,1)
-        self.grid_glq_phi = np.ravel(lon_glq).reshape(-1,1)
-        
-        self.lmax = lmax
+        self.grid_glq_radial  = np.ones((len(lat_glq.ravel()),))*r_at
+        self.grid_glq_theta = 90 - np.ravel(lat_glq).reshape(-1,)
+        self.grid_glq_phi = np.ravel(lon_glq).reshape(-1,)
+        self.grid_glq_N = np.shape(self.grid_glq_radial)[0]
+
+        self.grid_glq_nmax = nmax
 
     
     def ensemble_random_field_init(self):
@@ -335,7 +339,17 @@ class MiClass(object):
 
         self.B_ensemble_nmf = np.array(B_ensemble_nmf).T
            
-    
+    def ensemble_B_field_glq(self, g_use, fields = "all", nmax = 30, N_mf = 15, only_nmf = False, r_at = None, define_grid = False):
+
+        # Generate design matrix for grid
+        A_r, A_theta, A_phi = gt.design_SHA(self.grid_glq_radial/self.a, self.grid_glq_theta*self.rad, self.grid_glq_phi*self.rad, nmax)
+        #G = np.vstack((A_r, A_theta, A_phi))
+
+        self.B_glq_r = np.matmul(A_r,g_use)
+        self.B_glq_theta = np.matmul(A_theta,g_use)
+        self.B_glq_phi = np.matmul(A_phi,g_use)
+
+
     def interpolate_grid(self, grid_in_theta, grid_out_theta, grid_in_phi, grid_out_phi, grid_in, method_int = "nearest", output = "return", save_path = ""):
         # Define interpolation grids
         grid_in_tuple = (90-np.ravel(grid_in_theta), np.ravel(grid_in_phi))
