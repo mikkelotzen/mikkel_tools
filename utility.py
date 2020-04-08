@@ -70,98 +70,8 @@ def printProgressBar (iteration, total, *args, subject='', prefix = '', suffix =
     if iteration == total: 
         print()
 
-def plot_cartopy_global(lat, lon, data=None, unit = "[nT]", cmap = 'PuOr_r', vmin=None, vmax=None, figsize=(8,8), title='Cartopy Earth plot', lat_0 = 0.0, lon_0 = 0.0, point_size=10, showfig=True, norm_class = False, scale_uneven = False, fill = False, savefig = False, dpi = 100, path = None, saveformat = ".png"):
 
-    import cartopy.crs as ccrs
-    from cartopy.mpl.geoaxes import GeoAxes
-    #from cartopy.mpl.ticker import LongitudeFormatter, LatitudeFormatter
-    import matplotlib.pyplot as plt
-    from mpl_toolkits.axes_grid1 import AxesGrid
-    import numpy as np
-    import matplotlib.colors as colors
-
-    class MidpointNormalize(colors.Normalize):
-        def __init__(self, vmin=None, vmax=None, midpoint=None, clip=False):
-            self.midpoint = midpoint
-            colors.Normalize.__init__(self, vmin, vmax, clip)
-    
-        def __call__(self, value, clip=None):
-            # I'm ignoring masked values and all kinds of edge cases to make a
-            # simple example...
-            x, y = [self.vmin, self.midpoint, self.vmax], [0.0, 0.5, 1.0]
-            return np.ma.masked_array(np.interp(value, x, y))
-
-    class SqueezedNorm(colors.Normalize):
-        def __init__(self, vmin=None, vmax=None, mid=0, s1=1.75, s2=1.75, clip=False):
-            self.vmin = vmin # minimum value
-            self.mid  = mid  # middle value
-            self.vmax = vmax # maximum value
-            self.s1=s1; self.s2=s2
-            f = lambda x, zero,vmax,s: np.abs((x-zero)/(vmax-zero))**(1./s)*0.5
-            self.g = lambda x, zero,vmin,vmax, s1,s2: f(x,zero,vmax,s1)*(x>=zero) - \
-                                                 f(x,zero,vmin,s2)*(x<zero)+0.5
-            colors.Normalize.__init__(self, vmin, vmax, clip)
-    
-        def __call__(self, value, clip=None):
-            r = self.g(value, self.mid,self.vmin,self.vmax, self.s1,self.s2)
-            return np.ma.masked_array(r)
-
-    #fig = plt.figure(figsize=figsize)
-    #ax = fig.add_subplot(1, 1, 1, projection=ccrs.Mollweide())
-    
-    projection = ccrs.Mollweide()
-    axes_class = (GeoAxes, dict(map_projection=projection))
-    
-    fig = plt.figure(figsize=figsize)
-    axgr = AxesGrid(fig, 111, axes_class=axes_class,
-                    nrows_ncols=(1, 1),
-                    axes_pad=0.1,
-                    cbar_location='bottom',
-                    cbar_mode='single',
-                    cbar_pad=0.05,
-                    cbar_size='5%',
-                    label_mode='')  # note the empty label_mode
-    #if fill is True:
-
-    if data is None:
-        axgr[0].scatter(lon, lat, s=point_size, transform=ccrs.PlateCarree(), cmap=cmap)
-
-    else:
-        if vmin is None:
-            vmin = np.min(data)
-            vmax = np.max(data)
-            
-        if scale_uneven == False:
-            veven = np.max([abs(vmax),abs(vmin)])
-
-            cb = axgr[0].scatter(lon, lat, s=point_size, c=data, transform=ccrs.PlateCarree(), vmin = -veven, vmax = veven, cmap=cmap)	
-        else:
-            scale_diff = vmax-vmin
-            if norm_class == "midpoint":
-                cb = axgr[0].scatter(lon, lat, s=point_size, c=data, transform=ccrs.PlateCarree(), vmin = (vmax - scale_diff), vmax = vmax, cmap=cmap, norm=MidpointNormalize(midpoint=0.))
-            elif norm_class == "squeezed":
-                cb = axgr[0].scatter(lon, lat, s=point_size, c=data, transform=ccrs.PlateCarree(), vmin = (vmax - scale_diff), vmax = vmax, cmap=cmap, norm=SqueezedNorm())
-            else:
-                cb = axgr[0].scatter(lon, lat, s=point_size, c=data, transform=ccrs.PlateCarree(), vmin = (vmax - scale_diff), vmax = vmax, cmap=cmap)
-        #plt.colorbar(cb,location='bottom',pad="5%",size="5%").set_label(label='%s %s' %(title,unit), size=20, weight='bold')
-        axgr.cbar_axes[0].colorbar(cb)
-        #axgr.cbar_axes[0].set_label('%s %s' %(title,unit))
-        cax = axgr.cbar_axes[0]
-        axis = cax.axis[cax.orientation]
-        axis.label.set_text('%s %s' %(title,unit))
-
-    axgr[0].coastlines()
-    axgr[0].set_global()
-    
-
-    if savefig is True and path is not None:
-        title_to_filename = title.replace(" ", "_").replace(":","").replace("-","_").replace("/","").replace("(","").replace(")","")
-        plt.savefig('%s%s%s' %(path,title_to_filename,saveformat), bbox_inches='tight', dpi = dpi, format="%s" %saveformat.replace(".",""))
-    if showfig is True:
-        plt.show()
-    return
-
-def plot_cartopy_global_new(lat = None, lon = None, data=None, limits_data = None, plot_quality = None, unit = "[nT]", cmap = plt.cm.RdBu_r, projection_transformation = "Mollweide", figsize=(10,10), title='Cartopy Earth plot', lat_0 = 0.0, lon_0 = 0.0, point_size=2, showfig=True, norm_class = False, scale_uneven = False, shift_grid = False, savefig = False, dpi = 100, path = None, saveformat = ".png"):
+def plot_cartopy_global(lat = None, lon = None, data=None, limits_data = None, shape = (360,720), plot_quality = None, unit = "[nT]", cmap = plt.cm.RdBu_r, projection_transformation = "Mollweide", figsize=(10,10), title='Cartopy Earth plot', lat_0 = 0.0, lon_0 = 0.0, point_size=2, showfig=True, norm_class = False, scale_uneven = False, flip_shape = False, flip_grid = True, transpose_grid = False, shift_grid = False, savefig = False, dpi = 100, path = None, saveformat = ".png"):
 
     import cartopy.crs as ccrs
     from cartopy.mpl.geoaxes import GeoAxes
@@ -254,14 +164,25 @@ def plot_cartopy_global_new(lat = None, lon = None, data=None, limits_data = Non
             axis = cax.axis[cax.orientation]
             axis.label.set_text('%s %s' %(title,unit))
     else:
+
+        if flip_shape == True:
+            shape = (shape[1], shape[0])
+
         ax = plt.axes(projection=projection)
 
         ax.coastlines()
         ax.set_global()
 
-        data_in = np.flipud(np.ravel(data).reshape(360,720))
+        data_in = np.ravel(data).reshape(shape[0],shape[1])
+
+        if transpose_grid == True:
+            data_in = data_in.T
+
+        if flip_grid == True:
+            data_in = np.flipud(data_in)
+
         if shift_grid == True:
-            data_in = np.hstack((data_in[:,360:],data_in[:,:360]))
+            data_in = np.hstack((data_in[:,shape[0]:],data_in[:,:shape[0]]))
 
         cs = ax.imshow(data_in,  vmin = vmin, vmax = vmax, cmap = cmap, norm=norm_in, transform=ccrs.PlateCarree(), extent=[-180, 180, -90, 90])
 
@@ -277,7 +198,7 @@ def plot_cartopy_global_new(lat = None, lon = None, data=None, limits_data = Non
         plt.show()
     return
 
-def plot_cartopy_animation(lat = None, lon = None, data=None, limits_data = None, animation_quality = None, frames = 2, interval = 200, projection_transformation = "Mollweide", unit = "[nT]", title = "Cartopy Earth Plot", cmap = plt.cm.RdBu_r, figsize=(10,10), point_size=1, norm_class = False, scale_uneven = False, shift_grid = False, animation_output = "javascript", filename = "", path_save_mp4 = "images/"):
+def plot_cartopy_animation(lat = None, lon = None, data=None, limits_data = None, shape = (360,720), animation_quality = None, frames = 2, interval = 200, projection_transformation = "Mollweide", unit = "[nT]", title = "Cartopy Earth Plot", cmap = plt.cm.RdBu_r, figsize=(10,10), point_size=1, norm_class = False, scale_uneven = False, flip_shape = False, flip_grid = True, transpose_grid = False, shift_grid = False, animation_output = "javascript", filename = "", path_save_mp4 = "images/"):
 
     import cartopy.crs as ccrs
     from cartopy.mpl.geoaxes import GeoAxes
@@ -391,14 +312,26 @@ def plot_cartopy_animation(lat = None, lon = None, data=None, limits_data = None
             return (cb,)
         
     else:
+
         ax = plt.axes(projection=projection)
 
         ax.coastlines()
         ax.set_global()
 
-        data_init = np.flipud(np.ravel(limits_data).reshape(360,720))
+        if flip_shape == True:
+            shape = (shape[1], shape[0])
+
+        data_init = np.ravel(limits_data).reshape(shape[0],shape[1])
+
+        if transpose_grid == True:
+            data_init = data_init.T
+
+        if flip_grid == True:
+            data_init = np.flipud(data_init)
+
+        #data_init = np.flipud(np.ravel(limits_data).reshape(shape[0],shape[1]))
         if shift_grid == True:
-            data_init = np.hstack((data_init[:,360:],data_init[:,:360]))
+            data_init = np.hstack((data_init[:,shape[0]:],data_init[:,:shape[0]]))
 
         cs = ax.imshow(data_init,  vmin = vmin, vmax = vmax, cmap = cmap, norm=norm_in, transform=ccrs.PlateCarree(), extent=[-180, 180, -90, 90])
 
@@ -408,9 +341,18 @@ def plot_cartopy_animation(lat = None, lon = None, data=None, limits_data = None
         
         def animate(i):
             data_i = data[:,i]
-            data_i = np.flipud(np.ravel(data_i).reshape(360,720))
+
+            data_i = np.ravel(data_i).reshape(shape[0],shape[1])
+
+            if transpose_grid == True:
+                data_i = data_i.T
+
+            if flip_grid == True:
+                data_i = np.flipud(data_i)                
+
+            #data_i = np.flipud(np.ravel(data_i).reshape(shape[0],shape[1]))
             if shift_grid == True:
-                data_i = np.hstack((data_i[:,360:],data_i[:,:360]))
+                data_i = np.hstack((data_i[:,shape[0]:],data_i[:,:shape[0]]))
             cs = ax.imshow(data_i,  vmin = vmin, vmax = vmax, cmap = cmap, norm=norm_in, transform=ccrs.PlateCarree(), extent=[-180, 180, -90, 90])
             return (cs,)
 
@@ -452,6 +394,7 @@ def plot_p_spec(g_spec, p_spec_height, nmax, model_dict = None, figsize = (14,8)
     import matplotlib.pyplot as plt
     import numpy as np
     import scipy as sp
+    import scipy.io as spio
     import pyshtools
 
     # ChaosMagPy modules
@@ -481,7 +424,7 @@ def plot_p_spec(g_spec, p_spec_height, nmax, model_dict = None, figsize = (14,8)
                 plt.plot(ns, p_spec[:nmax], color=color)
 
     if model_dict is not None: # Load models
-        WDMAM2 = sp.io.loadmat('lithosphere_prior/grids/models/WDMAM2.mat')
+        WDMAM2 = spio.loadmat('lithosphere_prior/grids/models/WDMAM2.mat')
         LCS1 = load_shc("lithosphere_prior/grids/models/LCS-1.shc")
         MF7 = load_shc("lithosphere_prior/grids/models/MF7.shc")
         EMM2017 = np.loadtxt('lithosphere_prior/grids/models/EMM2017.COF',comments="%",skiprows=1)
@@ -525,7 +468,7 @@ def plot_p_spec(g_spec, p_spec_height, nmax, model_dict = None, figsize = (14,8)
             if key == "EMM2017" or key == "CHAOS-7":
                 use_ns = ns[:20]
                 use_p_spec = p_spec[:len(use_ns)]
-            elif key == "MF7":
+            elif key == "MF7" or key == "LCS-1" or key == "WDMAM2":
                 use_ns = ns[16-1:]
                 use_p_spec = p_spec[16-1:nmax]
             elif key == "POMME-6":
@@ -573,6 +516,36 @@ def plot_ensemble_histogram(ensemble, N_ensemble, target = None, figsize=(10,10)
     if savefig == True: 
         plt.savefig('{}{}.png'.format(savepath, filename), bbox_inches='tight', dpi = dpi)
     plt.show()
+
+
+def plot_CLiP_data(key, labels, shape_s, shape_Li, shape_C):
+    # Easy random plot synth sat, lithosphere, core
+
+    import matplotlib.pyplot as plt
+    import matplotlib.ticker as tick
+
+    SF = tick.ScalarFormatter() # Formatter for colorbar
+    SF.set_powerlimits((3, 3)) # Set sci exponent used
+
+    fig = plt.figure(figsize=(16,10), constrained_layout=True) # Initiate figure with constrained layout
+    gs = fig.add_gridspec(2, 2) # Add 2x2 grid
+
+    ax1 = fig.add_subplot(gs[0, :]) # Use full row
+    ax1.set_title('Synth sat obs, B_r [nT]')
+    im1 = ax1.imshow(ens_s_sat[:,key].reshape(shape_s), cmap = plt.cm.RdBu_r)
+    fig.colorbar(im1, ax=ax1, orientation = "horizontal", shrink=0.3, format = SF)
+
+    ax2 = fig.add_subplot(gs[1, 0]) # Use one 
+    ax2.set_title('Lithosphere, B_r [nT]')
+    im2 = ax2.imshow(ens_Li[:,labels[key][0]].reshape(shape_Li).T, cmap = plt.cm.RdBu_r)
+    fig.colorbar(im2, ax=ax2, orientation = "horizontal", shrink=0.6)
+
+    ax3 = fig.add_subplot(gs[1, 1])
+    ax3.set_title('Core, B_r [nT]')
+    im3 = ax3.imshow(ens_C[:,labels[key][1]].reshape(shape_C).T, cmap = plt.cm.RdBu_r)
+    fig.colorbar(im3, ax=ax3, orientation = "horizontal", shrink=0.6, format = SF)
+    plt.show()
+
 
 def haversine(radius, lon1, lat1, lon2, lat2):
     """

@@ -98,25 +98,24 @@ class MiClass(object):
             print(self.attribute_string["string_return"].split("\n", self.attribute_string["string_return_previous"].count("\n"))[-1])      
     
 
-    def grid_even_spaced(self, grid_size=0.25, wgs84=False, sat=False):
+    def grid_even_spaced(self, grid_size=0.25, r_at = None, wgs84=False):
         """ Hemant & Masterton style evenly spaced grid generation """
-        
+
+        if r_at is None:
+            r_at = self.a
+
         lat, lon = np.meshgrid(np.arange(-90+grid_size/2, 90, grid_size),np.arange(-180+grid_size/2, 180, grid_size))
         
         self.grid_even_theta_len = len(lat.T)
         self.grid_even_phi_len = len(lon)
-        self.grid_even_theta = 90 - np.flip(np.ravel(lat.T)).reshape(-1,1)
-        self.grid_even_phi = np.ravel(lon.T).reshape(-1,1)
+        self.grid_even_shape = (self.grid_even_phi_len, self.grid_even_theta_len)
 
-        # Set radius at surface or satellite altitude
-        if sat == False:
-            r = self.a
-        else:
-            r = self.r_sat
+        self.grid_even_theta = 90 - np.flip(np.ravel(lat.T)).reshape(-1,)
+        self.grid_even_phi = np.ravel(lon.T).reshape(-1,)
         
         # Possible use of WGS84 radius
         if wgs84 == False:
-            self.grid_even_radial = np.ones((len(self.grid_even_theta),1))*r
+            self.grid_even_radial = np.ones((len(self.grid_even_theta),))*r_at
         else:
             self.wgs84_a = 6378.137
             self.wgs84_c = 6356.752
@@ -132,9 +131,11 @@ class MiClass(object):
         # Gauss-Legendre Quadrature Grid
         lat_glq, lon_glq = pyshtools.expand.GLQGridCoord(nmax)
         
-        self.grid_glq_theta_len = len(lat_glq)
-        self.grid_glq_phi_len = len(lon_glq)
-        
+        grid_glq_theta_len = len(lat_glq)
+        grid_glq_phi_len = len(lon_glq)
+        self.grid_glq_shape = (grid_glq_phi_len, grid_glq_theta_len)
+
+
         lat_glq, lon_glq = np.meshgrid(lat_glq,lon_glq)
         
         self.grid_glq_radial  = np.ones((len(lat_glq.ravel()),))*r_at
@@ -338,17 +339,51 @@ class MiClass(object):
             self.B_ensemble = np.array(B_ensemble).T
 
         self.B_ensemble_nmf = np.array(B_ensemble_nmf).T
-           
-    def ensemble_B_field_glq(self, g_use, fields = "all", nmax = 30, N_mf = 15, only_nmf = False, r_at = None, define_grid = False):
+
+
+    def ensemble_B(self, g_use, nmax = 30, N_mf = 15, mf = True, nmf = False, r_at = None, grid_type = "glq"):
+
+        if r_at is None:
+            r_at = self.a
+
+        if grid_type == "glq":
+            grid_radial = self.grid_glq_radial
+            grid_theta = self.grid_glq_theta
+            grid_phi = self.grid_glq_phi
+        elif grid_type == "even":
+            grid_radial = self.grid_even_radial
+            grid_theta = self.grid_even_theta
+            grid_phi = self.grid_even_phi        
 
         # Generate design matrix for grid
-        A_r, A_theta, A_phi = gt.design_SHA(self.grid_glq_radial/self.a, self.grid_glq_theta*self.rad, self.grid_glq_phi*self.rad, nmax)
-        #G = np.vstack((A_r, A_theta, A_phi))
+        A_r, A_theta, A_phi = gt.design_SHA(r_at/self.a, grid_theta*self.rad, grid_phi*self.rad, nmax)
 
-        self.B_glq_r = np.matmul(A_r,g_use)
-        self.B_glq_theta = np.matmul(A_theta,g_use)
-        self.B_glq_phi = np.matmul(A_phi,g_use)
+        if mf == True:
+            B_r = np.matmul(A_r,g_use)
+            B_theta = np.matmul(A_theta,g_use)
+            B_phi = np.matmul(A_phi,g_use)            
+            B_ensemble = np.stack((B_r, B_theta, B_phi), axis = 1)
 
+            if grid_type == "glq":
+                self.B_ensemble_glq = B_ensemble.copy()
+            elif grid_type == "even":
+                self.B_ensemble_even = B_ensemble.copy()
+
+        if nmf == True:
+            g_use_nmf = g_use.copy()
+            g_use_nmf[:int(2*np.sum(np.arange(1,N_mf+1)+1)-N_mf)] = 0
+
+            B_r_nmf = np.matmul(A_r,g_use_nmf)
+            B_theta_nmf = np.matmul(A_theta,g_use_nmf)
+            B_phi_nmf = np.matmul(A_phi,g_use_nmf)
+            
+            B_ensemble_nmf = np.stack((B_r_nmf, B_theta_nmf, B_phi_nmf), axis = 1)
+        
+            if grid_type == "glq":
+                self.B_ensemble_nmf_glq = B_ensemble_nmf.copy()
+            elif grid_type == "even":
+                self.B_ensemble_nmf_even = B_ensemble_nmf.copy()
+            
 
     def interpolate_grid(self, grid_in_theta, grid_out_theta, grid_in_phi, grid_out_phi, grid_in, method_int = "nearest", output = "return", save_path = ""):
         # Define interpolation grids
