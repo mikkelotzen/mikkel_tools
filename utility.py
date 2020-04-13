@@ -518,7 +518,7 @@ def plot_ensemble_histogram(ensemble, N_ensemble, target = None, figsize=(10,10)
     plt.show()
 
 
-def plot_CLiP_data(key, labels, shape_s, shape_Li, shape_C):
+def plot_CLiP_data(key, ens_s_sat, ens_Li, ens_C, labels, shape_s, shape_Li, shape_C):
     # Easy random plot synth sat, lithosphere, core
 
     import matplotlib.pyplot as plt
@@ -615,3 +615,22 @@ def shc_vec_len(nmax, nmin = 1, include_n_zero = False, include_zeros = False):
             vec_len += 1
 
     return vec_len
+
+def array_nm(nmax):
+    import numpy as np
+    # Generate (degree,order) pairs
+    N_SH_m_len = np.sum(np.arange(1,nmax+1)+1) # Number of (degree,order) pairs
+    m_max = np.arange(0,nmax+1) # Orders for degree N
+    m = np.zeros(N_SH_m_len) # Pre-allocate orders
+    n = np.zeros(N_SH_m_len) # Pre-allocate degrees
+    len_m_in = 0 # initiate count of inserted order lengths
+    for i in range(0,nmax): # walk through degrees - 1
+        m_in = m_max[:(i+2)] # Get orders for current degree, i+1
+        i_m_in = m_in + len_m_in # Determine index for insertion
+        m[i_m_in] = m_in # Insert orders for current degree, i+1
+        n[i_m_in] = i+1 # Insert current degree
+        len_m_in += len(m_in) # Update insertion index for next iteration
+
+    nm = np.hstack((n.reshape(-1,1),m.reshape(-1,1))) # Collect (degree,order) pairs
+
+    return nm

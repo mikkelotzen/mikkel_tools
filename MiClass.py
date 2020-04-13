@@ -129,8 +129,10 @@ class MiClass(object):
             r_at = self.a
 
         # Gauss-Legendre Quadrature Grid
-        lat_glq, lon_glq = pyshtools.expand.GLQGridCoord(nmax)
         
+        lat_glq, lon_glq = pyshtools.expand.GLQGridCoord(nmax)
+        self.grid_glq_zero, self.grid_glq_w = pyshtools.expand.SHGLQ(nmax)
+
         grid_glq_theta_len = len(lat_glq)
         grid_glq_phi_len = len(lon_glq)
         self.grid_glq_shape = (grid_glq_phi_len, grid_glq_theta_len)
@@ -383,7 +385,7 @@ class MiClass(object):
                 self.B_ensemble_nmf_glq = B_ensemble_nmf.copy()
             elif grid_type == "even":
                 self.B_ensemble_nmf_even = B_ensemble_nmf.copy()
-            
+
 
     def interpolate_grid(self, grid_in_theta, grid_out_theta, grid_in_phi, grid_out_phi, grid_in, method_int = "nearest", output = "return", save_path = ""):
         # Define interpolation grids
