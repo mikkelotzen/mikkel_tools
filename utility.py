@@ -634,3 +634,267 @@ def array_nm(nmax):
     nm = np.hstack((n.reshape(-1,1),m.reshape(-1,1))) # Collect (degree,order) pairs
 
     return nm
+
+def plot_clip_loss(epoch, train_loss, valid_loss, train_L_Li, train_L_C, valid_L_Li, valid_L_C):
+    import numpy as np
+    import matplotlib.pyplot as plt
+
+    fig = plt.figure(figsize=(20,10), constrained_layout=True) # Initiate figure with constrained layout
+    gs = fig.add_gridspec(3, 2) # Add 3x2 grid
+
+    ax1 = fig.add_subplot(gs[0, :]) # Use full row
+    ax1.set_title("ELBO")
+    ax1.set_xlabel('Epoch')
+    ax1.set_ylabel('Absolute of negative ELBO batch mean')
+    #ax1.plot(np.arange(epoch+1), train_loss, color="black")
+    #ax1.plot(np.arange(epoch+1), valid_loss, color="gray", linestyle="--")
+    ax1.semilogy(np.arange(epoch)+1, np.abs(np.array(train_loss)), color="black")
+    ax1.semilogy(np.arange(epoch)+1, np.abs(np.array(valid_loss)), color="gray", linestyle="--")
+    #ax1.set_ylim(np.abs(np.array(train_loss))[-1]*0.5, np.abs(np.array(train_loss))[0]*1.5)
+    ax1.legend(['Training', 'Validation'])
+
+    ax5 = fig.add_subplot(gs[1, 0])
+    ax5.semilogy(np.arange(epoch)+1, np.mean(train_L_Li,axis=1)/np.var(train_L_Li), color="C0")
+    ax5.set_title("Training lithosphere MSE/var loss")
+    ax5.set_xlabel('Epoch')
+    ax5.set_ylabel('Mean batch loss')
+
+    ax5 = fig.add_subplot(gs[1, 1])
+    ax5.semilogy(np.arange(epoch)+1, np.mean(train_L_C,axis=1)/np.var(train_L_C), color="C1")
+    ax5.set_title("Training core MSE/var loss")
+    ax5.set_xlabel('Epoch')
+    ax5.set_ylabel('Mean batch loss')
+
+    ax6 = fig.add_subplot(gs[2, 0])
+    ax6.semilogy(np.arange(epoch)+1, np.mean(valid_L_Li,axis=1)/np.var(valid_L_Li), color="C0")
+    ax6.set_title("Validation lithosphere MSE/var loss")
+    ax6.set_xlabel('Epoch')
+    ax6.set_ylabel('mean batch loss')
+
+    ax6 = fig.add_subplot(gs[2, 1])
+    ax6.semilogy(np.arange(epoch)+1, np.mean(valid_L_C,axis=1)/np.var(valid_L_C), color="C1")
+    ax6.set_title("Validation core MSE/var loss")
+    ax6.set_xlabel('Epoch')
+    ax6.set_ylabel('Mean batch loss')
+
+    plt.show()
+
+def plot_clip_grid_comparison(epoch_i, idx_batch, Li_out, C_out, sat_in, batch_labels, clip):
+    import numpy as np
+    import matplotlib.pyplot as plt
+    import matplotlib.ticker as tick
+    import cartopy.crs as ccrs
+
+    size_lat_in = clip.grid_even_shape[1]
+    size_lon_in = clip.grid_even_shape[0]
+    size_lat_out = clip.grid_glq_shape[1]
+    size_lon_out = clip.grid_glq_shape[0]
+
+    Li_in_plot = clip.ens_Li[:,batch_labels[epoch_i][idx_batch][0]].reshape((size_lon_out,size_lat_out)).T
+    C_in_plot = clip.ens_C[:,batch_labels[epoch_i][idx_batch][1]].reshape((size_lon_out,size_lat_out)).T
+
+    Li_out_plot = Li_out[epoch_i][idx_batch].reshape((size_lon_out,size_lat_out)).T
+    C_out_plot = C_out[epoch_i][idx_batch].reshape((size_lon_out,size_lat_out)).T
+
+    batch_sat_plot = sat_in[epoch_i][idx_batch]
+
+    clip.clip_to_obs(Li_out_plot, C_out_plot, r_at = clip.r_sat)
+    sat_plot = clip.B_clip_pred[:,0]
+
+    if clip.normalize == 1:
+        Li_in_plot = Li_in_plot*(clip.Li_scale[0]-clip.Li_scale[1])+clip.Li_scale[1]
+        C_in_plot = C_in_plot*(clip.C_scale[0]-clip.C_scale[1])+clip.C_scale[1]
+        Li_out_plot = Li_out_plot*(clip.Li_scale[0]-clip.Li_scale[1])+clip.Li_scale[1]
+        C_out_plot = C_out_plot*(clip.C_scale[0]-clip.C_scale[1])+clip.C_scale[1]
+        batch_sat_plot = batch_sat_plot*(clip.clip_scale[0]-clip.clip_scale[1])+clip.clip_scale[1]
+        sat_plot = sat_plot*(clip.clip_scale[0]-clip.clip_scale[1])+clip.clip_scale[1]
+    if clip.normalize == 0:
+        Li_in_plot = Li_in_plot*(clip.Li_scale[0]-clip.Li_scale[1])/2+clip.Li_scale[1]+(clip.Li_scale[0]-clip.Li_scale[1])/2
+        C_in_plot = C_in_plot*(clip.C_scale[0]-clip.C_scale[1])/2+clip.C_scale[1]+(clip.C_scale[0]-clip.C_scale[1])/2
+        Li_out_plot = Li_out_plot*(clip.Li_scale[0]-clip.Li_scale[1])/2+clip.Li_scale[1]+(clip.Li_scale[0]-clip.Li_scale[1])/2
+        C_out_plot = C_out_plot*(clip.C_scale[0]-clip.C_scale[1])/2+clip.C_scale[1]+(clip.C_scale[0]-clip.C_scale[1])/2
+        batch_sat_plot = batch_sat_plot*(clip.clip_scale[0]-clip.clip_scale[1])/2+clip.clip_scale[1]+(clip.clip_scale[0]-clip.clip_scale[1])/2
+        sat_plot = sat_plot*(clip.clip_scale[0]-clip.clip_scale[1])/2+clip.clip_scale[1]+(clip.clip_scale[0]-clip.clip_scale[1])/2
+
+    SF = tick.ScalarFormatter() # Formatter for colorbar
+    SF.set_powerlimits((4, 4)) # Set sci exponent used    
+
+    fig = plt.figure(figsize=(16,16), constrained_layout=True) # Initiate figure with constrained layout
+    gs = fig.add_gridspec(3, 2) # Add 3x2 grid
+
+    ax01 = fig.add_subplot(gs[0, 0], projection=ccrs.PlateCarree())
+    ax01.set_global()
+    ax01.set_title('Input synthetic sat')
+    im01 = ax01.imshow(batch_sat_plot.reshape((size_lat_in,size_lon_in)), cmap = plt.cm.RdBu_r, transform=ccrs.PlateCarree(), extent=[-180, 180, 90, -90])
+    ax01.coastlines()
+
+    ax02 = fig.add_subplot(gs[0, 1], projection=ccrs.PlateCarree()) 
+    ax02.set_global()
+    ax02.set_title('Output sat estimate')
+    im02 = ax02.imshow(sat_plot.reshape((size_lat_in,size_lon_in)), cmap = plt.cm.RdBu_r, transform=ccrs.PlateCarree(), extent=[-180, 180, 90, -90])
+    ax02.coastlines()
+
+    ax2 = fig.add_subplot(gs[1, 1], projection=ccrs.PlateCarree()) 
+    ax2.set_global()
+    ax2.set_title('Output Lithosphere')
+    im2 = ax2.imshow(Li_out_plot, cmap = plt.cm.RdBu_r, transform=ccrs.PlateCarree(), extent=[-180, 180, 90, -90])
+    ax2.coastlines()
+    
+    ax3 = fig.add_subplot(gs[2, 1], projection=ccrs.PlateCarree()) 
+    ax3.set_global()
+    ax3.set_title('Output Core')
+    im3 = ax3.imshow(C_out_plot, cmap = plt.cm.RdBu_r, transform=ccrs.PlateCarree(), extent=[-180, 180, 90, -90])
+    ax3.coastlines()
+
+    ax4 = fig.add_subplot(gs[1, 0], projection=ccrs.PlateCarree())
+    ax4.set_global()  
+    ax4.set_title('Label Lithosphere')
+    im4 = ax4.imshow(Li_in_plot, cmap = plt.cm.RdBu_r, transform=ccrs.PlateCarree(), extent=[-180, 180, 90, -90])
+    ax4.coastlines()
+
+    ax5 = fig.add_subplot(gs[2, 0], projection=ccrs.PlateCarree())
+    ax5.set_global()
+    ax5.set_title('Label Core')
+    im5 = ax5.imshow(C_in_plot, cmap = plt.cm.RdBu_r, transform=ccrs.PlateCarree(), extent=[-180, 180, 90, -90])
+    ax5.coastlines()
+
+    limit_for_SF = 10**5
+    if np.max(batch_sat_plot)>limit_for_SF:
+        fig.colorbar(im01, ax=ax01, orientation = "horizontal", shrink=0.6, format = SF)
+        fig.colorbar(im01, ax=ax02, orientation = "horizontal", shrink=0.6, format = SF)
+    else:
+        fig.colorbar(im01, ax=ax01, orientation = "horizontal", shrink=0.6)
+        fig.colorbar(im01, ax=ax02, orientation = "horizontal", shrink=0.6)
+
+    if np.max(Li_in_plot)>limit_for_SF:
+        fig.colorbar(im4, ax=ax2, orientation = "horizontal", shrink=0.6, format = SF)
+        fig.colorbar(im4, ax=ax4, orientation = "horizontal", shrink=0.6, format = SF)
+    else:
+        fig.colorbar(im4, ax=ax2, orientation = "horizontal", shrink=0.6)
+        fig.colorbar(im4, ax=ax4, orientation = "horizontal", shrink=0.6)
+
+    if np.max(C_in_plot)>limit_for_SF:
+        fig.colorbar(im5, ax=ax3, orientation = "horizontal", shrink=0.6, format = SF)
+        fig.colorbar(im5, ax=ax5, orientation = "horizontal", shrink=0.6, format = SF)
+    else:
+        fig.colorbar(im5, ax=ax3, orientation = "horizontal", shrink=0.6)
+        fig.colorbar(im5, ax=ax5, orientation = "horizontal", shrink=0.6)        
+
+    #fig.colorbar(im02, ax=ax02, orientation = "horizontal", shrink=0.6, format = SF)
+    #fig.colorbar(im01, ax=ax02, orientation = "horizontal", shrink=0.6, format = SF)
+
+    #fig.colorbar(im2, ax=ax2, orientation = "horizontal", shrink=0.6)
+    #fig.colorbar(im4, ax=ax2, orientation = "horizontal", shrink=0.6)
+
+    #fig.colorbar(im3, ax=ax3, orientation = "horizontal", shrink=0.6, format = SF)
+    #fig.colorbar(im5, ax=ax3, orientation = "horizontal", shrink=0.6, format = SF)
+    #fig.colorbar(im3, ax=ax3, orientation = "horizontal", shrink=0.6)
+
+    #fig.colorbar(im4, ax=ax4, orientation = "horizontal", shrink=0.6)
+
+    #fig.colorbar(im5, ax=ax5, orientation = "horizontal", shrink=0.6, format = SF)
+    #fig.colorbar(im5, ax=ax5, orientation = "horizontal", shrink=0.6)
+
+    plt.show()
+
+
+def plot_clip_grid_residuals(epoch_i, idx_batch, Li_out, C_out, sat_in, batch_labels, clip):
+    import numpy as np
+    import matplotlib.pyplot as plt
+    import matplotlib.ticker as tick
+
+    size_lat_in = clip.grid_even_shape[1]
+    size_lon_in = clip.grid_even_shape[0]
+    size_lat_out = clip.grid_glq_shape[1]
+    size_lon_out = clip.grid_glq_shape[0]
+
+    Li_in_plot = clip.ens_Li[:,batch_labels[epoch_i][idx_batch][0]].reshape((size_lon_out,size_lat_out)).T
+    C_in_plot = clip.ens_C[:,batch_labels[epoch_i][idx_batch][1]].reshape((size_lon_out,size_lat_out)).T
+
+    Li_out_plot = Li_out[epoch_i][idx_batch].reshape((size_lon_out,size_lat_out)).T
+    C_out_plot = C_out[epoch_i][idx_batch].reshape((size_lon_out,size_lat_out)).T
+
+    batch_sat_plot = sat_in[epoch_i][idx_batch]
+
+    clip.clip_to_obs(Li_out_plot, C_out_plot, r_at = clip.r_sat)
+    sat_plot = clip.B_clip_pred[:,0]
+
+    if clip.normalize == 1:
+        Li_in_plot = Li_in_plot*(clip.Li_scale[0]-clip.Li_scale[1])+clip.Li_scale[1]
+        C_in_plot = C_in_plot*(clip.C_scale[0]-clip.C_scale[1])+clip.C_scale[1]
+        Li_out_plot = Li_out_plot*(clip.Li_scale[0]-clip.Li_scale[1])+clip.Li_scale[1]
+        C_out_plot = C_out_plot*(clip.C_scale[0]-clip.C_scale[1])+clip.C_scale[1]
+        batch_sat_plot = batch_sat_plot*(clip.clip_scale[0]-clip.clip_scale[1])+clip.clip_scale[1]
+        sat_plot = sat_plot*(clip.clip_scale[0]-clip.clip_scale[1])+clip.clip_scale[1]
+    if clip.normalize == 0:
+        Li_in_plot = Li_in_plot*(clip.Li_scale[0]-clip.Li_scale[1])/2+clip.Li_scale[1]+(clip.Li_scale[0]-clip.Li_scale[1])/2
+        C_in_plot = C_in_plot*(clip.C_scale[0]-clip.C_scale[1])/2+clip.C_scale[1]+(clip.C_scale[0]-clip.C_scale[1])/2
+        Li_out_plot = Li_out_plot*(clip.Li_scale[0]-clip.Li_scale[1])/2+clip.Li_scale[1]+(clip.Li_scale[0]-clip.Li_scale[1])/2
+        C_out_plot = C_out_plot*(clip.C_scale[0]-clip.C_scale[1])/2+clip.C_scale[1]+(clip.C_scale[0]-clip.C_scale[1])/2
+        batch_sat_plot = batch_sat_plot*(clip.clip_scale[0]-clip.clip_scale[1])/2+clip.clip_scale[1]+(clip.clip_scale[0]-clip.clip_scale[1])/2
+        sat_plot = sat_plot*(clip.clip_scale[0]-clip.clip_scale[1])/2+clip.clip_scale[1]+(clip.clip_scale[0]-clip.clip_scale[1])/2
+
+    # Residuals
+    Li_residuals = np.ravel(Li_in_plot)-np.ravel(Li_out_plot)
+    C_residuals = np.ravel(C_in_plot)-np.ravel(C_out_plot)
+    sat_residuals = batch_sat_plot-sat_plot
+
+    # MSE error of plotted output and label
+    MSE_Li = np.mean(Li_residuals**2)
+    MSE_C = np.mean(C_residuals**2)
+    MSE_sat = np.mean(sat_residuals**2)
+
+    print("MSE sat: ", MSE_sat)
+    print("MSE Li: ", MSE_Li)
+    print("MSE C: ", MSE_C)
+
+    fig = plt.figure(figsize=(12,8), constrained_layout=True) # Initiate figure with constrained layout
+    gs = fig.add_gridspec(2, 2) # Add 3x2 grid
+
+    ax1 = fig.add_subplot(gs[1, 0]) 
+    ax1.set_title('Studentized Lithosphere residuals')
+    #ax1.xlabel("Lithosphere residuals")
+    im1 = ax1.hist(Li_residuals/np.std(Li_residuals), bins = 100)
+
+    ax2 = fig.add_subplot(gs[1, 1]) 
+    ax2.set_title('Studentized Core residuals')
+    #ax2.xlabel("Core residuals")
+    im2 = ax2.hist(C_residuals/np.std(C_residuals), bins = 100)
+
+    ax3 = fig.add_subplot(gs[0, :]) 
+    ax3.set_title('Studentized Sat residuals')
+    #ax3.xlabel("Sat residuals")
+    im3 = ax3.hist(sat_residuals/np.std(Li_residuals), bins = 100)
+
+    plt.show()
+
+def plot_latent_parameters(epoch_i, idx_batch, mu, log_var, z):
+    import numpy as np
+    import matplotlib.pyplot as plt
+
+    mu_in = mu[epoch_i][idx_batch].T
+    var_in = np.exp(log_var[epoch_i][idx_batch].T)
+
+    fig = plt.figure(figsize=(14,7), constrained_layout=True) # Initiate figure with constrained layout
+    gs = fig.add_gridspec(1, 2) # Add 1x2 grid
+
+    ax1 = fig.add_subplot(gs[0, 0]) 
+    ax1.set_title('Latent parameters')
+    #ax1.set_xlabel("Latent parameter index")
+    ax1.set_xlabel("Mean")
+    ax1.set_ylabel("Variance")
+    #im1 = ax1.plot(mu[epoch_i][idx_batch].T, "*", linestyle=(0, (1, 5)))
+    im1 = ax1.scatter(mu_in, var_in, c = (mu_in-var_in)**2, cmap = "rainbow")
+
+    #ax2 = fig.add_subplot(gs[0, 1]) 
+    #ax2.set_title('sigma')
+    #ax2.set_xlabel("Latent variable")
+    #ax2.set_ylabel("Variance")
+    #im2 = ax2.plot(np.exp(log_var[epoch_i][idx_batch].T), "*", linestyle=(0, (1, 5)))
+    #im2 = ax2.plot(np.exp(log_var[epoch_i][idx_batch].T), "*")
+
+    ax3 = fig.add_subplot(gs[0, 1]) 
+    ax3.set_title('z')
+    ax3.set_ylabel("Sampled value")
+    ax3.set_xlabel("Samples")
+    im3 = ax3.plot(z[epoch_i][idx_batch], "*", linestyle=(0, (1, 5)))

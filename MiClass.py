@@ -111,7 +111,7 @@ class MiClass(object):
         self.grid_even_shape = (self.grid_even_phi_len, self.grid_even_theta_len)
 
         self.grid_even_theta = 90 - np.flip(np.ravel(lat.T)).reshape(-1,)
-        self.grid_even_phi = np.ravel(lon.T).reshape(-1,)
+        self.grid_even_phi = np.ravel(lon.T).reshape(-1,) + 180
         
         # Possible use of WGS84 radius
         if wgs84 == False:
