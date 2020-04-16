@@ -654,26 +654,26 @@ def plot_clip_loss(epoch, train_loss, valid_loss, train_L_Li, train_L_C, valid_L
     ax1.legend(['Training', 'Validation'])
 
     ax5 = fig.add_subplot(gs[1, 0])
-    ax5.semilogy(np.arange(epoch)+1, np.mean(train_L_Li,axis=1)/np.var(train_L_Li), color="C0")
-    ax5.set_title("Training lithosphere MSE/var loss")
+    ax5.semilogy(np.arange(epoch)+1, np.mean(train_L_Li,axis=1), color="C0")
+    ax5.set_title("Training lithosphere MSE loss")
     ax5.set_xlabel('Epoch')
     ax5.set_ylabel('Mean batch loss')
 
     ax5 = fig.add_subplot(gs[1, 1])
-    ax5.semilogy(np.arange(epoch)+1, np.mean(train_L_C,axis=1)/np.var(train_L_C), color="C1")
-    ax5.set_title("Training core MSE/var loss")
+    ax5.semilogy(np.arange(epoch)+1, np.mean(train_L_C,axis=1), color="C1")
+    ax5.set_title("Training core MSE loss")
     ax5.set_xlabel('Epoch')
     ax5.set_ylabel('Mean batch loss')
 
     ax6 = fig.add_subplot(gs[2, 0])
-    ax6.semilogy(np.arange(epoch)+1, np.mean(valid_L_Li,axis=1)/np.var(valid_L_Li), color="C0")
-    ax6.set_title("Validation lithosphere MSE/var loss")
+    ax6.semilogy(np.arange(epoch)+1, np.mean(valid_L_Li,axis=1), color="C0")
+    ax6.set_title("Validation lithosphere MSE loss")
     ax6.set_xlabel('Epoch')
     ax6.set_ylabel('mean batch loss')
 
     ax6 = fig.add_subplot(gs[2, 1])
-    ax6.semilogy(np.arange(epoch)+1, np.mean(valid_L_C,axis=1)/np.var(valid_L_C), color="C1")
-    ax6.set_title("Validation core MSE/var loss")
+    ax6.semilogy(np.arange(epoch)+1, np.mean(valid_L_C,axis=1), color="C1")
+    ax6.set_title("Validation core MSE loss")
     ax6.set_xlabel('Epoch')
     ax6.set_ylabel('Mean batch loss')
 
@@ -854,19 +854,24 @@ def plot_clip_grid_residuals(epoch_i, idx_batch, Li_out, C_out, sat_in, batch_la
     ax1 = fig.add_subplot(gs[1, 0]) 
     ax1.set_title('Studentized Lithosphere residuals')
     #ax1.xlabel("Lithosphere residuals")
-    im1 = ax1.hist(Li_residuals/np.std(Li_residuals), bins = 100)
+    ax1.set_xlabel('(Li_in - Li_out)/std(Li_out)')
+    ax1.set_ylabel('Count')
+    im1 = ax1.hist(Li_residuals/np.std(Li_out_plot), bins = 100)
 
     ax2 = fig.add_subplot(gs[1, 1]) 
     ax2.set_title('Studentized Core residuals')
-    #ax2.xlabel("Core residuals")
-    im2 = ax2.hist(C_residuals/np.std(C_residuals), bins = 100)
+    ax2.set_xlabel('(C_in - C_out)/std(C_out)')
+    ax2.set_ylabel('Count')
+    im2 = ax2.hist(C_residuals/np.std(C_out_plot), bins = 100)
 
     ax3 = fig.add_subplot(gs[0, :]) 
     ax3.set_title('Studentized Sat residuals')
-    #ax3.xlabel("Sat residuals")
-    im3 = ax3.hist(sat_residuals/np.std(Li_residuals), bins = 100)
+    ax3.set_xlabel('(Sat_in - Sat_out)/std(Sat_out)')
+    ax3.set_ylabel('Count')
+    im3 = ax3.hist(sat_residuals/np.std(sat_plot), bins = 100)
 
     plt.show()
+
 
 def plot_latent_parameters(epoch_i, idx_batch, mu, log_var, z):
     import numpy as np
@@ -874,6 +879,7 @@ def plot_latent_parameters(epoch_i, idx_batch, mu, log_var, z):
 
     mu_in = mu[epoch_i][idx_batch].T
     var_in = np.exp(log_var[epoch_i][idx_batch].T)
+    #, c = (mu_in-var_in)**2
 
     fig = plt.figure(figsize=(14,7), constrained_layout=True) # Initiate figure with constrained layout
     gs = fig.add_gridspec(1, 2) # Add 1x2 grid
@@ -883,8 +889,9 @@ def plot_latent_parameters(epoch_i, idx_batch, mu, log_var, z):
     #ax1.set_xlabel("Latent parameter index")
     ax1.set_xlabel("Mean")
     ax1.set_ylabel("Variance")
+    ax1.grid()
     #im1 = ax1.plot(mu[epoch_i][idx_batch].T, "*", linestyle=(0, (1, 5)))
-    im1 = ax1.scatter(mu_in, var_in, c = (mu_in-var_in)**2, cmap = "rainbow")
+    im1 = ax1.plot(mu_in.reshape(1,-1), var_in.reshape(1,-1), 'o', markersize = 20)
 
     #ax2 = fig.add_subplot(gs[0, 1]) 
     #ax2.set_title('sigma')
