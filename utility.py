@@ -411,6 +411,7 @@ def plot_p_spec(g_spec, p_spec_height, nmax, model_dict = None, figsize = (14,8)
         ens_cilm = np.array(pyshtools.shio.SHVectorToCilm(np.hstack((np.zeros(1,),g_spec))))
         p_spec = pyshtools.gravmag.mag_spectrum(ens_cilm, r_ref, p_spec_height, degrees = np.arange(1,np.shape(ens_cilm)[1])) # degrees to skip zeroth degree
         p_spec = p_spec[:nmax]
+        plt.plot(ns, p_spec[:nmax], color=color, label = label, linewidth = 5)
     else:
         N_ensembles = np.shape(g_spec)[-1]
 
