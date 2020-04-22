@@ -389,7 +389,7 @@ def plot_power_spectrum(p_spec, figsize=(14,8)):
     plt.grid(alpha=0.3)
     plt.show()
 
-def plot_p_spec(g_spec, p_spec_height, nmax, model_dict = None, figsize = (14,8), lwidth = 2, step = 5, ensemble = False, label = "ensemble", color = "lightgray", legend_loc = "best", r_ref = 6371.2):
+def plot_p_spec(g_spec, p_spec_height, nmax, model_dict = None, figsize = (14,8), lwidth = 2, lwidth_m = 2, step = 5, ensemble = False, label = "ensemble", color = "lightgray", legend_loc = "best", r_ref = 6371.2):
 
     import matplotlib.pyplot as plt
     import numpy as np
@@ -411,7 +411,7 @@ def plot_p_spec(g_spec, p_spec_height, nmax, model_dict = None, figsize = (14,8)
         ens_cilm = np.array(pyshtools.shio.SHVectorToCilm(np.hstack((np.zeros(1,),g_spec))))
         p_spec = pyshtools.gravmag.mag_spectrum(ens_cilm, r_ref, p_spec_height, degrees = np.arange(1,np.shape(ens_cilm)[1])) # degrees to skip zeroth degree
         p_spec = p_spec[:nmax]
-        plt.plot(ns, p_spec[:nmax], color=color, label = label, linewidth = 5)
+        plt.plot(ns, p_spec[:nmax], color=color, label = label, linewidth = lwidth)
     else:
         N_ensembles = np.shape(g_spec)[-1]
 
@@ -420,9 +420,9 @@ def plot_p_spec(g_spec, p_spec_height, nmax, model_dict = None, figsize = (14,8)
             p_spec = pyshtools.gravmag.mag_spectrum(ens_cilm, r_ref, p_spec_height, degrees = np.arange(1,np.shape(ens_cilm)[1]))
             p_spec = p_spec[:nmax]
             if i == 0:
-                plt.plot(ns, p_spec[:nmax], color=color, label = label)
+                plt.plot(ns, p_spec[:nmax], color=color, label = label, linewidth = lwidth)
             else:
-                plt.plot(ns, p_spec[:nmax], color=color)
+                plt.plot(ns, p_spec[:nmax], color=color, linewidth = lwidth)
 
     if model_dict is not None: # Load models
         WDMAM2 = spio.loadmat('lithosphere_prior/grids/models/WDMAM2.mat')
@@ -479,7 +479,7 @@ def plot_p_spec(g_spec, p_spec_height, nmax, model_dict = None, figsize = (14,8)
                 use_ns = ns
                 use_p_spec = p_spec[:nmax]
 
-            plt.plot(use_ns, use_p_spec, color="C{}".format(i), label = key, linewidth = lwidth)
+            plt.plot(use_ns, use_p_spec, color="C{}".format(i), label = key, linewidth = lwidth_m)
             i += 1
 
     plt.yscale('log')
@@ -699,23 +699,23 @@ def plot_clip_grid_comparison(epoch_i, idx_batch, Li_out, C_out, sat_in, batch_l
 
     batch_sat_plot = sat_in[epoch_i][idx_batch]
 
-    clip.clip_to_obs(Li_out_plot, C_out_plot, r_at = clip.r_sat)
-    sat_plot = clip.B_clip_pred[:,0]
-
     if clip.normalize == 1:
         Li_in_plot = Li_in_plot*(clip.Li_scale[0]-clip.Li_scale[1])+clip.Li_scale[1]
         C_in_plot = C_in_plot*(clip.C_scale[0]-clip.C_scale[1])+clip.C_scale[1]
         Li_out_plot = Li_out_plot*(clip.Li_scale[0]-clip.Li_scale[1])+clip.Li_scale[1]
         C_out_plot = C_out_plot*(clip.C_scale[0]-clip.C_scale[1])+clip.C_scale[1]
         batch_sat_plot = batch_sat_plot*(clip.clip_scale[0]-clip.clip_scale[1])+clip.clip_scale[1]
-        sat_plot = sat_plot*(clip.clip_scale[0]-clip.clip_scale[1])+clip.clip_scale[1]
+        #sat_plot = sat_plot*(clip.clip_scale[0]-clip.clip_scale[1])+clip.clip_scale[1]
     if clip.normalize == 0:
         Li_in_plot = Li_in_plot*(clip.Li_scale[0]-clip.Li_scale[1])/2+clip.Li_scale[1]+(clip.Li_scale[0]-clip.Li_scale[1])/2
         C_in_plot = C_in_plot*(clip.C_scale[0]-clip.C_scale[1])/2+clip.C_scale[1]+(clip.C_scale[0]-clip.C_scale[1])/2
         Li_out_plot = Li_out_plot*(clip.Li_scale[0]-clip.Li_scale[1])/2+clip.Li_scale[1]+(clip.Li_scale[0]-clip.Li_scale[1])/2
         C_out_plot = C_out_plot*(clip.C_scale[0]-clip.C_scale[1])/2+clip.C_scale[1]+(clip.C_scale[0]-clip.C_scale[1])/2
         batch_sat_plot = batch_sat_plot*(clip.clip_scale[0]-clip.clip_scale[1])/2+clip.clip_scale[1]+(clip.clip_scale[0]-clip.clip_scale[1])/2
-        sat_plot = sat_plot*(clip.clip_scale[0]-clip.clip_scale[1])/2+clip.clip_scale[1]+(clip.clip_scale[0]-clip.clip_scale[1])/2
+        #sat_plot = sat_plot*(clip.clip_scale[0]-clip.clip_scale[1])/2+clip.clip_scale[1]+(clip.clip_scale[0]-clip.clip_scale[1])/2
+
+    clip.clip_to_obs(Li_out_plot, C_out_plot, r_at = clip.r_sat)
+    sat_plot = clip.B_clip_pred[:,0]
 
     SF = tick.ScalarFormatter() # Formatter for colorbar
     SF.set_powerlimits((4, 4)) # Set sci exponent used    
@@ -762,23 +762,23 @@ def plot_clip_grid_comparison(epoch_i, idx_batch, Li_out, C_out, sat_in, batch_l
     limit_for_SF = 10**5
     if np.max(batch_sat_plot)>limit_for_SF:
         fig.colorbar(im01, ax=ax01, orientation = "horizontal", shrink=0.6, format = SF)
-        fig.colorbar(im01, ax=ax02, orientation = "horizontal", shrink=0.6, format = SF)
+        fig.colorbar(im02, ax=ax02, orientation = "horizontal", shrink=0.6, format = SF)
     else:
         fig.colorbar(im01, ax=ax01, orientation = "horizontal", shrink=0.6)
-        fig.colorbar(im01, ax=ax02, orientation = "horizontal", shrink=0.6)
+        fig.colorbar(im02, ax=ax02, orientation = "horizontal", shrink=0.6)
 
     if np.max(Li_in_plot)>limit_for_SF:
-        fig.colorbar(im4, ax=ax2, orientation = "horizontal", shrink=0.6, format = SF)
+        fig.colorbar(im2, ax=ax2, orientation = "horizontal", shrink=0.6, format = SF)
         fig.colorbar(im4, ax=ax4, orientation = "horizontal", shrink=0.6, format = SF)
     else:
-        fig.colorbar(im4, ax=ax2, orientation = "horizontal", shrink=0.6)
+        fig.colorbar(im2, ax=ax2, orientation = "horizontal", shrink=0.6)
         fig.colorbar(im4, ax=ax4, orientation = "horizontal", shrink=0.6)
 
     if np.max(C_in_plot)>limit_for_SF:
-        fig.colorbar(im5, ax=ax3, orientation = "horizontal", shrink=0.6, format = SF)
+        fig.colorbar(im3, ax=ax3, orientation = "horizontal", shrink=0.6, format = SF)
         fig.colorbar(im5, ax=ax5, orientation = "horizontal", shrink=0.6, format = SF)
     else:
-        fig.colorbar(im5, ax=ax3, orientation = "horizontal", shrink=0.6)
+        fig.colorbar(im3, ax=ax3, orientation = "horizontal", shrink=0.6)
         fig.colorbar(im5, ax=ax5, orientation = "horizontal", shrink=0.6)        
 
     #fig.colorbar(im02, ax=ax02, orientation = "horizontal", shrink=0.6, format = SF)
@@ -817,23 +817,23 @@ def plot_clip_grid_residuals(epoch_i, idx_batch, Li_out, C_out, sat_in, batch_la
 
     batch_sat_plot = sat_in[epoch_i][idx_batch]
 
-    clip.clip_to_obs(Li_out_plot, C_out_plot, r_at = clip.r_sat)
-    sat_plot = clip.B_clip_pred[:,0]
-
     if clip.normalize == 1:
         Li_in_plot = Li_in_plot*(clip.Li_scale[0]-clip.Li_scale[1])+clip.Li_scale[1]
         C_in_plot = C_in_plot*(clip.C_scale[0]-clip.C_scale[1])+clip.C_scale[1]
         Li_out_plot = Li_out_plot*(clip.Li_scale[0]-clip.Li_scale[1])+clip.Li_scale[1]
         C_out_plot = C_out_plot*(clip.C_scale[0]-clip.C_scale[1])+clip.C_scale[1]
         batch_sat_plot = batch_sat_plot*(clip.clip_scale[0]-clip.clip_scale[1])+clip.clip_scale[1]
-        sat_plot = sat_plot*(clip.clip_scale[0]-clip.clip_scale[1])+clip.clip_scale[1]
+        #sat_plot = sat_plot*(clip.clip_scale[0]-clip.clip_scale[1])+clip.clip_scale[1]
     if clip.normalize == 0:
         Li_in_plot = Li_in_plot*(clip.Li_scale[0]-clip.Li_scale[1])/2+clip.Li_scale[1]+(clip.Li_scale[0]-clip.Li_scale[1])/2
         C_in_plot = C_in_plot*(clip.C_scale[0]-clip.C_scale[1])/2+clip.C_scale[1]+(clip.C_scale[0]-clip.C_scale[1])/2
         Li_out_plot = Li_out_plot*(clip.Li_scale[0]-clip.Li_scale[1])/2+clip.Li_scale[1]+(clip.Li_scale[0]-clip.Li_scale[1])/2
         C_out_plot = C_out_plot*(clip.C_scale[0]-clip.C_scale[1])/2+clip.C_scale[1]+(clip.C_scale[0]-clip.C_scale[1])/2
         batch_sat_plot = batch_sat_plot*(clip.clip_scale[0]-clip.clip_scale[1])/2+clip.clip_scale[1]+(clip.clip_scale[0]-clip.clip_scale[1])/2
-        sat_plot = sat_plot*(clip.clip_scale[0]-clip.clip_scale[1])/2+clip.clip_scale[1]+(clip.clip_scale[0]-clip.clip_scale[1])/2
+        #sat_plot = sat_plot*(clip.clip_scale[0]-clip.clip_scale[1])/2+clip.clip_scale[1]+(clip.clip_scale[0]-clip.clip_scale[1])/2
+
+    clip.clip_to_obs(Li_out_plot, C_out_plot, r_at = clip.r_sat)
+    sat_plot = clip.B_clip_pred[:,0]
 
     # Residuals
     Li_residuals = np.ravel(Li_in_plot)-np.ravel(Li_out_plot)
