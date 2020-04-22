@@ -841,13 +841,13 @@ def plot_clip_grid_residuals(epoch_i, idx_batch, Li_out, C_out, sat_in, batch_la
     sat_residuals = batch_sat_plot-sat_plot
 
     # MSE error of plotted output and label
-    MSE_Li = np.mean(Li_residuals**2)
-    MSE_C = np.mean(C_residuals**2)
-    MSE_sat = np.mean(sat_residuals**2)
+    RMSE_Li = np.sqrt(np.mean(Li_residuals**2))
+    RMSE_C = np.sqrt(np.mean(C_residuals**2))
+    RMSE_sat = np.sqrt(np.mean(sat_residuals**2))
 
-    print("MSE sat: ", MSE_sat)
-    print("MSE Li: ", MSE_Li)
-    print("MSE C: ", MSE_C)
+    print("RMSE sat: ", RMSE_sat)
+    print("RMSE Li: ", RMSE_Li)
+    print("RMSE C: ", RMSE_C)
 
     fig = plt.figure(figsize=(12,8), constrained_layout=True) # Initiate figure with constrained layout
     gs = fig.add_gridspec(2, 2) # Add 3x2 grid
