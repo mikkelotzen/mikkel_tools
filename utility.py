@@ -680,7 +680,7 @@ def plot_clip_loss(epoch, train_loss, valid_loss, train_L_Li, train_L_C, valid_L
 
     plt.show()
 
-def plot_clip_grid_comparison(epoch_i, idx_batch, Li_out, C_out, sat_in, batch_labels, clip):
+def plot_clip_grid_comparison(epoch_i, Li_out, C_out, sat_in, batch_labels, clip):
     import numpy as np
     import matplotlib.pyplot as plt
     import matplotlib.ticker as tick
@@ -691,13 +691,13 @@ def plot_clip_grid_comparison(epoch_i, idx_batch, Li_out, C_out, sat_in, batch_l
     size_lat_out = clip.grid_glq_shape[1]
     size_lon_out = clip.grid_glq_shape[0]
 
-    Li_in_plot = clip.ens_Li[:,batch_labels[epoch_i][idx_batch][0]].reshape((size_lon_out,size_lat_out)).T
-    C_in_plot = clip.ens_C[:,batch_labels[epoch_i][idx_batch][1]].reshape((size_lon_out,size_lat_out)).T
+    Li_in_plot = clip.ens_Li[:,batch_labels[epoch_i][0]].reshape((size_lon_out,size_lat_out)).T
+    C_in_plot = clip.ens_C[:,batch_labels[epoch_i][1]].reshape((size_lon_out,size_lat_out)).T
 
-    Li_out_plot = Li_out[epoch_i][idx_batch].reshape((size_lon_out,size_lat_out)).T
-    C_out_plot = C_out[epoch_i][idx_batch].reshape((size_lon_out,size_lat_out)).T
+    Li_out_plot = Li_out[epoch_i].reshape((size_lon_out,size_lat_out)).T
+    C_out_plot = C_out[epoch_i].reshape((size_lon_out,size_lat_out)).T
 
-    batch_sat_plot = sat_in[epoch_i][idx_batch]
+    batch_sat_plot = sat_in[epoch_i]
 
     if clip.normalize == 1:
         Li_in_plot = Li_in_plot*(clip.Li_scale[0]-clip.Li_scale[1])+clip.Li_scale[1]
@@ -799,7 +799,7 @@ def plot_clip_grid_comparison(epoch_i, idx_batch, Li_out, C_out, sat_in, batch_l
     plt.show()
 
 
-def plot_clip_grid_residuals(epoch_i, idx_batch, Li_out, C_out, sat_in, batch_labels, clip):
+def plot_clip_grid_residuals(epoch_i, Li_out, C_out, sat_in, batch_labels, clip):
     import numpy as np
     import matplotlib.pyplot as plt
     import matplotlib.ticker as tick
@@ -809,13 +809,13 @@ def plot_clip_grid_residuals(epoch_i, idx_batch, Li_out, C_out, sat_in, batch_la
     size_lat_out = clip.grid_glq_shape[1]
     size_lon_out = clip.grid_glq_shape[0]
 
-    Li_in_plot = clip.ens_Li[:,batch_labels[epoch_i][idx_batch][0]].reshape((size_lon_out,size_lat_out)).T
-    C_in_plot = clip.ens_C[:,batch_labels[epoch_i][idx_batch][1]].reshape((size_lon_out,size_lat_out)).T
+    Li_in_plot = clip.ens_Li[:,batch_labels[epoch_i][0]].reshape((size_lon_out,size_lat_out)).T
+    C_in_plot = clip.ens_C[:,batch_labels[epoch_i][1]].reshape((size_lon_out,size_lat_out)).T
 
-    Li_out_plot = Li_out[epoch_i][idx_batch].reshape((size_lon_out,size_lat_out)).T
-    C_out_plot = C_out[epoch_i][idx_batch].reshape((size_lon_out,size_lat_out)).T
+    Li_out_plot = Li_out[epoch_i].reshape((size_lon_out,size_lat_out)).T
+    C_out_plot = C_out[epoch_i].reshape((size_lon_out,size_lat_out)).T
 
-    batch_sat_plot = sat_in[epoch_i][idx_batch]
+    batch_sat_plot = sat_in[epoch_i]
 
     if clip.normalize == 1:
         Li_in_plot = Li_in_plot*(clip.Li_scale[0]-clip.Li_scale[1])+clip.Li_scale[1]
@@ -874,12 +874,12 @@ def plot_clip_grid_residuals(epoch_i, idx_batch, Li_out, C_out, sat_in, batch_la
     plt.show()
 
 
-def plot_latent_parameters(epoch_i, idx_batch, mu, log_var, z):
+def plot_latent_parameters(epoch_i, mu, log_var, z):
     import numpy as np
     import matplotlib.pyplot as plt
 
-    mu_in = mu[epoch_i][idx_batch].T
-    var_in = np.exp(log_var[epoch_i][idx_batch].T)
+    mu_in = mu[epoch_i].T
+    var_in = np.exp(log_var[epoch_i].T)
     #, c = (mu_in-var_in)**2
 
     fig = plt.figure(figsize=(14,7), constrained_layout=True) # Initiate figure with constrained layout
@@ -905,4 +905,4 @@ def plot_latent_parameters(epoch_i, idx_batch, mu, log_var, z):
     ax3.set_title('z')
     ax3.set_ylabel("Sampled value")
     ax3.set_xlabel("Samples")
-    im3 = ax3.plot(z[epoch_i][idx_batch], "*", linestyle=(0, (1, 5)))
+    im3 = ax3.plot(z[epoch_i], "*", linestyle=(0, (1, 5)))
