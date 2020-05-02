@@ -519,11 +519,21 @@ def plot_ensemble_histogram(ensemble, N_ensemble, target = None, figsize=(10,10)
     plt.show()
 
 
-def plot_CLiP_data(key, ens_s_sat, ens_Li, ens_C, labels, shape_s, shape_Li, shape_C):
+def plot_CLiP_data(key, ens_s_sat, ens_Li, ens_C, labels, transform_to_map = False, shape_s = None, shape_Li = None, shape_C = None):
     # Easy random plot synth sat, lithosphere, core
 
     import matplotlib.pyplot as plt
     import matplotlib.ticker as tick
+
+    if transform_to_map == True:
+        plot_s = ens_s_sat[:,key].reshape(shape_s)
+        plot_Li = ens_Li[:,labels[key][0]].reshape(shape_Li).T
+        plot_C = ens_C[:,labels[key][1]].reshape(shape_C).T
+    else:
+        plot_s = ens_s_sat[key,:,:]
+        plot_Li = ens_Li[labels[key][0],:,:]
+        plot_C = ens_C[labels[key][1],:,:]
+
 
     SF = tick.ScalarFormatter() # Formatter for colorbar
     SF.set_powerlimits((3, 3)) # Set sci exponent used
@@ -533,17 +543,17 @@ def plot_CLiP_data(key, ens_s_sat, ens_Li, ens_C, labels, shape_s, shape_Li, sha
 
     ax1 = fig.add_subplot(gs[0, :]) # Use full row
     ax1.set_title('Synth sat obs, B_r [nT]')
-    im1 = ax1.imshow(ens_s_sat[:,key].reshape(shape_s), cmap = plt.cm.RdBu_r)
+    im1 = ax1.imshow(plot_s, cmap = plt.cm.RdBu_r)
     fig.colorbar(im1, ax=ax1, orientation = "horizontal", shrink=0.3, format = SF)
 
     ax2 = fig.add_subplot(gs[1, 0]) # Use one 
     ax2.set_title('Lithosphere, B_r [nT]')
-    im2 = ax2.imshow(ens_Li[:,labels[key][0]].reshape(shape_Li).T, cmap = plt.cm.RdBu_r)
+    im2 = ax2.imshow(plot_Li, cmap = plt.cm.RdBu_r)
     fig.colorbar(im2, ax=ax2, orientation = "horizontal", shrink=0.6)
 
     ax3 = fig.add_subplot(gs[1, 1])
     ax3.set_title('Core, B_r [nT]')
-    im3 = ax3.imshow(ens_C[:,labels[key][1]].reshape(shape_C).T, cmap = plt.cm.RdBu_r)
+    im3 = ax3.imshow(plot_C, cmap = plt.cm.RdBu_r)
     fig.colorbar(im3, ax=ax3, orientation = "horizontal", shrink=0.6, format = SF)
     plt.show()
 
@@ -680,7 +690,7 @@ def plot_clip_loss(epoch, train_loss, valid_loss, train_L_Li, train_L_C, valid_L
 
     plt.show()
 
-def plot_clip_grid_comparison(epoch_i, Li_out, C_out, sat_in, batch_labels, clip):
+def plot_clip_grid_comparison(epoch_i, Li_out, C_out, sat_in, batch_labels, clip, map_shape = False):
     import numpy as np
     import matplotlib.pyplot as plt
     import matplotlib.ticker as tick
@@ -691,11 +701,16 @@ def plot_clip_grid_comparison(epoch_i, Li_out, C_out, sat_in, batch_labels, clip
     size_lat_out = clip.grid_glq_shape[1]
     size_lon_out = clip.grid_glq_shape[0]
 
-    Li_in_plot = clip.ens_Li[:,batch_labels[epoch_i][0]].reshape((size_lon_out,size_lat_out)).T
-    C_in_plot = clip.ens_C[:,batch_labels[epoch_i][1]].reshape((size_lon_out,size_lat_out)).T
-
-    Li_out_plot = Li_out[epoch_i].reshape((size_lon_out,size_lat_out)).T
-    C_out_plot = C_out[epoch_i].reshape((size_lon_out,size_lat_out)).T
+    if map_shape == False:
+        Li_in_plot = clip.ens_Li[:,batch_labels[epoch_i][0]].reshape((size_lon_out,size_lat_out)).T
+        C_in_plot = clip.ens_C[:,batch_labels[epoch_i][1]].reshape((size_lon_out,size_lat_out)).T
+        Li_out_plot = Li_out[epoch_i].reshape((size_lon_out,size_lat_out)).T
+        C_out_plot = C_out[epoch_i].reshape((size_lon_out,size_lat_out)).T
+    else:
+        Li_in_plot = clip.ens_Li[batch_labels[epoch_i][0],:,:]
+        C_in_plot = clip.ens_C[batch_labels[epoch_i][1],:,:]
+        Li_out_plot = Li_out[epoch_i].reshape((size_lat_out,size_lon_out))
+        C_out_plot = C_out[epoch_i].reshape((size_lat_out,size_lon_out))
 
     batch_sat_plot = sat_in[epoch_i]
 
@@ -732,20 +747,14 @@ def plot_clip_grid_comparison(epoch_i, Li_out, C_out, sat_in, batch_labels, clip
     ax02 = fig.add_subplot(gs[0, 1], projection=ccrs.PlateCarree()) 
     ax02.set_global()
     ax02.set_title('Output sat estimate')
-    im02 = ax02.imshow(sat_plot.reshape((size_lat_in,size_lon_in)), cmap = plt.cm.RdBu_r, transform=ccrs.PlateCarree(), extent=[-180, 180, 90, -90])
-    ax02.coastlines()
 
     ax2 = fig.add_subplot(gs[1, 1], projection=ccrs.PlateCarree()) 
     ax2.set_global()
     ax2.set_title('Output Lithosphere')
-    im2 = ax2.imshow(Li_out_plot, cmap = plt.cm.RdBu_r, transform=ccrs.PlateCarree(), extent=[-180, 180, 90, -90])
-    ax2.coastlines()
     
     ax3 = fig.add_subplot(gs[2, 1], projection=ccrs.PlateCarree()) 
     ax3.set_global()
     ax3.set_title('Output Core')
-    im3 = ax3.imshow(C_out_plot, cmap = plt.cm.RdBu_r, transform=ccrs.PlateCarree(), extent=[-180, 180, 90, -90])
-    ax3.coastlines()
 
     ax4 = fig.add_subplot(gs[1, 0], projection=ccrs.PlateCarree())
     ax4.set_global()  
@@ -758,6 +767,19 @@ def plot_clip_grid_comparison(epoch_i, Li_out, C_out, sat_in, batch_labels, clip
     ax5.set_title('Label Core')
     im5 = ax5.imshow(C_in_plot, cmap = plt.cm.RdBu_r, transform=ccrs.PlateCarree(), extent=[-180, 180, 90, -90])
     ax5.coastlines()
+
+    if map_shape == False:
+        im02 = ax02.imshow(sat_plot.reshape((size_lat_in,size_lon_in)), cmap = plt.cm.RdBu_r, transform=ccrs.PlateCarree(), extent=[-180, 180, 90, -90])
+        im2 = ax2.imshow(Li_out_plot, cmap = plt.cm.RdBu_r, transform=ccrs.PlateCarree(), extent=[-180, 180, 90, -90])
+        im3 = ax3.imshow(C_out_plot, cmap = plt.cm.RdBu_r, transform=ccrs.PlateCarree(), extent=[-180, 180, 90, -90])
+    else:
+        im02 = ax02.imshow(sat_plot.reshape((size_lat_in,size_lon_in)), cmap = plt.cm.RdBu_r, transform=ccrs.PlateCarree(), extent=[-180, 180, 90, -90])
+        im2 = ax2.imshow(Li_out_plot, cmap = plt.cm.RdBu_r, transform=ccrs.PlateCarree(), extent=[-180, 180, 90, -90])
+        im3 = ax3.imshow(C_out_plot, cmap = plt.cm.RdBu_r, transform=ccrs.PlateCarree(), extent=[-180, 180, 90, -90])
+        
+    ax02.coastlines()
+    ax2.coastlines()
+    ax3.coastlines()
 
     limit_for_SF = 10**5
     if np.max(batch_sat_plot)>limit_for_SF:
@@ -799,7 +821,7 @@ def plot_clip_grid_comparison(epoch_i, Li_out, C_out, sat_in, batch_labels, clip
     plt.show()
 
 
-def plot_clip_grid_residuals(epoch_i, Li_out, C_out, sat_in, batch_labels, clip):
+def plot_clip_grid_residuals(epoch_i, Li_out, C_out, sat_in, batch_labels, clip, map_shape = False):
     import numpy as np
     import matplotlib.pyplot as plt
     import matplotlib.ticker as tick
@@ -809,11 +831,22 @@ def plot_clip_grid_residuals(epoch_i, Li_out, C_out, sat_in, batch_labels, clip)
     size_lat_out = clip.grid_glq_shape[1]
     size_lon_out = clip.grid_glq_shape[0]
 
-    Li_in_plot = clip.ens_Li[:,batch_labels[epoch_i][0]].reshape((size_lon_out,size_lat_out)).T
-    C_in_plot = clip.ens_C[:,batch_labels[epoch_i][1]].reshape((size_lon_out,size_lat_out)).T
+    #Li_in_plot = clip.ens_Li[:,batch_labels[epoch_i][0]].reshape((size_lon_out,size_lat_out)).T
+    #C_in_plot = clip.ens_C[:,batch_labels[epoch_i][1]].reshape((size_lon_out,size_lat_out)).T
 
-    Li_out_plot = Li_out[epoch_i].reshape((size_lon_out,size_lat_out)).T
-    C_out_plot = C_out[epoch_i].reshape((size_lon_out,size_lat_out)).T
+    #Li_out_plot = Li_out[epoch_i].reshape((size_lon_out,size_lat_out)).T
+    #C_out_plot = C_out[epoch_i].reshape((size_lon_out,size_lat_out)).T
+
+    if map_shape == False:
+        Li_in_plot = clip.ens_Li[:,batch_labels[epoch_i][0]].reshape((size_lon_out,size_lat_out)).T
+        C_in_plot = clip.ens_C[:,batch_labels[epoch_i][1]].reshape((size_lon_out,size_lat_out)).T
+        Li_out_plot = Li_out[epoch_i].reshape((size_lon_out,size_lat_out)).T
+        C_out_plot = C_out[epoch_i].reshape((size_lon_out,size_lat_out)).T
+    else:
+        Li_in_plot = clip.ens_Li[batch_labels[epoch_i][0],:,:]
+        C_in_plot = clip.ens_C[batch_labels[epoch_i][1],:,:]
+        Li_out_plot = Li_out[epoch_i].reshape((size_lat_out,size_lon_out))
+        C_out_plot = C_out[epoch_i].reshape((size_lat_out,size_lon_out))
 
     batch_sat_plot = sat_in[epoch_i]
 
@@ -838,7 +871,7 @@ def plot_clip_grid_residuals(epoch_i, Li_out, C_out, sat_in, batch_labels, clip)
     # Residuals
     Li_residuals = np.ravel(Li_in_plot)-np.ravel(Li_out_plot)
     C_residuals = np.ravel(C_in_plot)-np.ravel(C_out_plot)
-    sat_residuals = batch_sat_plot-sat_plot
+    sat_residuals = np.ravel(batch_sat_plot)-sat_plot
 
     # MSE error of plotted output and label
     RMSE_Li = np.sqrt(np.mean(Li_residuals**2))
