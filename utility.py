@@ -665,25 +665,29 @@ def plot_clip_loss(epoch, train_loss, valid_loss, train_L_Li, train_L_C, valid_L
     ax1.legend(['Training', 'Validation'])
 
     ax5 = fig.add_subplot(gs[1, 0])
-    ax5.semilogy(np.arange(epoch)+1, np.mean(train_L_Li,axis=1), color="C0")
+    #ax5.semilogy(np.arange(epoch)+1, np.mean(train_L_Li,axis=1), color="C0")
+    ax5.semilogy(np.arange(epoch)+1, train_L_Li, color="C0")
     ax5.set_title("Training lithosphere MSE loss")
     ax5.set_xlabel('Epoch')
     ax5.set_ylabel('Mean batch loss')
 
     ax5 = fig.add_subplot(gs[1, 1])
-    ax5.semilogy(np.arange(epoch)+1, np.mean(train_L_C,axis=1), color="C1")
+    #ax5.semilogy(np.arange(epoch)+1, np.mean(train_L_C,axis=1), color="C1")
+    ax5.semilogy(np.arange(epoch)+1, train_L_C, color="C1")
     ax5.set_title("Training core MSE loss")
     ax5.set_xlabel('Epoch')
     ax5.set_ylabel('Mean batch loss')
 
     ax6 = fig.add_subplot(gs[2, 0])
-    ax6.semilogy(np.arange(epoch)+1, np.mean(valid_L_Li,axis=1), color="C0")
+    #ax6.semilogy(np.arange(epoch)+1, np.mean(valid_L_Li,axis=1), color="C0")
+    ax6.semilogy(np.arange(epoch)+1, valid_L_Li, color="C0")
     ax6.set_title("Validation lithosphere MSE loss")
     ax6.set_xlabel('Epoch')
     ax6.set_ylabel('mean batch loss')
 
     ax6 = fig.add_subplot(gs[2, 1])
-    ax6.semilogy(np.arange(epoch)+1, np.mean(valid_L_C,axis=1), color="C1")
+    #ax6.semilogy(np.arange(epoch)+1, np.mean(valid_L_C,axis=1), color="C1")
+    ax6.semilogy(np.arange(epoch)+1, valid_L_C, color="C1")
     ax6.set_title("Validation core MSE loss")
     ax6.set_xlabel('Epoch')
     ax6.set_ylabel('Mean batch loss')
@@ -706,6 +710,12 @@ def plot_clip_grid_comparison(epoch_i, Li_out, C_out, sat_in, batch_labels, clip
         C_in_plot = clip.ens_C[:,batch_labels[epoch_i][1]].reshape((size_lon_out,size_lat_out)).T
         Li_out_plot = Li_out[epoch_i].reshape((size_lon_out,size_lat_out)).T
         C_out_plot = C_out[epoch_i].reshape((size_lon_out,size_lat_out)).T
+    elif map_shape == "deconv":
+        Li_in_plot = clip.ens_Li[batch_labels[epoch_i][0],:,:]
+        C_in_plot = clip.ens_C[batch_labels[epoch_i][1],:,:]
+        Li_out_plot = Li_out[epoch_i][0]
+        C_out_plot = C_out[epoch_i][0]
+        #print(np.array(Li_out).shape)
     else:
         Li_in_plot = clip.ens_Li[batch_labels[epoch_i][0],:,:]
         C_in_plot = clip.ens_C[batch_labels[epoch_i][1],:,:]
@@ -729,8 +739,12 @@ def plot_clip_grid_comparison(epoch_i, Li_out, C_out, sat_in, batch_labels, clip
         batch_sat_plot = batch_sat_plot*(clip.clip_scale[0]-clip.clip_scale[1])/2+clip.clip_scale[1]+(clip.clip_scale[0]-clip.clip_scale[1])/2
         #sat_plot = sat_plot*(clip.clip_scale[0]-clip.clip_scale[1])/2+clip.clip_scale[1]+(clip.clip_scale[0]-clip.clip_scale[1])/2
 
-    clip.clip_to_obs(Li_out_plot, C_out_plot, r_at = clip.r_sat)
-    sat_plot = clip.B_clip_pred[:,0]
+    if map_shape == "deconv":
+        clip.clip_to_obs(Li_out_plot, C_out_plot, r_at = clip.r_sat)
+        sat_plot = clip.B_clip_pred[:,0]
+    else:
+        clip.clip_to_obs(Li_out_plot, C_out_plot, r_at = clip.r_sat)
+        sat_plot = clip.B_clip_pred[:,0]
 
     SF = tick.ScalarFormatter() # Formatter for colorbar
     SF.set_powerlimits((4, 4)) # Set sci exponent used    
