@@ -389,7 +389,8 @@ def plot_power_spectrum(p_spec, figsize=(14,8)):
     plt.grid(alpha=0.3)
     plt.show()
 
-def plot_p_spec(g_spec, p_spec_height, nmax, model_dict = None, figsize = (14,8), lwidth = 2, lwidth_m = 2, step = 5, ensemble = False, label = "ensemble", color = "lightgray", legend_loc = "best", r_ref = 6371.2):
+def plot_p_spec(g_spec, p_spec_height, nmax, model_dict = None, figsize = (14,8), lwidth = 2, lwidth_m = 2, step = 5, spec_style = None, 
+                label = "ensemble", color = "lightgray", legend_loc = "best", r_ref = 6371.2, g_spec_compares = None, nmax_pairs = None, nmax_pairs_compare = None):
 
     import matplotlib.pyplot as plt
     import numpy as np
@@ -407,7 +408,27 @@ def plot_p_spec(g_spec, p_spec_height, nmax, model_dict = None, figsize = (14,8)
     ns = np.arange(1,nmax+1)
     n_ticks = np.append(np.array([1, 5, 10,]),np.arange(15,np.max(ns)+step,step=step))
 
-    if ensemble == False:
+    if spec_style == "pair_compare":
+        rgb_gradient = 0.6
+        for g_spec_use, g_spec_compare, nmax_use, nmax_compare, labels in zip(g_spec, g_spec_compares, nmax_pairs, nmax_pairs_compare, label):
+            ens_cilm = np.array(pyshtools.shio.SHVectorToCilm(np.hstack((np.zeros(1,),g_spec_use))))
+            ens_cilm_compare = np.array(pyshtools.shio.SHVectorToCilm(np.hstack((np.zeros(1,),g_spec_compare))))
+
+            p_spec = pyshtools.gravmag.mag_spectrum(ens_cilm, r_ref, p_spec_height, degrees = np.arange(1,np.shape(ens_cilm)[1])) # degrees to skip zeroth degree
+            p_spec_compare = pyshtools.gravmag.mag_spectrum(ens_cilm_compare, r_ref, p_spec_height, degrees = np.arange(1,np.shape(ens_cilm_compare)[1])) # degrees to skip zeroth degree
+
+            p_spec = p_spec[:nmax_use]
+            p_spec_compare = p_spec_compare[:nmax_compare]
+
+            labels_use = labels + " estimate"
+            labels_compare = labels + " label"
+
+            plt.plot(np.arange(1,nmax_use+1), p_spec, color=(rgb_gradient, rgb_gradient, rgb_gradient), label = labels_use, linewidth = lwidth)
+            plt.plot(np.arange(1,nmax_compare+1), p_spec_compare, color=(rgb_gradient, rgb_gradient, rgb_gradient), label = labels_compare, linewidth = lwidth, linestyle = "dashed")
+
+            rgb_gradient -= 0.4
+
+    elif spec_style == "ensemble":
         ens_cilm = np.array(pyshtools.shio.SHVectorToCilm(np.hstack((np.zeros(1,),g_spec))))
         p_spec = pyshtools.gravmag.mag_spectrum(ens_cilm, r_ref, p_spec_height, degrees = np.arange(1,np.shape(ens_cilm)[1])) # degrees to skip zeroth degree
         p_spec = p_spec[:nmax]
@@ -519,7 +540,7 @@ def plot_ensemble_histogram(ensemble, N_ensemble, target = None, figsize=(10,10)
     plt.show()
 
 
-def plot_CLiP_data(key, ens_s_sat, ens_Li, ens_C, labels, transform_to_map = False, shape_s = None, shape_Li = None, shape_C = None):
+def plot_CLiP_data(key, ens_s_sat, ens_Li, ens_C, labels, transform_to_map = False, shape_s = None, shape_Li = None, shape_C = None, figsize=(16,10)):
     # Easy random plot synth sat, lithosphere, core
 
     import matplotlib.pyplot as plt
@@ -538,7 +559,7 @@ def plot_CLiP_data(key, ens_s_sat, ens_Li, ens_C, labels, transform_to_map = Fal
     SF = tick.ScalarFormatter() # Formatter for colorbar
     SF.set_powerlimits((3, 3)) # Set sci exponent used
 
-    fig = plt.figure(figsize=(16,10), constrained_layout=True) # Initiate figure with constrained layout
+    fig = plt.figure(figsize=figsize, constrained_layout=True) # Initiate figure with constrained layout
     gs = fig.add_gridspec(2, 2) # Add 2x2 grid
 
     ax1 = fig.add_subplot(gs[0, :]) # Use full row
@@ -646,11 +667,11 @@ def array_nm(nmax):
 
     return nm
 
-def plot_clip_loss(epoch, train_loss, valid_loss, train_L_Li, train_L_C, valid_L_Li, valid_L_C):
+def plot_clip_loss(epoch, train_loss, valid_loss, train_L_Li, train_L_C, valid_L_Li, valid_L_C, figsize=(10,5)):
     import numpy as np
     import matplotlib.pyplot as plt
 
-    fig = plt.figure(figsize=(20,10), constrained_layout=True) # Initiate figure with constrained layout
+    fig = plt.figure(figsize=figsize, constrained_layout=True) # Initiate figure with constrained layout
     gs = fig.add_gridspec(3, 2) # Add 3x2 grid
 
     ax1 = fig.add_subplot(gs[0, :]) # Use full row
@@ -664,12 +685,12 @@ def plot_clip_loss(epoch, train_loss, valid_loss, train_L_Li, train_L_C, valid_L
     #ax1.set_ylim(np.abs(np.array(train_loss))[-1]*0.5, np.abs(np.array(train_loss))[0]*1.5)
     ax1.legend(['Training', 'Validation'])
 
-    ax5 = fig.add_subplot(gs[1, 0])
+    ax4 = fig.add_subplot(gs[1, 0])
     #ax5.semilogy(np.arange(epoch)+1, np.mean(train_L_Li,axis=1), color="C0")
-    ax5.semilogy(np.arange(epoch)+1, train_L_Li, color="C0")
-    ax5.set_title("Training lithosphere MSE loss")
-    ax5.set_xlabel('Epoch')
-    ax5.set_ylabel('Mean batch loss')
+    ax4.semilogy(np.arange(epoch)+1, train_L_Li, color="C0")
+    ax4.set_title("Training lithosphere MSE loss")
+    ax4.set_xlabel('Epoch')
+    ax4.set_ylabel('Mean batch loss')
 
     ax5 = fig.add_subplot(gs[1, 1])
     #ax5.semilogy(np.arange(epoch)+1, np.mean(train_L_C,axis=1), color="C1")
@@ -685,16 +706,16 @@ def plot_clip_loss(epoch, train_loss, valid_loss, train_L_Li, train_L_C, valid_L
     ax6.set_xlabel('Epoch')
     ax6.set_ylabel('mean batch loss')
 
-    ax6 = fig.add_subplot(gs[2, 1])
+    ax7 = fig.add_subplot(gs[2, 1])
     #ax6.semilogy(np.arange(epoch)+1, np.mean(valid_L_C,axis=1), color="C1")
-    ax6.semilogy(np.arange(epoch)+1, valid_L_C, color="C1")
-    ax6.set_title("Validation core MSE loss")
-    ax6.set_xlabel('Epoch')
-    ax6.set_ylabel('Mean batch loss')
+    ax7.semilogy(np.arange(epoch)+1, valid_L_C, color="C1")
+    ax7.set_title("Validation core MSE loss")
+    ax7.set_xlabel('Epoch')
+    ax7.set_ylabel('Mean batch loss')
 
     plt.show()
 
-def plot_clip_grid_comparison(epoch_i, Li_out, C_out, sat_in, batch_labels, clip, map_shape = False):
+def plot_clip_grid_comparison(epoch_i, Li_out, C_out, sat_in, batch_labels, clip, map_shape = False, equal_amp = False, figsize=(8,8)):
     import numpy as np
     import matplotlib.pyplot as plt
     import matplotlib.ticker as tick
@@ -749,14 +770,13 @@ def plot_clip_grid_comparison(epoch_i, Li_out, C_out, sat_in, batch_labels, clip
     SF = tick.ScalarFormatter() # Formatter for colorbar
     SF.set_powerlimits((4, 4)) # Set sci exponent used    
 
-    fig = plt.figure(figsize=(16,16), constrained_layout=True) # Initiate figure with constrained layout
+    fig = plt.figure(figsize=figsize, constrained_layout=True) # Initiate figure with constrained layout
     gs = fig.add_gridspec(3, 2) # Add 3x2 grid
 
     ax01 = fig.add_subplot(gs[0, 0], projection=ccrs.PlateCarree())
     ax01.set_global()
     ax01.set_title('Input synthetic sat')
     im01 = ax01.imshow(batch_sat_plot.reshape((size_lat_in,size_lon_in)), cmap = plt.cm.RdBu_r, transform=ccrs.PlateCarree(), extent=[-180, 180, 90, -90])
-    ax01.coastlines()
 
     ax02 = fig.add_subplot(gs[0, 1], projection=ccrs.PlateCarree()) 
     ax02.set_global()
@@ -774,27 +794,47 @@ def plot_clip_grid_comparison(epoch_i, Li_out, C_out, sat_in, batch_labels, clip
     ax4.set_global()  
     ax4.set_title('Label Lithosphere')
     im4 = ax4.imshow(Li_in_plot, cmap = plt.cm.RdBu_r, transform=ccrs.PlateCarree(), extent=[-180, 180, 90, -90])
-    ax4.coastlines()
-
+    
     ax5 = fig.add_subplot(gs[2, 0], projection=ccrs.PlateCarree())
     ax5.set_global()
     ax5.set_title('Label Core')
     im5 = ax5.imshow(C_in_plot, cmap = plt.cm.RdBu_r, transform=ccrs.PlateCarree(), extent=[-180, 180, 90, -90])
-    ax5.coastlines()
+
+    if equal_amp == True:
+        vmin_Li=np.min(Li_in_plot)
+        vmax_Li=np.max(Li_in_plot)
+
+        vmin_C=np.min(C_in_plot)
+        vmax_C=np.max(C_in_plot)
+
+        vmin_sat=np.min(batch_sat_plot)
+        vmax_sat=np.max(batch_sat_plot)
+    else:
+        vmin_Li=None
+        vmax_Li=None
+
+        vmin_C=None
+        vmax_C=None
+
+        vmin_sat=None
+        vmax_sat=None
 
     if map_shape == False:
-        im02 = ax02.imshow(sat_plot.reshape((size_lat_in,size_lon_in)), cmap = plt.cm.RdBu_r, transform=ccrs.PlateCarree(), extent=[-180, 180, 90, -90])
-        im2 = ax2.imshow(Li_out_plot, cmap = plt.cm.RdBu_r, transform=ccrs.PlateCarree(), extent=[-180, 180, 90, -90])
-        im3 = ax3.imshow(C_out_plot, cmap = plt.cm.RdBu_r, transform=ccrs.PlateCarree(), extent=[-180, 180, 90, -90])
+        im02 = ax02.imshow(sat_plot.reshape((size_lat_in,size_lon_in)), cmap = plt.cm.RdBu_r, transform=ccrs.PlateCarree(), extent=[-180, 180, 90, -90], vmin = vmin_sat, vmax = vmax_sat)
+        im2 = ax2.imshow(Li_out_plot, cmap = plt.cm.RdBu_r, transform=ccrs.PlateCarree(), extent=[-180, 180, 90, -90], vmin = vmin_Li, vmax = vmax_Li)
+        im3 = ax3.imshow(C_out_plot, cmap = plt.cm.RdBu_r, transform=ccrs.PlateCarree(), extent=[-180, 180, 90, -90], vmin = vmin_C, vmax = vmax_C)
     else:
-        im02 = ax02.imshow(sat_plot.reshape((size_lat_in,size_lon_in)), cmap = plt.cm.RdBu_r, transform=ccrs.PlateCarree(), extent=[-180, 180, 90, -90])
-        im2 = ax2.imshow(Li_out_plot, cmap = plt.cm.RdBu_r, transform=ccrs.PlateCarree(), extent=[-180, 180, 90, -90])
-        im3 = ax3.imshow(C_out_plot, cmap = plt.cm.RdBu_r, transform=ccrs.PlateCarree(), extent=[-180, 180, 90, -90])
-        
+        im02 = ax02.imshow(sat_plot.reshape((size_lat_in,size_lon_in)), cmap = plt.cm.RdBu_r, transform=ccrs.PlateCarree(), extent=[-180, 180, 90, -90], vmin = vmin_sat, vmax = vmax_sat)
+        im2 = ax2.imshow(Li_out_plot, cmap = plt.cm.RdBu_r, transform=ccrs.PlateCarree(), extent=[-180, 180, 90, -90], vmin = vmin_Li, vmax = vmax_Li)
+        im3 = ax3.imshow(C_out_plot, cmap = plt.cm.RdBu_r, transform=ccrs.PlateCarree(), extent=[-180, 180, 90, -90], vmin = vmin_C, vmax = vmax_C)
+    
+    ax01.coastlines()
     ax02.coastlines()
     ax2.coastlines()
     ax3.coastlines()
-
+    ax4.coastlines()
+    ax5.coastlines()
+    
     limit_for_SF = 10**5
     if np.max(batch_sat_plot)>limit_for_SF:
         fig.colorbar(im01, ax=ax01, orientation = "horizontal", shrink=0.6, format = SF)
@@ -835,7 +875,7 @@ def plot_clip_grid_comparison(epoch_i, Li_out, C_out, sat_in, batch_labels, clip
     plt.show()
 
 
-def plot_clip_grid_residuals(epoch_i, Li_out, C_out, sat_in, batch_labels, clip, map_shape = False):
+def plot_clip_grid_residuals(epoch_i, Li_out, C_out, sat_in, batch_labels, clip, map_shape = False, clip_at_sat = False, bins = 100, figsize = (12,8)):
     import numpy as np
     import matplotlib.pyplot as plt
     import matplotlib.ticker as tick
@@ -879,8 +919,23 @@ def plot_clip_grid_residuals(epoch_i, Li_out, C_out, sat_in, batch_labels, clip,
         batch_sat_plot = batch_sat_plot*(clip.clip_scale[0]-clip.clip_scale[1])/2+clip.clip_scale[1]+(clip.clip_scale[0]-clip.clip_scale[1])/2
         #sat_plot = sat_plot*(clip.clip_scale[0]-clip.clip_scale[1])/2+clip.clip_scale[1]+(clip.clip_scale[0]-clip.clip_scale[1])/2
 
-    clip.clip_to_obs(Li_out_plot, C_out_plot, r_at = clip.r_sat)
+    clip.clip_to_obs(Li_out_plot, C_out_plot, r_at = clip.r_sat, clip_at_sat = clip_at_sat, batch_labels = batch_labels)
     sat_plot = clip.B_clip_pred[:,0]
+    
+    if clip_at_sat == True:
+        sat_plot_pred_Li = clip.B_clip_pred_Li
+        sat_plot_pred_C = clip.B_clip_pred_C
+        sat_plot_label_Li = clip.B_clip_label_Li
+        sat_plot_label_C = clip.B_clip_label_C
+
+        sat_Li_residuals = np.ravel(sat_plot_label_Li)-np.ravel(sat_plot_pred_Li)
+        sat_C_residuals = np.ravel(sat_plot_label_C)-np.ravel(sat_plot_pred_C)
+
+        RMSE_sat_Li = np.sqrt(np.mean(sat_Li_residuals**2))
+        RMSE_sat_C = np.sqrt(np.mean(sat_C_residuals**2))
+
+        print("RMSE sat_height_Li: ", RMSE_sat_Li)
+        print("RMSE sat_height_C: ", RMSE_sat_C)
 
     # Residuals
     Li_residuals = np.ravel(Li_in_plot)-np.ravel(Li_out_plot)
@@ -896,27 +951,50 @@ def plot_clip_grid_residuals(epoch_i, Li_out, C_out, sat_in, batch_labels, clip,
     print("RMSE Li: ", RMSE_Li)
     print("RMSE C: ", RMSE_C)
 
-    fig = plt.figure(figsize=(12,8), constrained_layout=True) # Initiate figure with constrained layout
-    gs = fig.add_gridspec(2, 2) # Add 3x2 grid
+    fig = plt.figure(figsize=figsize, constrained_layout=True) # Initiate figure with constrained layout
+
+    if clip_at_sat == True:
+        gs = fig.add_gridspec(3, 2) # Add 3x2 grid
+        
+        ax4 = fig.add_subplot(gs[2, 0]) 
+        ax4.set_title('Lithosphere residuals at satellite altitude')
+        ax4.set_xlabel('sat_Li_in - sat_Li_out')
+        ax4.set_ylabel('Count')
+        im4 = ax4.hist(sat_Li_residuals, bins = bins)      
+
+        ax5 = fig.add_subplot(gs[2, 1]) 
+        ax5.set_title('Core residuals at satellite altitude')
+        ax5.set_xlabel('sat_C_in - sat_C_out')
+        ax5.set_ylabel('Count')
+        im5 = ax5.hist(sat_C_residuals, bins = bins)   
+
+    else:
+        gs = fig.add_gridspec(2, 2) # Add 2x2 grid
 
     ax1 = fig.add_subplot(gs[1, 0]) 
-    ax1.set_title('Studentized Lithosphere residuals')
+    ax1.set_title('Lithosphere residuals')
     #ax1.xlabel("Lithosphere residuals")
-    ax1.set_xlabel('(Li_in - Li_out)/std(Li_out)')
+    #ax1.set_xlabel('(Li_in - Li_out)^2/Li_RMSE')
+    ax1.set_xlabel('Li_in - Li_out')
     ax1.set_ylabel('Count')
-    im1 = ax1.hist(Li_residuals/np.std(Li_out_plot), bins = 100)
+    #im1 = ax1.hist(Li_residuals*np.abs(Li_residuals)/RMSE_Li, bins = bins)
+    im1 = ax1.hist(Li_residuals, bins = bins)
 
     ax2 = fig.add_subplot(gs[1, 1]) 
-    ax2.set_title('Studentized Core residuals')
-    ax2.set_xlabel('(C_in - C_out)/std(C_out)')
+    ax2.set_title('Core residuals')
+    #ax2.set_xlabel('(C_in - C_out)^2/C_RMSE')
+    ax2.set_xlabel('C_in - C_out')
     ax2.set_ylabel('Count')
-    im2 = ax2.hist(C_residuals/np.std(C_out_plot), bins = 100)
+    #im2 = ax2.hist(C_residuals*np.abs(C_residuals)/RMSE_C, bins = bins)
+    im2 = ax2.hist(C_residuals, bins = bins)
 
     ax3 = fig.add_subplot(gs[0, :]) 
-    ax3.set_title('Studentized Sat residuals')
-    ax3.set_xlabel('(Sat_in - Sat_out)/std(Sat_out)')
+    ax3.set_title('Sat residuals')
+    #ax3.set_xlabel('(Sat_in - Sat_out)^2/Sat_RMSE')
+    ax3.set_xlabel('Sat_in - Sat_out')
     ax3.set_ylabel('Count')
-    im3 = ax3.hist(sat_residuals/np.std(sat_plot), bins = 100)
+    #im3 = ax3.hist(sat_residuals*np.abs(sat_residuals)/RMSE_sat, bins = bins)
+    im3 = ax3.hist(sat_residuals, bins = bins)
 
     plt.show()
 

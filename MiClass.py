@@ -98,13 +98,16 @@ class MiClass(object):
             print(self.attribute_string["string_return"].split("\n", self.attribute_string["string_return_previous"].count("\n"))[-1])      
     
 
-    def grid_even_spaced(self, grid_size=0.25, r_at = None, wgs84=False):
+    def grid_even_spaced(self, grid_size=0.25, r_at = None, wgs84=False, square_grid = False):
         """ Hemant & Masterton style evenly spaced grid generation """
 
         if r_at is None:
             r_at = self.a
 
-        lat, lon = np.meshgrid(np.arange(-90+grid_size/2, 90, grid_size),np.arange(-180+grid_size/2, 180, grid_size))
+        if square_grid == True:
+            lat, lon = np.meshgrid(np.arange(-90+grid_size/2, 90, grid_size),np.arange(-180+grid_size/2, 180, 2*grid_size))
+        else:
+            lat, lon = np.meshgrid(np.arange(-90+grid_size/2, 90, grid_size),np.arange(-180+grid_size/2, 180, grid_size))
         
         self.grid_even_theta_len = len(lat.T)
         self.grid_even_phi_len = len(lon)
