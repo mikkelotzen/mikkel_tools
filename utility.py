@@ -720,6 +720,16 @@ def plot_clip_grid_comparison(epoch_i, Li_out, C_out, sat_in, batch_labels, clip
     import matplotlib.pyplot as plt
     import matplotlib.ticker as tick
     import cartopy.crs as ccrs
+    import matplotlib.colors as colors
+
+    class MidpointNormalize(colors.Normalize):
+        def __init__(self, vmin=None, vmax=None, midpoint=None, clip=False):
+            self.midpoint = midpoint
+            colors.Normalize.__init__(self, vmin, vmax, clip)
+    
+        def __call__(self, value, clip=None):
+            x, y = [self.vmin, self.midpoint, self.vmax], [0.0, 0.5, 1.0]
+            return np.ma.masked_array(np.interp(value, x, y))
 
     size_lat_in = clip.grid_even_shape[1]
     size_lon_in = clip.grid_even_shape[0]
@@ -776,7 +786,7 @@ def plot_clip_grid_comparison(epoch_i, Li_out, C_out, sat_in, batch_labels, clip
     ax01 = fig.add_subplot(gs[0, 0], projection=ccrs.PlateCarree())
     ax01.set_global()
     ax01.set_title('Input synthetic sat')
-    im01 = ax01.imshow(batch_sat_plot.reshape((size_lat_in,size_lon_in)), cmap = plt.cm.RdBu_r, transform=ccrs.PlateCarree(), extent=[-180, 180, 90, -90])
+    im01 = ax01.imshow(batch_sat_plot.reshape((size_lat_in,size_lon_in)), norm = MidpointNormalize(midpoint=0.), cmap = plt.cm.RdBu_r, transform=ccrs.PlateCarree(), extent=[-180, 180, 90, -90])
 
     ax02 = fig.add_subplot(gs[0, 1], projection=ccrs.PlateCarree()) 
     ax02.set_global()
@@ -793,12 +803,12 @@ def plot_clip_grid_comparison(epoch_i, Li_out, C_out, sat_in, batch_labels, clip
     ax4 = fig.add_subplot(gs[1, 0], projection=ccrs.PlateCarree())
     ax4.set_global()  
     ax4.set_title('Label Lithosphere')
-    im4 = ax4.imshow(Li_in_plot, cmap = plt.cm.RdBu_r, transform=ccrs.PlateCarree(), extent=[-180, 180, 90, -90])
+    im4 = ax4.imshow(Li_in_plot, norm = MidpointNormalize(midpoint=0.), cmap = plt.cm.RdBu_r, transform=ccrs.PlateCarree(), extent=[-180, 180, 90, -90])
     
     ax5 = fig.add_subplot(gs[2, 0], projection=ccrs.PlateCarree())
     ax5.set_global()
     ax5.set_title('Label Core')
-    im5 = ax5.imshow(C_in_plot, cmap = plt.cm.RdBu_r, transform=ccrs.PlateCarree(), extent=[-180, 180, 90, -90])
+    im5 = ax5.imshow(C_in_plot, norm = MidpointNormalize(midpoint=0.), cmap = plt.cm.RdBu_r, transform=ccrs.PlateCarree(), extent=[-180, 180, 90, -90])
 
     if equal_amp == True:
         vmin_Li=np.min(Li_in_plot)
@@ -820,13 +830,13 @@ def plot_clip_grid_comparison(epoch_i, Li_out, C_out, sat_in, batch_labels, clip
         vmax_sat=None
 
     if map_shape == False:
-        im02 = ax02.imshow(sat_plot.reshape((size_lat_in,size_lon_in)), cmap = plt.cm.RdBu_r, transform=ccrs.PlateCarree(), extent=[-180, 180, 90, -90], vmin = vmin_sat, vmax = vmax_sat)
-        im2 = ax2.imshow(Li_out_plot, cmap = plt.cm.RdBu_r, transform=ccrs.PlateCarree(), extent=[-180, 180, 90, -90], vmin = vmin_Li, vmax = vmax_Li)
-        im3 = ax3.imshow(C_out_plot, cmap = plt.cm.RdBu_r, transform=ccrs.PlateCarree(), extent=[-180, 180, 90, -90], vmin = vmin_C, vmax = vmax_C)
+        im02 = ax02.imshow(sat_plot.reshape((size_lat_in,size_lon_in)), norm = MidpointNormalize(midpoint=0.), cmap = plt.cm.RdBu_r, transform=ccrs.PlateCarree(), extent=[-180, 180, 90, -90], vmin = vmin_sat, vmax = vmax_sat)
+        im2 = ax2.imshow(Li_out_plot, norm = MidpointNormalize(midpoint=0.), cmap = plt.cm.RdBu_r, transform=ccrs.PlateCarree(), extent=[-180, 180, 90, -90], vmin = vmin_Li, vmax = vmax_Li)
+        im3 = ax3.imshow(C_out_plot, norm = MidpointNormalize(midpoint=0.), cmap = plt.cm.RdBu_r, transform=ccrs.PlateCarree(), extent=[-180, 180, 90, -90], vmin = vmin_C, vmax = vmax_C)
     else:
-        im02 = ax02.imshow(sat_plot.reshape((size_lat_in,size_lon_in)), cmap = plt.cm.RdBu_r, transform=ccrs.PlateCarree(), extent=[-180, 180, 90, -90], vmin = vmin_sat, vmax = vmax_sat)
-        im2 = ax2.imshow(Li_out_plot, cmap = plt.cm.RdBu_r, transform=ccrs.PlateCarree(), extent=[-180, 180, 90, -90], vmin = vmin_Li, vmax = vmax_Li)
-        im3 = ax3.imshow(C_out_plot, cmap = plt.cm.RdBu_r, transform=ccrs.PlateCarree(), extent=[-180, 180, 90, -90], vmin = vmin_C, vmax = vmax_C)
+        im02 = ax02.imshow(sat_plot.reshape((size_lat_in,size_lon_in)), norm = MidpointNormalize(midpoint=0.), cmap = plt.cm.RdBu_r, transform=ccrs.PlateCarree(), extent=[-180, 180, 90, -90], vmin = vmin_sat, vmax = vmax_sat)
+        im2 = ax2.imshow(Li_out_plot, norm = MidpointNormalize(midpoint=0.), cmap = plt.cm.RdBu_r, transform=ccrs.PlateCarree(), extent=[-180, 180, 90, -90], vmin = vmin_Li, vmax = vmax_Li)
+        im3 = ax3.imshow(C_out_plot, norm = MidpointNormalize(midpoint=0.), cmap = plt.cm.RdBu_r, transform=ccrs.PlateCarree(), extent=[-180, 180, 90, -90], vmin = vmin_C, vmax = vmax_C)
     
     ax01.coastlines()
     ax02.coastlines()
