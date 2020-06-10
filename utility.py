@@ -733,14 +733,16 @@ def plot_clip_grid_comparison(epoch_i, Li_out, C_out, sat_in, batch_labels, clip
 
     size_lat_in = clip.grid_even_shape[1]
     size_lon_in = clip.grid_even_shape[0]
-    size_lat_out = clip.grid_glq_shape[1]
-    size_lon_out = clip.grid_glq_shape[0]
+    size_lat_out_Li = clip.ens_Li.shape[1]
+    size_lon_out_Li = clip.ens_Li.shape[2]
+    size_lat_out_C = clip.ens_C.shape[1]
+    size_lon_out_C = clip.ens_C.shape[2]
 
     if map_shape == False:
-        Li_in_plot = clip.ens_Li[:,batch_labels[epoch_i][0]].reshape((size_lon_out,size_lat_out)).T
-        C_in_plot = clip.ens_C[:,batch_labels[epoch_i][1]].reshape((size_lon_out,size_lat_out)).T
-        Li_out_plot = Li_out[epoch_i].reshape((size_lon_out,size_lat_out)).T
-        C_out_plot = C_out[epoch_i].reshape((size_lon_out,size_lat_out)).T
+        Li_in_plot = clip.ens_Li[:,batch_labels[epoch_i][0]].reshape((size_lon_out_Li,size_lat_out_Li)).T
+        C_in_plot = clip.ens_C[:,batch_labels[epoch_i][1]].reshape((size_lon_out_C,size_lat_out_C)).T
+        Li_out_plot = Li_out[epoch_i].reshape((size_lon_out_Li,size_lat_out_Li)).T
+        C_out_plot = C_out[epoch_i].reshape((size_lon_out_C,size_lat_out_C)).T
     elif map_shape == "deconv":
         Li_in_plot = clip.ens_Li[batch_labels[epoch_i][0],:,:]
         C_in_plot = clip.ens_C[batch_labels[epoch_i][1],:,:]
@@ -750,8 +752,8 @@ def plot_clip_grid_comparison(epoch_i, Li_out, C_out, sat_in, batch_labels, clip
     else:
         Li_in_plot = clip.ens_Li[batch_labels[epoch_i][0],:,:]
         C_in_plot = clip.ens_C[batch_labels[epoch_i][1],:,:]
-        Li_out_plot = Li_out[epoch_i].reshape((size_lat_out,size_lon_out))
-        C_out_plot = C_out[epoch_i].reshape((size_lat_out,size_lon_out))
+        Li_out_plot = Li_out[epoch_i].reshape((size_lat_out_Li,size_lon_out_Li))
+        C_out_plot = C_out[epoch_i].reshape((size_lat_out_C,size_lon_out_C))
 
     batch_sat_plot = sat_in[epoch_i]
 
@@ -781,7 +783,7 @@ def plot_clip_grid_comparison(epoch_i, Li_out, C_out, sat_in, batch_labels, clip
     SF.set_powerlimits((4, 4)) # Set sci exponent used    
 
     fig = plt.figure(figsize=figsize, constrained_layout=True) # Initiate figure with constrained layout
-    gs = fig.add_gridspec(3, 2) # Add 3x2 grid
+    gs = fig.add_gridspec(3, 3) # Add 3x2 grid
 
     ax01 = fig.add_subplot(gs[0, 0], projection=ccrs.PlateCarree())
     ax01.set_global()
@@ -810,6 +812,20 @@ def plot_clip_grid_comparison(epoch_i, Li_out, C_out, sat_in, batch_labels, clip
     ax5.set_title('Label Core')
     im5 = ax5.imshow(C_in_plot, norm = MidpointNormalize(midpoint=0.), cmap = plt.cm.RdBu_r, transform=ccrs.PlateCarree(), extent=[-180, 180, 90, -90])
 
+    ax6 = fig.add_subplot(gs[0, 2], projection=ccrs.PlateCarree())
+    ax6.set_global()
+    ax6.set_title('Sat differences')
+
+    ax7 = fig.add_subplot(gs[1, 2], projection=ccrs.PlateCarree())
+    ax7.set_global()
+    ax7.set_title('Lithosphere differences')
+
+    ax8 = fig.add_subplot(gs[2, 2], projection=ccrs.PlateCarree())
+    ax8.set_global()
+    ax8.set_title('Core differences')
+
+
+
     if equal_amp == True:
         vmin_Li=np.min(Li_in_plot)
         vmax_Li=np.max(Li_in_plot)
@@ -829,58 +845,62 @@ def plot_clip_grid_comparison(epoch_i, Li_out, C_out, sat_in, batch_labels, clip
         vmin_sat=None
         vmax_sat=None
 
-    if map_shape == False:
-        im02 = ax02.imshow(sat_plot.reshape((size_lat_in,size_lon_in)), norm = MidpointNormalize(midpoint=0.), cmap = plt.cm.RdBu_r, transform=ccrs.PlateCarree(), extent=[-180, 180, 90, -90], vmin = vmin_sat, vmax = vmax_sat)
-        im2 = ax2.imshow(Li_out_plot, norm = MidpointNormalize(midpoint=0.), cmap = plt.cm.RdBu_r, transform=ccrs.PlateCarree(), extent=[-180, 180, 90, -90], vmin = vmin_Li, vmax = vmax_Li)
-        im3 = ax3.imshow(C_out_plot, norm = MidpointNormalize(midpoint=0.), cmap = plt.cm.RdBu_r, transform=ccrs.PlateCarree(), extent=[-180, 180, 90, -90], vmin = vmin_C, vmax = vmax_C)
-    else:
-        im02 = ax02.imshow(sat_plot.reshape((size_lat_in,size_lon_in)), norm = MidpointNormalize(midpoint=0.), cmap = plt.cm.RdBu_r, transform=ccrs.PlateCarree(), extent=[-180, 180, 90, -90], vmin = vmin_sat, vmax = vmax_sat)
-        im2 = ax2.imshow(Li_out_plot, norm = MidpointNormalize(midpoint=0.), cmap = plt.cm.RdBu_r, transform=ccrs.PlateCarree(), extent=[-180, 180, 90, -90], vmin = vmin_Li, vmax = vmax_Li)
-        im3 = ax3.imshow(C_out_plot, norm = MidpointNormalize(midpoint=0.), cmap = plt.cm.RdBu_r, transform=ccrs.PlateCarree(), extent=[-180, 180, 90, -90], vmin = vmin_C, vmax = vmax_C)
-    
+    #if map_shape == False:
+    #    im02 = ax02.imshow(sat_plot.reshape((size_lat_in,size_lon_in)), norm = MidpointNormalize(midpoint=0.), cmap = plt.cm.RdBu_r, transform=ccrs.PlateCarree(), extent=[-180, 180, 90, -90], vmin = vmin_sat, vmax = vmax_sat)
+    #    im2 = ax2.imshow(Li_out_plot, norm = MidpointNormalize(midpoint=0.), cmap = plt.cm.RdBu_r, transform=ccrs.PlateCarree(), extent=[-180, 180, 90, -90], vmin = vmin_Li, vmax = vmax_Li)
+    #    im3 = ax3.imshow(C_out_plot, norm = MidpointNormalize(midpoint=0.), cmap = plt.cm.RdBu_r, transform=ccrs.PlateCarree(), extent=[-180, 180, 90, -90], vmin = vmin_C, vmax = vmax_C)
+    #
+    #    im6 = ax02.imshow(batch_sat_plot.reshape((size_lat_in,size_lon_in))-sat_plot.reshape((size_lat_in,size_lon_in)), norm = MidpointNormalize(midpoint=0.), cmap = plt.cm.RdBu_r, transform=ccrs.PlateCarree(), extent=[-180, 180, 90, -90], vmin = vmin_sat, vmax = vmax_sat)
+    #    im7 = ax2.imshow(Li_in_plot-Li_out_plot, norm = MidpointNormalize(midpoint=0.), cmap = plt.cm.RdBu_r, transform=ccrs.PlateCarree(), extent=[-180, 180, 90, -90], vmin = vmin_Li, vmax = vmax_Li)
+    #    im8 = ax3.imshow(C_in_plot-C_out_plot, norm = MidpointNormalize(midpoint=0.), cmap = plt.cm.RdBu_r, transform=ccrs.PlateCarree(), extent=[-180, 180, 90, -90], vmin = vmin_C, vmax = vmax_C)
+    #
+    #else:
+    im02 = ax02.imshow(sat_plot.reshape((size_lat_in,size_lon_in)), norm = MidpointNormalize(midpoint=0.), cmap = plt.cm.RdBu_r, transform=ccrs.PlateCarree(), extent=[-180, 180, 90, -90], vmin = vmin_sat, vmax = vmax_sat)
+    im2 = ax2.imshow(Li_out_plot, norm = MidpointNormalize(midpoint=0.), cmap = plt.cm.RdBu_r, transform=ccrs.PlateCarree(), extent=[-180, 180, 90, -90], vmin = vmin_Li, vmax = vmax_Li)
+    im3 = ax3.imshow(C_out_plot, norm = MidpointNormalize(midpoint=0.), cmap = plt.cm.RdBu_r, transform=ccrs.PlateCarree(), extent=[-180, 180, 90, -90], vmin = vmin_C, vmax = vmax_C)
+
+    im6 = ax6.imshow(batch_sat_plot.reshape((size_lat_in,size_lon_in))-sat_plot.reshape((size_lat_in,size_lon_in)), norm = MidpointNormalize(midpoint=0.), cmap = plt.cm.RdBu_r, transform=ccrs.PlateCarree(), extent=[-180, 180, 90, -90])
+    im7 = ax7.imshow(Li_in_plot-Li_out_plot, norm = MidpointNormalize(midpoint=0.), cmap = plt.cm.RdBu_r, transform=ccrs.PlateCarree(), extent=[-180, 180, 90, -90])
+    im8 = ax8.imshow(C_in_plot-C_out_plot, norm = MidpointNormalize(midpoint=0.), cmap = plt.cm.RdBu_r, transform=ccrs.PlateCarree(), extent=[-180, 180, 90, -90])
+
     ax01.coastlines()
     ax02.coastlines()
     ax2.coastlines()
     ax3.coastlines()
     ax4.coastlines()
     ax5.coastlines()
+    ax6.coastlines()
+    ax7.coastlines()
+    ax8.coastlines()
     
-    limit_for_SF = 10**5
+    limit_for_SF = 10**3
+    shrink_factor = 1.0
     if np.max(batch_sat_plot)>limit_for_SF:
-        fig.colorbar(im01, ax=ax01, orientation = "horizontal", shrink=0.6, format = SF)
-        fig.colorbar(im02, ax=ax02, orientation = "horizontal", shrink=0.6, format = SF)
+        fig.colorbar(im01, ax=ax01, orientation = "horizontal", shrink=shrink_factor, format = SF)
+        fig.colorbar(im02, ax=ax02, orientation = "horizontal", shrink=shrink_factor, format = SF)
+        fig.colorbar(im6, ax=ax6, orientation = "horizontal", shrink=shrink_factor, format = SF)
     else:
-        fig.colorbar(im01, ax=ax01, orientation = "horizontal", shrink=0.6)
-        fig.colorbar(im02, ax=ax02, orientation = "horizontal", shrink=0.6)
+        fig.colorbar(im01, ax=ax01, orientation = "horizontal", shrink=shrink_factor)
+        fig.colorbar(im02, ax=ax02, orientation = "horizontal", shrink=shrink_factor)
+        fig.colorbar(im6, ax=ax6, orientation = "horizontal", shrink=shrink_factor)
 
     if np.max(Li_in_plot)>limit_for_SF:
-        fig.colorbar(im2, ax=ax2, orientation = "horizontal", shrink=0.6, format = SF)
-        fig.colorbar(im4, ax=ax4, orientation = "horizontal", shrink=0.6, format = SF)
+        fig.colorbar(im2, ax=ax2, orientation = "horizontal", shrink=shrink_factor, format = SF)
+        fig.colorbar(im4, ax=ax4, orientation = "horizontal", shrink=shrink_factor, format = SF)
+        fig.colorbar(im7, ax=ax7, orientation = "horizontal", shrink=shrink_factor, format = SF)
     else:
-        fig.colorbar(im2, ax=ax2, orientation = "horizontal", shrink=0.6)
-        fig.colorbar(im4, ax=ax4, orientation = "horizontal", shrink=0.6)
+        fig.colorbar(im2, ax=ax2, orientation = "horizontal", shrink=shrink_factor)
+        fig.colorbar(im4, ax=ax4, orientation = "horizontal", shrink=shrink_factor)
+        fig.colorbar(im7, ax=ax7, orientation = "horizontal", shrink=shrink_factor)
 
     if np.max(C_in_plot)>limit_for_SF:
-        fig.colorbar(im3, ax=ax3, orientation = "horizontal", shrink=0.6, format = SF)
-        fig.colorbar(im5, ax=ax5, orientation = "horizontal", shrink=0.6, format = SF)
+        fig.colorbar(im3, ax=ax3, orientation = "horizontal", shrink=shrink_factor, format = SF)
+        fig.colorbar(im5, ax=ax5, orientation = "horizontal", shrink=shrink_factor, format = SF)
+        fig.colorbar(im8, ax=ax8, orientation = "horizontal", shrink=shrink_factor, format = SF)
     else:
-        fig.colorbar(im3, ax=ax3, orientation = "horizontal", shrink=0.6)
-        fig.colorbar(im5, ax=ax5, orientation = "horizontal", shrink=0.6)        
-
-    #fig.colorbar(im02, ax=ax02, orientation = "horizontal", shrink=0.6, format = SF)
-    #fig.colorbar(im01, ax=ax02, orientation = "horizontal", shrink=0.6, format = SF)
-
-    #fig.colorbar(im2, ax=ax2, orientation = "horizontal", shrink=0.6)
-    #fig.colorbar(im4, ax=ax2, orientation = "horizontal", shrink=0.6)
-
-    #fig.colorbar(im3, ax=ax3, orientation = "horizontal", shrink=0.6, format = SF)
-    #fig.colorbar(im5, ax=ax3, orientation = "horizontal", shrink=0.6, format = SF)
-    #fig.colorbar(im3, ax=ax3, orientation = "horizontal", shrink=0.6)
-
-    #fig.colorbar(im4, ax=ax4, orientation = "horizontal", shrink=0.6)
-
-    #fig.colorbar(im5, ax=ax5, orientation = "horizontal", shrink=0.6, format = SF)
-    #fig.colorbar(im5, ax=ax5, orientation = "horizontal", shrink=0.6)
+        fig.colorbar(im3, ax=ax3, orientation = "horizontal", shrink=shrink_factor)
+        fig.colorbar(im5, ax=ax5, orientation = "horizontal", shrink=shrink_factor)
+        fig.colorbar(im8, ax=ax8, orientation = "horizontal", shrink=shrink_factor)      
 
     plt.show()
 
@@ -892,8 +912,10 @@ def plot_clip_grid_residuals(epoch_i, Li_out, C_out, sat_in, batch_labels, clip,
 
     size_lat_in = clip.grid_even_shape[1]
     size_lon_in = clip.grid_even_shape[0]
-    size_lat_out = clip.grid_glq_shape[1]
-    size_lon_out = clip.grid_glq_shape[0]
+    size_lat_out_Li = clip.ens_Li.shape[1]
+    size_lon_out_Li = clip.ens_Li.shape[2]
+    size_lat_out_C = clip.ens_C.shape[1]
+    size_lon_out_C = clip.ens_C.shape[2]
 
     #Li_in_plot = clip.ens_Li[:,batch_labels[epoch_i][0]].reshape((size_lon_out,size_lat_out)).T
     #C_in_plot = clip.ens_C[:,batch_labels[epoch_i][1]].reshape((size_lon_out,size_lat_out)).T
@@ -902,15 +924,15 @@ def plot_clip_grid_residuals(epoch_i, Li_out, C_out, sat_in, batch_labels, clip,
     #C_out_plot = C_out[epoch_i].reshape((size_lon_out,size_lat_out)).T
 
     if map_shape == False:
-        Li_in_plot = clip.ens_Li[:,batch_labels[epoch_i][0]].reshape((size_lon_out,size_lat_out)).T
-        C_in_plot = clip.ens_C[:,batch_labels[epoch_i][1]].reshape((size_lon_out,size_lat_out)).T
-        Li_out_plot = Li_out[epoch_i].reshape((size_lon_out,size_lat_out)).T
+        Li_in_plot = clip.ens_Li[:,batch_labels[epoch_i][0]].reshape((size_lon_out_Li,size_lat_out_Li)).T
+        C_in_plot = clip.ens_C[:,batch_labels[epoch_i][1]].reshape((size_lon_out_C,size_lat_out_C)).T
+        Li_out_plot = Li_out[epoch_i].reshape((size_lon_out_Li,size_lat_out_Li)).T
         C_out_plot = C_out[epoch_i].reshape((size_lon_out,size_lat_out)).T
     else:
         Li_in_plot = clip.ens_Li[batch_labels[epoch_i][0],:,:]
         C_in_plot = clip.ens_C[batch_labels[epoch_i][1],:,:]
-        Li_out_plot = Li_out[epoch_i].reshape((size_lat_out,size_lon_out))
-        C_out_plot = C_out[epoch_i].reshape((size_lat_out,size_lon_out))
+        Li_out_plot = Li_out[epoch_i].reshape((size_lat_out_Li,size_lon_out_Li))
+        C_out_plot = C_out[epoch_i].reshape((size_lat_out_C,size_lon_out_C))
 
     batch_sat_plot = sat_in[epoch_i]
 
