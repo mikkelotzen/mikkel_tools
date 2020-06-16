@@ -715,7 +715,7 @@ def plot_clip_loss(epoch, train_loss, valid_loss, train_L_Li, train_L_C, valid_L
 
     plt.show()
 
-def plot_clip_grid_comparison(epoch_i, Li_out, C_out, sat_in, batch_labels, clip, map_shape = False, equal_amp = False, figsize=(8,8)):
+def plot_clip_grid_comparison(epoch_i, Li_out, C_out, sat_in, batch_labels, clip, map_shape = False, equal_amp = False, show_diff = False, figsize=(8,8), limit_for_SF = 10**6, shrink_factor = 1.0):
     import numpy as np
     import matplotlib.pyplot as plt
     import matplotlib.ticker as tick
@@ -771,6 +771,13 @@ def plot_clip_grid_comparison(epoch_i, Li_out, C_out, sat_in, batch_labels, clip
         C_out_plot = C_out_plot*(clip.C_scale[0]-clip.C_scale[1])/2+clip.C_scale[1]+(clip.C_scale[0]-clip.C_scale[1])/2
         batch_sat_plot = batch_sat_plot*(clip.clip_scale[0]-clip.clip_scale[1])/2+clip.clip_scale[1]+(clip.clip_scale[0]-clip.clip_scale[1])/2
         #sat_plot = sat_plot*(clip.clip_scale[0]-clip.clip_scale[1])/2+clip.clip_scale[1]+(clip.clip_scale[0]-clip.clip_scale[1])/2
+    if clip.normalize == "mean":
+        Li_in_plot = Li_in_plot*(clip.Li_scale[0]-clip.Li_scale[1])+clip.Li_mean
+        C_in_plot = C_in_plot*(clip.C_scale[0]-clip.C_scale[1])+clip.C_mean
+        Li_out_plot = Li_out_plot*(clip.Li_scale[0]-clip.Li_scale[1])+clip.Li_mean
+        C_out_plot = C_out_plot*(clip.C_scale[0]-clip.C_scale[1])+clip.C_mean
+        batch_sat_plot = batch_sat_plot*(clip.clip_scale[0]-clip.clip_scale[1])+clip.clip_mean
+
 
     if map_shape == "deconv":
         clip.clip_to_obs(Li_out_plot, C_out_plot, r_at = clip.r_sat)
@@ -780,10 +787,14 @@ def plot_clip_grid_comparison(epoch_i, Li_out, C_out, sat_in, batch_labels, clip
         sat_plot = clip.B_clip_pred[:,0]
 
     SF = tick.ScalarFormatter() # Formatter for colorbar
-    SF.set_powerlimits((4, 4)) # Set sci exponent used    
+    SF.set_powerlimits((6, 6)) # Set sci exponent used    
 
     fig = plt.figure(figsize=figsize, constrained_layout=True) # Initiate figure with constrained layout
-    gs = fig.add_gridspec(3, 3) # Add 3x2 grid
+
+    if show_diff == True:
+        gs = fig.add_gridspec(3, 3) # Add 3x2 grid
+    else:
+        gs = fig.add_gridspec(3, 2) # Add 3x2 grid
 
     ax01 = fig.add_subplot(gs[0, 0], projection=ccrs.PlateCarree())
     ax01.set_global()
@@ -812,17 +823,18 @@ def plot_clip_grid_comparison(epoch_i, Li_out, C_out, sat_in, batch_labels, clip
     ax5.set_title('Label Core')
     im5 = ax5.imshow(C_in_plot, norm = MidpointNormalize(midpoint=0.), cmap = plt.cm.RdBu_r, transform=ccrs.PlateCarree(), extent=[-180, 180, 90, -90])
 
-    ax6 = fig.add_subplot(gs[0, 2], projection=ccrs.PlateCarree())
-    ax6.set_global()
-    ax6.set_title('Sat differences')
+    if show_diff == True:
+        ax6 = fig.add_subplot(gs[0, 2], projection=ccrs.PlateCarree())
+        ax6.set_global()
+        ax6.set_title('Sat differences')
 
-    ax7 = fig.add_subplot(gs[1, 2], projection=ccrs.PlateCarree())
-    ax7.set_global()
-    ax7.set_title('Lithosphere differences')
+        ax7 = fig.add_subplot(gs[1, 2], projection=ccrs.PlateCarree())
+        ax7.set_global()
+        ax7.set_title('Lithosphere differences')
 
-    ax8 = fig.add_subplot(gs[2, 2], projection=ccrs.PlateCarree())
-    ax8.set_global()
-    ax8.set_title('Core differences')
+        ax8 = fig.add_subplot(gs[2, 2], projection=ccrs.PlateCarree())
+        ax8.set_global()
+        ax8.set_title('Core differences')
 
 
 
@@ -858,10 +870,14 @@ def plot_clip_grid_comparison(epoch_i, Li_out, C_out, sat_in, batch_labels, clip
     im02 = ax02.imshow(sat_plot.reshape((size_lat_in,size_lon_in)), norm = MidpointNormalize(midpoint=0.), cmap = plt.cm.RdBu_r, transform=ccrs.PlateCarree(), extent=[-180, 180, 90, -90], vmin = vmin_sat, vmax = vmax_sat)
     im2 = ax2.imshow(Li_out_plot, norm = MidpointNormalize(midpoint=0.), cmap = plt.cm.RdBu_r, transform=ccrs.PlateCarree(), extent=[-180, 180, 90, -90], vmin = vmin_Li, vmax = vmax_Li)
     im3 = ax3.imshow(C_out_plot, norm = MidpointNormalize(midpoint=0.), cmap = plt.cm.RdBu_r, transform=ccrs.PlateCarree(), extent=[-180, 180, 90, -90], vmin = vmin_C, vmax = vmax_C)
-
-    im6 = ax6.imshow(batch_sat_plot.reshape((size_lat_in,size_lon_in))-sat_plot.reshape((size_lat_in,size_lon_in)), norm = MidpointNormalize(midpoint=0.), cmap = plt.cm.RdBu_r, transform=ccrs.PlateCarree(), extent=[-180, 180, 90, -90])
-    im7 = ax7.imshow(Li_in_plot-Li_out_plot, norm = MidpointNormalize(midpoint=0.), cmap = plt.cm.RdBu_r, transform=ccrs.PlateCarree(), extent=[-180, 180, 90, -90])
-    im8 = ax8.imshow(C_in_plot-C_out_plot, norm = MidpointNormalize(midpoint=0.), cmap = plt.cm.RdBu_r, transform=ccrs.PlateCarree(), extent=[-180, 180, 90, -90])
+    
+    if show_diff == True:
+        im6 = ax6.imshow(batch_sat_plot.reshape((size_lat_in,size_lon_in))-sat_plot.reshape((size_lat_in,size_lon_in)), norm = MidpointNormalize(midpoint=0.), cmap = plt.cm.RdBu_r, transform=ccrs.PlateCarree(), extent=[-180, 180, 90, -90])
+        im7 = ax7.imshow(Li_in_plot-Li_out_plot, norm = MidpointNormalize(midpoint=0.), cmap = plt.cm.RdBu_r, transform=ccrs.PlateCarree(), extent=[-180, 180, 90, -90])
+        im8 = ax8.imshow(C_in_plot-C_out_plot, norm = MidpointNormalize(midpoint=0.), cmap = plt.cm.RdBu_r, transform=ccrs.PlateCarree(), extent=[-180, 180, 90, -90])
+        ax6.coastlines()
+        ax7.coastlines()
+        ax8.coastlines()
 
     ax01.coastlines()
     ax02.coastlines()
@@ -869,38 +885,42 @@ def plot_clip_grid_comparison(epoch_i, Li_out, C_out, sat_in, batch_labels, clip
     ax3.coastlines()
     ax4.coastlines()
     ax5.coastlines()
-    ax6.coastlines()
-    ax7.coastlines()
-    ax8.coastlines()
+
     
-    limit_for_SF = 10**3
-    shrink_factor = 1.0
+    #limit_for_SF = 10**3
+    #shrink_factor = 1.0
     if np.max(batch_sat_plot)>limit_for_SF:
         fig.colorbar(im01, ax=ax01, orientation = "horizontal", shrink=shrink_factor, format = SF)
         fig.colorbar(im02, ax=ax02, orientation = "horizontal", shrink=shrink_factor, format = SF)
-        fig.colorbar(im6, ax=ax6, orientation = "horizontal", shrink=shrink_factor, format = SF)
+        if show_diff == True:
+            fig.colorbar(im6, ax=ax6, orientation = "horizontal", shrink=shrink_factor, format = SF)
     else:
         fig.colorbar(im01, ax=ax01, orientation = "horizontal", shrink=shrink_factor)
         fig.colorbar(im02, ax=ax02, orientation = "horizontal", shrink=shrink_factor)
-        fig.colorbar(im6, ax=ax6, orientation = "horizontal", shrink=shrink_factor)
+        if show_diff == True:
+            fig.colorbar(im6, ax=ax6, orientation = "horizontal", shrink=shrink_factor)
 
     if np.max(Li_in_plot)>limit_for_SF:
         fig.colorbar(im2, ax=ax2, orientation = "horizontal", shrink=shrink_factor, format = SF)
         fig.colorbar(im4, ax=ax4, orientation = "horizontal", shrink=shrink_factor, format = SF)
-        fig.colorbar(im7, ax=ax7, orientation = "horizontal", shrink=shrink_factor, format = SF)
+        if show_diff == True:
+            fig.colorbar(im7, ax=ax7, orientation = "horizontal", shrink=shrink_factor, format = SF)
     else:
         fig.colorbar(im2, ax=ax2, orientation = "horizontal", shrink=shrink_factor)
         fig.colorbar(im4, ax=ax4, orientation = "horizontal", shrink=shrink_factor)
-        fig.colorbar(im7, ax=ax7, orientation = "horizontal", shrink=shrink_factor)
+        if show_diff == True:
+            fig.colorbar(im7, ax=ax7, orientation = "horizontal", shrink=shrink_factor)
 
     if np.max(C_in_plot)>limit_for_SF:
         fig.colorbar(im3, ax=ax3, orientation = "horizontal", shrink=shrink_factor, format = SF)
         fig.colorbar(im5, ax=ax5, orientation = "horizontal", shrink=shrink_factor, format = SF)
-        fig.colorbar(im8, ax=ax8, orientation = "horizontal", shrink=shrink_factor, format = SF)
+        if show_diff == True:
+            fig.colorbar(im8, ax=ax8, orientation = "horizontal", shrink=shrink_factor, format = SF)
     else:
         fig.colorbar(im3, ax=ax3, orientation = "horizontal", shrink=shrink_factor)
         fig.colorbar(im5, ax=ax5, orientation = "horizontal", shrink=shrink_factor)
-        fig.colorbar(im8, ax=ax8, orientation = "horizontal", shrink=shrink_factor)      
+        if show_diff == True:
+            fig.colorbar(im8, ax=ax8, orientation = "horizontal", shrink=shrink_factor)      
 
     plt.show()
 
@@ -950,7 +970,13 @@ def plot_clip_grid_residuals(epoch_i, Li_out, C_out, sat_in, batch_labels, clip,
         C_out_plot = C_out_plot*(clip.C_scale[0]-clip.C_scale[1])/2+clip.C_scale[1]+(clip.C_scale[0]-clip.C_scale[1])/2
         batch_sat_plot = batch_sat_plot*(clip.clip_scale[0]-clip.clip_scale[1])/2+clip.clip_scale[1]+(clip.clip_scale[0]-clip.clip_scale[1])/2
         #sat_plot = sat_plot*(clip.clip_scale[0]-clip.clip_scale[1])/2+clip.clip_scale[1]+(clip.clip_scale[0]-clip.clip_scale[1])/2
-
+    if clip.normalize == "mean":
+        Li_in_plot = Li_in_plot*(clip.Li_scale[0]-clip.Li_scale[1])+clip.Li_mean
+        C_in_plot = C_in_plot*(clip.C_scale[0]-clip.C_scale[1])+clip.C_mean
+        Li_out_plot = Li_out_plot*(clip.Li_scale[0]-clip.Li_scale[1])+clip.Li_mean
+        C_out_plot = C_out_plot*(clip.C_scale[0]-clip.C_scale[1])+clip.C_mean
+        batch_sat_plot = batch_sat_plot*(clip.clip_scale[0]-clip.clip_scale[1])+clip.clip_mean
+        
     clip.clip_to_obs(Li_out_plot, C_out_plot, r_at = clip.r_sat, clip_at_sat = clip_at_sat, batch_labels = batch_labels)
     sat_plot = clip.B_clip_pred[:,0]
     
