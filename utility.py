@@ -981,13 +981,13 @@ def plot_clip_grid_residuals(epoch_i, Li_out, C_out, sat_in, batch_labels, clip,
         Li_out_plot = Li_out_plot*(clip.Li_scale[0]-clip.Li_scale[1])+clip.Li_mean
         C_out_plot = C_out_plot*(clip.C_scale[0]-clip.C_scale[1])+clip.C_mean
         batch_sat_plot = batch_sat_plot*(clip.clip_scale[0]-clip.clip_scale[1])+clip.clip_mean
-     if clip.normalize == "standardized":
+    if clip.normalize == "standardized":
         Li_in_plot = Li_in_plot*clip.Li_std+clip.Li_mean
         C_in_plot = C_in_plot*clip.C_std+clip.C_mean
         Li_out_plot = Li_out_plot*clip.Li_std+clip.Li_mean
         C_out_plot = C_out_plot*clip.C_std+clip.C_mean
         batch_sat_plot = batch_sat_plot*clip.clip_std+clip.clip_mean
-               
+
     clip.clip_to_obs(Li_out_plot, C_out_plot, r_at = clip.r_sat, clip_at_sat = clip_at_sat, batch_labels = batch_labels)
     sat_plot = clip.B_clip_pred[:,0]
     
