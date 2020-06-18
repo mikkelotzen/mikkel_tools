@@ -675,9 +675,9 @@ def plot_clip_loss(epoch, train_loss, valid_loss, train_L_Li, train_L_C, valid_L
     gs = fig.add_gridspec(3, 2) # Add 3x2 grid
 
     ax1 = fig.add_subplot(gs[0, :]) # Use full row
-    ax1.set_title("ELBO")
+    ax1.set_title("Loss")
     ax1.set_xlabel('Epoch')
-    ax1.set_ylabel('Absolute of negative ELBO batch mean')
+    ax1.set_ylabel('Mean of batch loss')
     #ax1.plot(np.arange(epoch+1), train_loss, color="black")
     #ax1.plot(np.arange(epoch+1), valid_loss, color="gray", linestyle="--")
     ax1.semilogy(np.arange(epoch)+1, np.abs(np.array(train_loss)), color="black")
@@ -688,28 +688,28 @@ def plot_clip_loss(epoch, train_loss, valid_loss, train_L_Li, train_L_C, valid_L
     ax4 = fig.add_subplot(gs[1, 0])
     #ax5.semilogy(np.arange(epoch)+1, np.mean(train_L_Li,axis=1), color="C0")
     ax4.semilogy(np.arange(epoch)+1, train_L_Li, color="C0")
-    ax4.set_title("Training lithosphere MSE loss")
+    ax4.set_title("Training lithosphere loss")
     ax4.set_xlabel('Epoch')
     ax4.set_ylabel('Mean batch loss')
 
     ax5 = fig.add_subplot(gs[1, 1])
     #ax5.semilogy(np.arange(epoch)+1, np.mean(train_L_C,axis=1), color="C1")
     ax5.semilogy(np.arange(epoch)+1, train_L_C, color="C1")
-    ax5.set_title("Training core MSE loss")
+    ax5.set_title("Training core loss")
     ax5.set_xlabel('Epoch')
     ax5.set_ylabel('Mean batch loss')
 
     ax6 = fig.add_subplot(gs[2, 0])
     #ax6.semilogy(np.arange(epoch)+1, np.mean(valid_L_Li,axis=1), color="C0")
     ax6.semilogy(np.arange(epoch)+1, valid_L_Li, color="C0")
-    ax6.set_title("Validation lithosphere MSE loss")
+    ax6.set_title("Validation lithosphere loss")
     ax6.set_xlabel('Epoch')
     ax6.set_ylabel('mean batch loss')
 
     ax7 = fig.add_subplot(gs[2, 1])
     #ax6.semilogy(np.arange(epoch)+1, np.mean(valid_L_C,axis=1), color="C1")
     ax7.semilogy(np.arange(epoch)+1, valid_L_C, color="C1")
-    ax7.set_title("Validation core MSE loss")
+    ax7.set_title("Validation core loss")
     ax7.set_xlabel('Epoch')
     ax7.set_ylabel('Mean batch loss')
 
