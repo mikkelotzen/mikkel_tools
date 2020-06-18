@@ -182,7 +182,8 @@ def plot_cartopy_global(lat = None, lon = None, data=None, limits_data = None, s
             data_in = np.flipud(data_in)
 
         if shift_grid == True:
-            data_in = np.hstack((data_in[:,shape[0]:],data_in[:,:shape[0]]))
+            shift_axis = np.min(shape)
+            data_in = np.hstack((data_in[:,shift_axis:],data_in[:,:shift_axis]))
 
         cs = ax.imshow(data_in,  vmin = vmin, vmax = vmax, cmap = cmap, norm=norm_in, transform=ccrs.PlateCarree(), extent=[-180, 180, -90, 90])
 
@@ -600,7 +601,9 @@ def haversine(radius, lon1, lat1, lon2, lat2):
     km = radius * c
     return km
 
+
 def gauss_vector(g_in, N_deg, i_n = 0, i_m = 1):
+    # Function for computing a vector of Gauss coefficicents given standard input
     import numpy as np
 
     i=0
@@ -1100,3 +1103,368 @@ def plot_latent_parameters(epoch_i, mu, log_var, z):
     ax3.set_ylabel("Sampled value")
     ax3.set_xlabel("Samples")
     im3 = ax3.plot(z[epoch_i], "*", linestyle=(0, (1, 5)))
+
+
+def handle_poles(grid_core, setup_core, grid_sat, setup_sat):
+    import numpy as np    
+    
+    if grid_core is not None:
+        idx_end_core = grid_core["N"]-1
+        grid_core["lat"] = np.delete(grid_core["lat"],[0,idx_end_core],0)
+        grid_core["lon"] = np.delete(grid_core["lon"],[0,idx_end_core],0)
+        grid_core["N"] = idx_end_core-1
+        
+        grid_core["n_regions"] = np.delete(grid_core["n_regions"],-1,1)
+        grid_core["n_regions"] = np.delete(grid_core["n_regions"],0,1)
+        
+        grid_core["s_cap"] = np.delete(grid_core["s_cap"],-1,1)
+        grid_core["s_cap"] = np.delete(grid_core["s_cap"],0,1)
+        
+        """
+        data_core["lat"] = np.delete(data_core["lat"],[0,idx_end_core],0)
+        data_core["lon"] = np.delete(data_core["lon"],[0,idx_end_core],0)
+        data_core["radius"] = np.delete(data_core["radius"],[0,idx_end_core],0)
+        data_core["data"] = np.delete(data_core["data"],[0,idx_end_core],0)
+        data_core["N"] = idx_end_core-1
+        """
+        setup_core["N"] = idx_end_core-1
+        
+        
+        
+        if grid_core["sph_dist"] is not None:
+            grid_core["sph_dist"] = np.delete(grid_core["sph_dist"],[0,idx_end_core],0)
+            grid_core["sph_dist"] = np.delete(grid_core["sph_dist"],[0,idx_end_core],1)
+    
+    if grid_sat is not None:
+        idx_end_sat = grid_sat["N"]-1
+        grid_sat["lat"] = np.delete(grid_sat["lat"],[0,idx_end_sat],0)
+        grid_sat["lon"] = np.delete(grid_sat["lon"],[0,idx_end_sat],0)
+        grid_sat["N"] = idx_end_sat-1
+        
+        """
+        data_sat["lat"] = np.delete(data_sat["lat"],[0,idx_end_sat],0)
+        data_sat["lon"] = np.delete(data_sat["lon"],[0,idx_end_sat],0)
+        data_sat["radius"] = np.delete(data_sat["radius"],[0,idx_end_sat],0)
+        data_sat["data"] = np.delete(data_sat["data"],[0,idx_end_sat],0)
+        data_sat["N"] = idx_end_sat-1
+        """
+        setup_sat["N"] = idx_end_sat-1
+        
+        if grid_sat["sph_dist"] is not None:
+            grid_sat["sph_dist"] = np.delete(grid_sat["sph_dist"],[0,idx_end_sat],0)
+            grid_sat["sph_dist"] = np.delete(grid_sat["sph_dist"],[0,idx_end_sat],1)
+        
+        #if np.logical_and(data_core is not None, grid_core is not None):
+        if grid_core is not None:
+            #return grid_core, data_core, setup_core, grid_sat, data_sat, setup_sat
+            return grid_core, setup_core, grid_sat, setup_sat
+        #elif np.logical_and(data_sat is None, grid_sat is None):            
+        else:
+            #return grid_sat, data_sat, setup_sat
+            return grid_sat, setup_sat
+    else:
+        return grid_core, setup_core
+
+
+def find_sort_d(grid_core, max_dist = 2000):
+    import numpy as np
+    range_d = grid_core["sph_dist"].ravel() < max_dist
+    idx_range = np.array(np.where(range_d == True)).ravel()
+    val_range = grid_core["sph_dist"].ravel()[idx_range]
+    idx_sort_val_range = np.argsort(val_range)
+    sort_d = idx_range[idx_sort_val_range]
+    return sort_d
+
+
+"""
+FUNCTIONS RELATED TO GREEN'S
+"""
+
+def Gr_vec(r_s, r_d, lat_s, lat_d, lon_s, lon_d, angdist_out = False):
+    import numpy as np
+
+    theta_s, theta_d, lon_s, lon_d = map(np.radians, [np.matrix(90.0-lat_s), np.matrix(90.0-lat_d), np.matrix(lon_s), np.matrix(lon_d)])
+    
+    r_s = np.matrix(r_s)
+    r_d = np.matrix(r_d)
+    
+    mu = np.cos(theta_d.T)*np.cos(theta_s)+np.multiply(np.sin(theta_d.T)
+    *np.sin(theta_s),np.cos(lon_d.T-lon_s))
+    
+    h = r_s.T/r_d
+    
+    def rs(r_s,r_d, mu):
+        r_d_sq = np.power(r_d,2)
+        r_s_sq = np.power(r_s,2)
+        rr_ds = r_d.T*r_s
+        rr_ds_mu = 2*np.multiply(rr_ds,mu)
+        rr_ds_sq_sum = r_d_sq.T+r_s_sq
+        R = np.sqrt(rr_ds_sq_sum-rr_ds_mu)
+        f = R.T/r_d
+        return f
+    
+    f = rs(r_s,r_d, mu)
+
+    h_sq = np.power(h,2)
+    
+    f_cb = np.power(f,3)
+    
+    G_r = (1/(4*np.pi)*np.multiply(h_sq,(1-h_sq))/f_cb).T
+    if angdist_out == True:
+        return G_r, mu
+    else:
+        return G_r
+
+
+def take_along_axis(arr, ind, axis):
+    import numpy as np
+    """
+    ... here means a "pack" of dimensions, possibly empty
+
+    arr: array_like of shape (A..., M, B...)
+        source array
+    ind: array_like of shape (A..., K..., B...)
+        indices to take along each 1d slice of `arr`
+    axis: int
+        index of the axis with dimension M
+
+    out: array_like of shape (A..., K..., B...)
+        out[a..., k..., b...] = arr[a..., inds[a..., k..., b...], b...]
+    """
+    if axis < 0:
+       if axis >= -arr.ndim:
+           axis += arr.ndim
+       else:
+           raise IndexError('axis out of range')
+    ind_shape = (1,) * ind.ndim
+    ins_ndim = ind.ndim - (arr.ndim - 1)   #inserted dimensions
+
+    dest_dims = list(range(axis)) + [None] + list(range(axis+ins_ndim, ind.ndim))
+
+    # could also call np.ix_ here with some dummy arguments, then throw those results away
+    inds = []
+    for dim, n in zip(dest_dims, arr.shape):
+        if dim is None:
+            inds.append(ind)
+        else:
+            ind_shape_dim = ind_shape[:dim] + (-1,) + ind_shape[dim+1:]
+            inds.append(np.arange(n).reshape(ind_shape_dim))
+
+    return arr[tuple(inds)]
+
+
+def greens_differentials(grid):
+    import numpy as np
+    s_cap = grid["s_cap"].T
+    s_cap_diff = np.diff(s_cap,axis=0)
+
+        
+    n_regions = grid["n_regions"].T
+    #if n_regions[0] == 1:
+    s_cap_diff = np.vstack((s_cap[0],s_cap_diff))    
+    s_cap_diff[-1] =  s_cap_diff[0]
+    d_theta_core = np.empty([0,1],dtype=float)
+    d_phi_core = np.empty([0,1],dtype=float)
+        
+    for i in range(0,len(n_regions)):
+            
+        d_theta_core = np.vstack((d_theta_core,(s_cap_diff[i]*np.ones(int(n_regions[i]))).T))
+            
+        d_phi_core = np.vstack((d_phi_core,(2*np.pi/n_regions[i]*np.ones((int(n_regions[i]),1)))))
+    
+    theta_core = np.matrix(90.0-grid["lat"])*np.pi/180.0
+    
+    return np.multiply(np.multiply(d_theta_core,d_phi_core),np.sin(theta_core.T))
+
+
+"""
+FUNCTIONS TO CALCULATE EQUAL AREA SPHERICAL COORDINATES
+
+Assumptions:
+    - dim is always 2
+    - N > 2
+"""
+
+#% sradius_of_cap
+def sradius_of_cap(area):
+    import numpy as np
+    #s_cap = 2*np.emath.arcsin(np.sqrt(area/np.pi)/2)
+    s_cap = 2*np.arcsin(np.sqrt(area/np.pi)/2)
+    return s_cap
+
+
+#% area_of_sphere
+def area_of_sphere():
+    import scipy.special as scis
+    import numpy as np
+    dim = 2
+    power = (dim+1)/2
+    area = (2*np.pi**power/scis.gamma(power))
+    return area
+
+
+#% area_of_ideal_region
+def area_of_ideal_region(N):
+    area = area_of_sphere()/N
+    return area
+
+
+#% polar_colat
+def polar_colat(N):
+    c_polar = sradius_of_cap(area_of_ideal_region(N))
+    return c_polar
+
+
+#% num_collars
+def num_collars(N,c_polar,a_ideal):
+    import numpy as np
+    
+    n_collars = np.zeros(np.size(N)).T
+    #enough = np.logical_and(N > 2, a_ideal > 0)
+    n_collars = max(1,np.round((np.pi-2*c_polar)/a_ideal))
+    
+    return n_collars
+
+
+#% ideal_collar_angle
+def ideal_collar_angle(N):
+    dim = 2
+    angle = area_of_ideal_region(N)**(1/dim)
+    return angle
+
+
+#% area_of_cap
+def area_of_cap(s_cap):
+    import numpy as np
+    area = 4*np.pi*np.sin(s_cap/2)**2
+    return area
+
+
+#% area_of_collar
+def area_of_collar(a_top, a_bot):
+    area = area_of_cap(a_bot) - area_of_cap(a_top);
+    return area
+
+
+#% ideal_region_list
+def ideal_region_list(N,c_polar,n_collars):
+    import numpy as np
+    r_regions = np.zeros((1,2+int(n_collars))).T
+    r_regions[0] = 1
+    if n_collars > 0:
+        a_fitting = (np.pi-2*c_polar)/n_collars
+        ideal_region_area = area_of_ideal_region(N)
+        for collar_n in range(1,int(n_collars)+1):
+            ideal_collar_area = area_of_collar(c_polar+(collar_n-1)*a_fitting, c_polar+collar_n*a_fitting)
+            r_regions[0+collar_n] = ideal_collar_area / ideal_region_area
+            
+    r_regions[1+int(n_collars)] = 1
+    
+    return r_regions
+
+
+#% round_to_naturals   
+def round_to_naturals(N,r_regions):
+    import numpy as np
+    n_regions = r_regions
+    discrepancy = 0
+    for zone_n in range(0,np.size(r_regions,0)):
+        n_regions[zone_n] = np.round(r_regions[zone_n]+discrepancy)
+        discrepancy = discrepancy+r_regions[zone_n]-n_regions[zone_n]
+    
+    return n_regions
+
+
+#% cap_colats
+def cap_colats(N,c_polar,n_regions):
+    import numpy as np
+    c_caps = np.zeros(np.size(n_regions)).T
+    c_caps[0] = c_polar
+    ideal_region_area = area_of_ideal_region(N)
+    n_collars = np.size(n_regions,0)-2
+    subtotal_n_regions = 1
+    for collar_n in range(1,n_collars+1):
+        subtotal_n_regions = subtotal_n_regions+n_regions[0+collar_n]
+        c_caps[collar_n+0] = sradius_of_cap(subtotal_n_regions*ideal_region_area)
+    
+    c_caps[0+n_collars+1] = np.pi
+    
+    return c_caps
+
+
+#% eq_caps
+def eq_caps(N):
+    c_polar = polar_colat(N)
+
+    n_collars = num_collars(N,c_polar,ideal_collar_angle(N))
+    
+    r_regions = ideal_region_list(N,c_polar,n_collars)
+    
+    n_regions = round_to_naturals(N,r_regions)
+    
+    s_cap = cap_colats(N,c_polar,n_regions)
+    
+    return s_cap, n_regions
+    
+
+#% circle_offset   
+def circle_offset(n_top,n_bot):
+    import numpy as np
+    #from math import gcd
+    
+    offset = (1/n_bot - 1/n_top)/2 + np.gcd(n_top,n_bot)/(2*n_top*n_bot)
+    return offset
+
+
+#% eq_point_set_polar
+def eq_point_set_polar(N):
+    import numpy as np
+    from math import floor
+    
+    s_cap, n_regions = eq_caps(N)
+    
+    n_collars = np.size(n_regions,0)-2
+    
+    points_s = np.zeros((N,2))
+    point_n = 1
+    offset = 0
+    
+    cache_size = floor(n_collars/2)
+    cache = list()
+
+    for collar_n in range(0,n_collars):
+        s_top = s_cap[collar_n]
+        s_bot = s_cap[collar_n+1]
+        n_in_collar = n_regions[collar_n+1]
+        
+        twin_collar_n = n_collars-collar_n+1
+        
+        if (twin_collar_n <= cache_size and np.size(cache[twin_collar_n]) == n_in_collar):
+            points_1 = cache[twin_collar_n]
+            
+        else:
+            sector = np.arange(1,n_in_collar+1)
+            s_cap_1 = sector*2*np.pi/n_in_collar
+            #n_regions_1 = np.ones(len(sector))
+            
+            points_1 = s_cap_1 - np.pi/n_in_collar
+            
+            cache.append(points_1)
+            
+        s_point = (s_top+s_bot)/2
+        
+        point_1_n = np.arange(0,np.size(points_1))
+
+        #print(point_n+point_1_n)
+        points_s[point_n+point_1_n,0] = (points_1[point_1_n]+2*np.pi*offset)%(2*np.pi)
+
+        offset = offset + circle_offset(int(n_in_collar),int(n_regions[2+collar_n]))
+        offset = offset - floor(offset)
+
+        points_s[point_n+point_1_n,1] = s_point
+        point_n = point_n + np.size(points_1)
+    
+    points_s[point_n,:] = np.zeros((1,2))
+    points_s[point_n,1] = np.pi
+    
+    return points_s
