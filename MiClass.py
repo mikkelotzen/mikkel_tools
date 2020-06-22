@@ -8,6 +8,7 @@ import scipy.interpolate as itp
 import GMT_tools as gt
 import time
 import pyshtools
+import mikkel_tools.utility as mt_util
 
 # Simon Williams modules
 #import os
@@ -150,7 +151,80 @@ class MiClass(object):
 
         self.grid_glq_nmax = nmax
 
-    
+
+    def grid_glq_np(self, nmax = 14, r_at = None):
+
+        gauss_leg = np.polynomial.legendre.leggauss(nmax) # Use built-in numpy function to generate grid
+        
+        # Set lat and lon range from estimated grid
+        theta = np.flipud(np.arccos(gauss_leg[0]).reshape(-1,1))*180/np.pi
+        phi = np.arange(0,2*np.pi,np.pi/nmax)*180/np.pi
+        
+        weights, none = np.meshgrid(gauss_leg[1],phi,indexing='ij') # Get weights for quadrature on grid
+        self.weights = np.ravel(weights)
+        
+        # Compute full lat/lon grid
+        theta, phi = np.meshgrid(theta, phi,indexing='ij')
+
+        self.grid_glq_radial = np.ones((len(theta),))*r_at
+        self.grid_glq_theta = theta.ravel()
+        self.grid_glq_phi = phi.ravel()
+        self.grid_glq_N = 2*nmax**2
+        self.grid_glq_nmax = nmax
+
+
+    def grid_equal_area(self, N_grid = 1000, r_at = None, poles_remove = False):
+
+        N_grid_orig = N_grid
+        check_flag = False
+
+        while check_flag is False:
+            points_polar = mt_util.eq_point_set_polar(N_grid) # Compute grid with equal area grid functions
+            
+            # Set lat and lon from estimated grid
+            lon = points_polar[:,0]*180/np.pi
+            lat = 90 - points_polar[:,1]*180/np.pi
+
+            # Determine equal area grid specifics used for defining the integration area
+            s_cap, n_regions = mt_util.eq_caps(N_grid)
+            self.n_regions = n_regions.T
+            self.s_cap = np.matrix(s_cap)
+            
+            if N_grid == int(np.sum(n_regions)):
+                check_flag = True
+                if N_grid_orig - N_grid != 0:
+                    print("")
+                    print("___ CHANGES TO GRID ___")
+                    print("N = {}, not compatible for equal area grid".format(N_grid_orig))
+                    print("N has been set to {}".format(N_grid))
+                
+            else:
+                N_grid -= 1
+        
+        if poles_remove == True:
+            # Remove the first and last grid points (the poles) and the corresponding structure related components
+            idx_end_core = N_grid-1
+            lat = np.delete(lat,[0,idx_end_core],0)
+            lon = np.delete(lon,[0,idx_end_core],0)
+            N_grid = idx_end_core-1
+            
+            self.n_regions = np.delete(self.n_regions,-1,1)
+            self.n_regions = np.delete(self.n_regions,0,1)
+            
+            self.s_cap = np.delete(self.s_cap,-1,1)
+            self.s_cap = np.delete(self.s_cap,0,1)
+            
+            N_grid = idx_end_core-1
+
+        #self.grid_eqa_theta_len = len(np.unique(lat))
+        #self.grid_eqa_phi_len = len(np.unique(lon))
+
+        self.grid_eqa_radial = np.ones((len(lat.ravel()),))*r_at
+        self.grid_eqa_theta = 90 - lat.reshape(-1,)
+        self.grid_eqa_phi = lon.reshape(-1,)
+        self.grid_eqa_N = N_grid        
+
+
     def ensemble_random_field_init(self):
         n = 720
         h = 1/n
@@ -358,7 +432,11 @@ class MiClass(object):
         elif grid_type == "even":
             grid_radial = self.grid_even_radial
             grid_theta = self.grid_even_theta
-            grid_phi = self.grid_even_phi        
+            grid_phi = self.grid_even_phi
+        elif grid_type == "eqa":        
+            grid_radial = self.grid_eqa_radial
+            grid_theta = self.grid_eqa_theta
+            grid_phi = self.grid_eqa_phi
 
         # Generate design matrix for grid
         A_r, A_theta, A_phi = gt.design_SHA(r_at/self.a, grid_theta*self.rad, grid_phi*self.rad, nmax)
@@ -373,6 +451,8 @@ class MiClass(object):
                 self.B_ensemble_glq = B_ensemble.copy()
             elif grid_type == "even":
                 self.B_ensemble_even = B_ensemble.copy()
+            elif grid_type == "eqa":
+                self.B_ensemble_eqa = B_ensemble.copy()
 
         if nmf == True:
             g_use_nmf = g_use.copy()
@@ -388,6 +468,8 @@ class MiClass(object):
                 self.B_ensemble_nmf_glq = B_ensemble_nmf.copy()
             elif grid_type == "even":
                 self.B_ensemble_nmf_even = B_ensemble_nmf.copy()
+            elif grid_type == "eqa":
+                self.B_ensemble_nmf_eqa = B_ensemble_nmf.copy()
 
 
     def interpolate_grid(self, grid_in_theta, grid_out_theta, grid_in_phi, grid_out_phi, grid_in, method_int = "nearest", output = "return", save_path = ""):

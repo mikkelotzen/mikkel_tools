@@ -141,14 +141,18 @@ def plot_cartopy_global(lat = None, lon = None, data=None, limits_data = None, s
     
     if plot_quality == "high":
         axes_class = (GeoAxes, dict(map_projection=projection))
+        # axgr = AxesGrid(fig, 111, axes_class=axes_class,
+        #                 nrows_ncols=(1, 1),
+        #                 axes_pad=0.1,
+        #                 cbar_location='bottom',
+        #                 cbar_mode='single',
+        #                 cbar_pad=0.05,
+        #                 cbar_size='5%',
+        #                 label_mode='')  # note the empty label_mode
+
         axgr = AxesGrid(fig, 111, axes_class=axes_class,
-                        nrows_ncols=(1, 1),
-                        axes_pad=0.1,
-                        cbar_location='bottom',
-                        cbar_mode='single',
-                        cbar_pad=0.05,
-                        cbar_size='5%',
-                        label_mode='')  # note the empty label_mode
+                nrows_ncols=(1, 1),
+                label_mode='')  # note the empty label_mode
 
         axgr[0].coastlines()
         axgr[0].set_global()
@@ -159,10 +163,14 @@ def plot_cartopy_global(lat = None, lon = None, data=None, limits_data = None, s
         else:
             cb = axgr[0].scatter(lon, lat, s=point_size, c=data, transform=ccrs.PlateCarree(), vmin = vmin, vmax = vmax, cmap=cmap, norm = norm_in)
 
-            axgr.cbar_axes[0].colorbar(cb)
-            cax = axgr.cbar_axes[0]
-            axis = cax.axis[cax.orientation]
-            axis.label.set_text('%s %s' %(title,unit))
+            cax,kw = matplotlib.colorbar.make_axes(axgr[0],location='bottom', shrink=0.7, aspect=40, fraction = 0.23)
+            out=fig.colorbar(cb,cax=cax,extend='neither',**kw)
+            out.set_label('%s %s' %(title,unit), size=10)
+
+            #axgr.cbar_axes[0].colorbar(cb)
+            #cax = axgr.cbar_axes[0]
+            #axis = cax.axis[cax.orientation]
+            #axis.label.set_text('%s %s' %(title,unit))
     else:
 
         if flip_shape == True:
@@ -1181,6 +1189,7 @@ FUNCTIONS RELATED TO GREEN'S
 """
 
 def Gr_vec(r_s, r_d, lat_s, lat_d, lon_s, lon_d, angdist_out = False):
+    # s for target surface, d for data
     import numpy as np
 
     theta_s, theta_d, lon_s, lon_d = map(np.radians, [np.matrix(90.0-lat_s), np.matrix(90.0-lat_d), np.matrix(lon_s), np.matrix(lon_d)])
