@@ -188,7 +188,7 @@ class MiClass(object):
             # Determine equal area grid specifics used for defining the integration area
             s_cap, n_regions = mt_util.eq_caps(N_grid)
             self.n_regions = n_regions.T
-            self.s_cap = np.matrix(s_cap)
+            self.s_cap = s_cap
             
             if N_grid == int(np.sum(n_regions)):
                 check_flag = True
