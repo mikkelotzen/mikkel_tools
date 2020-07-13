@@ -142,8 +142,10 @@ class MiClass(object):
         self.grid_glq_shape = (grid_glq_phi_len, grid_glq_theta_len)
 
 
-        lat_glq, lon_glq = np.meshgrid(lat_glq,lon_glq)
-        
+        #lat_glq, lon_glq = np.meshgrid(lat_glq,lon_glq)
+        lon_glq, lat_glq = np.meshgrid(lon_glq,lat_glq)
+
+
         self.grid_glq_radial  = np.ones((len(lat_glq.ravel()),))*r_at
         self.grid_glq_theta = 90 - np.ravel(lat_glq).reshape(-1,)
         self.grid_glq_phi = np.ravel(lon_glq).reshape(-1,)
