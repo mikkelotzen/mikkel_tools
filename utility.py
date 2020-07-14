@@ -399,7 +399,7 @@ def plot_power_spectrum(p_spec, figsize=(14,8)):
     plt.show()
 
 def plot_p_spec(g_spec, p_spec_height, nmax, model_dict = None, figsize = (14,8), lwidth = 2, lwidth_m = 2, step = 5, spec_style = None, 
-                label = "ensemble", color = "lightgray", legend_loc = "best", r_ref = 6371.2, g_spec_compares = None, nmax_pairs = None, nmax_pairs_compare = None):
+                label = "ensemble", color = "lightgray", legend_loc = "best", r_ref = 6371.2, g_spec_compares = None, nmax_pairs = None, nmax_pairs_compare = None, label_compare = None, color_compare = (0,0,0)):
 
     import matplotlib.pyplot as plt
     import numpy as np
@@ -438,10 +438,24 @@ def plot_p_spec(g_spec, p_spec_height, nmax, model_dict = None, figsize = (14,8)
             rgb_gradient -= 0.4
 
     elif spec_style == "ensemble":
-        ens_cilm = np.array(pyshtools.shio.SHVectorToCilm(np.hstack((np.zeros(1,),g_spec))))
-        p_spec = pyshtools.gravmag.mag_spectrum(ens_cilm, r_ref, p_spec_height, degrees = np.arange(1,np.shape(ens_cilm)[1])) # degrees to skip zeroth degree
-        p_spec = p_spec[:nmax]
-        plt.plot(ns, p_spec[:nmax], color=color, label = label, linewidth = lwidth)
+        N_ensembles = np.shape(g_spec)[-1]
+
+        for i in np.arange(0,N_ensembles):
+            ens_cilm = np.array(pyshtools.shio.SHVectorToCilm(np.hstack((np.zeros(1,),g_spec[:,i]))))
+            p_spec = pyshtools.gravmag.mag_spectrum(ens_cilm, r_ref, p_spec_height, degrees = np.arange(1,np.shape(ens_cilm)[1]))
+            p_spec = p_spec[:nmax]
+            if i == 0:
+                plt.plot(ns, p_spec, color=color, label = label, linewidth = lwidth)
+            else:
+                plt.plot(ns, p_spec, color=color, linewidth = lwidth)
+
+        if g_spec_compares is not None:
+            ens_cilm_compare = np.array(pyshtools.shio.SHVectorToCilm(np.hstack((np.zeros(1,),g_spec_compares))))
+            p_spec_compare = pyshtools.gravmag.mag_spectrum(ens_cilm_compare, r_ref, p_spec_height, degrees = np.arange(1,np.shape(ens_cilm_compare)[1])) # degrees to skip zeroth degree
+            p_spec_compare = p_spec_compare[:nmax]
+            plt.plot(ns, p_spec_compare, color=color_compare, label = label_compare, linewidth = lwidth, linestyle = "dashed")
+
+
     else:
         N_ensembles = np.shape(g_spec)[-1]
 
@@ -514,7 +528,7 @@ def plot_p_spec(g_spec, p_spec_height, nmax, model_dict = None, figsize = (14,8)
 
     plt.yscale('log')
     plt.xlabel("degree n")
-    plt.ylabel("Power [nt²]")
+    plt.ylabel("Power [nT²]")
     plt.xticks(n_ticks, fontsize="small")
     plt.grid(alpha=0.3)
     plt.legend(loc = legend_loc)

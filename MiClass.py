@@ -134,13 +134,21 @@ class MiClass(object):
 
         # Gauss-Legendre Quadrature Grid
         
-        lat_glq, lon_glq = pyshtools.expand.GLQGridCoord(nmax)
-        self.grid_glq_zero, self.grid_glq_w = pyshtools.expand.SHGLQ(nmax)
+        lat_glq, lon_glq = pyshtools.expand.GLQGridCoord(nmax,extend=False)
+        #lon_glq = np.round(lon_glq[:-1])
+
+        #lon_glq = np.arange(0,2*np.pi,np.pi/nmax)*180/np.pi
+
+        self.grid_glq_zero, grid_glq_w = pyshtools.expand.SHGLQ(nmax)
 
         grid_glq_theta_len = len(lat_glq)
         grid_glq_phi_len = len(lon_glq)
         self.grid_glq_shape = (grid_glq_phi_len, grid_glq_theta_len)
 
+        #grid_glq_w = np.polynomial.legendre.legweight(np.flipud(np.cos((90-lat_glq)*self.rad)))
+
+        weights, none = np.meshgrid(grid_glq_w,lon_glq,indexing='ij') # Get weights for quadrature on grid
+        self.grid_glq_w = np.ravel(weights)
 
         #lat_glq, lon_glq = np.meshgrid(lat_glq,lon_glq)
         lon_glq, lat_glq = np.meshgrid(lon_glq,lat_glq)
@@ -160,10 +168,10 @@ class MiClass(object):
         
         # Set lat and lon range from estimated grid
         theta = np.flipud(np.arccos(gauss_leg[0]).reshape(-1,1))*180/np.pi
-        phi = np.arange(0,2*np.pi,np.pi/nmax)*180/np.pi
+        phi = np.arange(0,2*np.pi-np.pi/nmax,np.pi/nmax)*180/np.pi
         
         weights, none = np.meshgrid(gauss_leg[1],phi,indexing='ij') # Get weights for quadrature on grid
-        self.weights = np.ravel(weights)
+        self.grid_glq_w = np.ravel(weights)
         
         # Compute full lat/lon grid
         theta, phi = np.meshgrid(theta, phi,indexing='ij')
@@ -213,8 +221,8 @@ class MiClass(object):
             self.n_regions = np.delete(self.n_regions,-1,1)
             self.n_regions = np.delete(self.n_regions,0,1)
             
-            self.s_cap = np.delete(self.s_cap,-1,1)
-            self.s_cap = np.delete(self.s_cap,0,1)
+            self.s_cap = np.delete(self.s_cap,-1,0)
+            self.s_cap = np.delete(self.s_cap,0,0)
             
             N_grid = idx_end_core-1
 
@@ -439,6 +447,10 @@ class MiClass(object):
             grid_radial = self.grid_eqa_radial
             grid_theta = self.grid_eqa_theta
             grid_phi = self.grid_eqa_phi
+        elif grid_type == "swarm":
+            grid_radial = self.swarm_radius
+            grid_theta = self.swarm_theta
+            grid_phi = self.swarm_phi
 
         # Generate design matrix for grid
         A_r, A_theta, A_phi = gt.design_SHA(r_at/self.a, grid_theta*self.rad, grid_phi*self.rad, nmax)
@@ -455,6 +467,8 @@ class MiClass(object):
                 self.B_ensemble_even = B_ensemble.copy()
             elif grid_type == "eqa":
                 self.B_ensemble_eqa = B_ensemble.copy()
+            elif grid_type == "swarm":
+                self.B_ensemble_swarm = B_ensemble.copy()
 
         if nmf == True:
             g_use_nmf = g_use.copy()
@@ -472,6 +486,8 @@ class MiClass(object):
                 self.B_ensemble_nmf_even = B_ensemble_nmf.copy()
             elif grid_type == "eqa":
                 self.B_ensemble_nmf_eqa = B_ensemble_nmf.copy()
+            elif grid_type == "swarm":
+                self.B_ensemble_nmf_swarm = B_ensemble_nmf.copy()
 
 
     def interpolate_grid(self, grid_in_theta, grid_out_theta, grid_in_phi, grid_out_phi, grid_in, method_int = "nearest", output = "return", save_path = ""):
