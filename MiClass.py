@@ -140,7 +140,8 @@ class MiClass(object):
         #lon_glq = np.arange(0,2*np.pi,np.pi/nmax)*180/np.pi
 
         self.grid_glq_zero, grid_glq_w = pyshtools.expand.SHGLQ(nmax)
-
+        self.grid_glq_w_shtools = grid_glq_w.copy()
+        
         grid_glq_theta_len = len(lat_glq)
         grid_glq_phi_len = len(lon_glq)
         self.grid_glq_shape = (grid_glq_phi_len, grid_glq_theta_len)
@@ -149,7 +150,7 @@ class MiClass(object):
 
         weights, none = np.meshgrid(grid_glq_w,lon_glq,indexing='ij') # Get weights for quadrature on grid
         self.grid_glq_w = np.ravel(weights)
-
+        
         #lat_glq, lon_glq = np.meshgrid(lat_glq,lon_glq)
         lon_glq, lat_glq = np.meshgrid(lon_glq,lat_glq)
 

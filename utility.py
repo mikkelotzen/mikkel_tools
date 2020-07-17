@@ -4,6 +4,7 @@ Utility functions by Mikkel Otzen
 
 import matplotlib.pyplot as plt
 import os
+import cartopy.crs as ccrs
 
 utility_abs_path = os.path.dirname(__file__)
 
@@ -383,6 +384,71 @@ def plot_cartopy_animation(lat = None, lon = None, data=None, limits_data = None
         #return HTML(anim.to_jshtml())
     #return HTML(anim.to_html5_video())
     #return anim
+
+def plot_ensemble_map_tiles(lon, lat, ensemble_fields, field_compare = None, tile_size_row = 3, tile_size_column = 3, figsize=(8,8), limit_for_SF = 10**6, shrink_factor = 1.0, point_size = 3,
+                            left=0.02, bottom=0.05, right=0.98, top=0.98, wspace = 0.05, hspace=-0.72,
+                            savefig = False, save_string = "",  projection = ccrs.Mollweide()):
+    import numpy as np
+    import matplotlib.pyplot as plt
+    import matplotlib.ticker as tick
+    import cartopy.crs as ccrs
+    import matplotlib.colors as colors
+    from matplotlib.colorbar import Colorbar
+
+    class MidpointNormalize(colors.Normalize):
+        def __init__(self, vmin=None, vmax=None, midpoint=None, clip=False):
+            self.midpoint = midpoint
+            colors.Normalize.__init__(self, vmin, vmax, clip)
+    
+        def __call__(self, value, clip=None):
+            x, y = [self.vmin, self.midpoint, self.vmax], [0.0, 0.5, 1.0]
+            return np.ma.masked_array(np.interp(value, x, y))
+
+    SF = tick.ScalarFormatter() # Formatter for colorbar
+    SF.set_powerlimits((6, 6)) # Set sci exponent used    
+
+    fig = plt.figure(figsize=figsize, constrained_layout=False) # Initiate figure with constrained layout
+
+    # Generate ratio lists
+    h_ratio = [1]*tile_size_row
+    h_ratio.append(0.1)
+    w_ratio = [1]*tile_size_column
+
+    gs = fig.add_gridspec(tile_size_row+1, tile_size_column, height_ratios=h_ratio, width_ratios=w_ratio) # Add x-by-y grid
+
+    #gs.update(left=0.02, bottom=0.02, right=0.98, top=0.98, wspace=wspace, hspace=hspace)
+
+    if field_compare is None:
+        field_max = 0.7*np.max(ensemble_fields)
+        field_min = 0.7*np.min(ensemble_fields)
+    else:
+        field_max = 0.7*np.max(field_compare)
+        field_min = 0.7*np.min(field_compare)
+
+    ens_n = 0
+    for i in np.arange(0,tile_size_row):
+        for j in np.arange(0,tile_size_column):
+            ens_n += 1
+            plot_field = ensemble_fields[:,ens_n]
+            ax = fig.add_subplot(gs[i, j], projection=projection)
+            ax.set_global()
+            im = ax.scatter(lon, lat, s=point_size, c=plot_field, transform=ccrs.PlateCarree(), vmin = field_min, vmax = field_max, cmap=plt.cm.RdBu_r, norm = MidpointNormalize(midpoint=0.))
+            ax.coastlines()
+
+    cbax = plt.subplot(gs[tile_size_row,:]) # Set colorbar position
+
+    if field_max>limit_for_SF:
+        cb = Colorbar(mappable = im, ax = cbax, orientation = "horizontal", format = SF) # im, ax=ax, 
+    else:
+        cb = Colorbar(mappable = im, ax = cbax, orientation = "horizontal")
+
+    fig.subplots_adjust(left=left, bottom=bottom, right=right, top=top, wspace=wspace, hspace=hspace)
+
+    if savefig == True:
+        fig.savefig('map_tiles_{}.pdf'.format(save_string), bbox_inches='tight') 
+
+    fig.show()
+
 
 def plot_power_spectrum(p_spec, figsize=(14,8)):
     import matplotlib.pyplot as plt
