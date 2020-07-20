@@ -295,30 +295,61 @@ def plot_cartopy_animation(lat = None, lon = None, data=None, limits_data = None
     else:
         projection = ccrs.Mollweide()
     
-    
+
     if animation_quality == "high":
         axes_class = (GeoAxes, dict(map_projection=projection))
+        # axgr = AxesGrid(fig, 111, axes_class=axes_class,
+        #                 nrows_ncols=(1, 1),
+        #                 axes_pad=0.1,
+        #                 cbar_location='bottom',
+        #                 cbar_mode='single',
+        #                 cbar_pad=0.05,
+        #                 cbar_size='5%',
+        #                 label_mode='')  # note the empty label_mode
+
         axgr = AxesGrid(fig, 111, axes_class=axes_class,
-                        nrows_ncols=(1, 1),
-                        axes_pad=0.1,
-                        cbar_location='bottom',
-                        cbar_mode='single',
-                        cbar_pad=0.05,
-                        cbar_size='5%',
-                        label_mode='')  # note the empty label_mode
+                nrows_ncols=(1, 1),
+                label_mode='')  # note the empty label_mode
 
         axgr[0].coastlines()
         axgr[0].set_global()
-                
+        
+
         cb = axgr[0].scatter(lon, lat, s=point_size, c=limits_data, transform=ccrs.PlateCarree(), vmin = vmin, vmax = vmax, cmap=cmap, norm = norm_in)
 
-        axgr.cbar_axes[0].colorbar(cb)
-        cax = axgr.cbar_axes[0]
-        axis = cax.axis[cax.orientation]
-        axis.label.set_text('%s %s' %(title,unit))
+        cax,kw = matplotlib.colorbar.make_axes(axgr[0],location='bottom', shrink=0.7, aspect=40, fraction = 0.23)
+        out=fig.colorbar(cb,cax=cax,extend='neither',**kw)
+        out.set_label('%s %s' %(title,unit), size=10)
+    
+    #if animation_quality == "high":
+    #    axes_class = (GeoAxes, dict(map_projection=projection))
+    #    axgr = AxesGrid(fig, 111, axes_class=axes_class,
+    #                    nrows_ncols=(1, 1),
+    #                    axes_pad=0.1,
+    #                    cbar_location='bottom',
+    #                    cbar_mode='single',
+    #                    cbar_pad=0.05,
+    #                    cbar_size='5%',
+    #                    label_mode='')  # note the empty label_mode
+
+        # axgr[0].coastlines()
+        # axgr[0].set_global()
+                
+        # cb = axgr[0].scatter(lon, lat, s=point_size, c=limits_data, transform=ccrs.PlateCarree(), vmin = vmin, vmax = vmax, cmap=cmap, norm = norm_in)
+
+        # axgr.cbar_axes[0].colorbar(cb)
+        # cax = axgr.cbar_axes[0]
+        # axis = cax.axis[cax.orientation]
+        # axis.label.set_text('%s %s' %(title,unit))
+
+        # cb = axgr[0].scatter(lon, lat, s=point_size, c=data, transform=ccrs.PlateCarree(), vmin = vmin, vmax = vmax, cmap=cmap, norm = norm_in)
+
+        # cax,kw = matplotlib.colorbar.make_axes(axgr[0],location='bottom', shrink=0.7, aspect=40, fraction = 0.23)
+        # out=fig.colorbar(cb,cax=cax,extend='neither',**kw)
+        # out.set_label('%s %s' %(title,unit), size=10)
 
         def animate(i):
-            cb = axgr[0].scatter(lon, lat, s=point_size, c=data[:,i], transform=ccrs.PlateCarree(), cmap=cmap, norm = norm_in)
+            cb = axgr[0].scatter(lon, lat, s=point_size, c=data[:,i], transform=ccrs.PlateCarree(), cmap=cmap, norm = norm_in, vmin = vmin, vmax = vmax)
             return (cb,)
         
     else:
