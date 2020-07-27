@@ -450,22 +450,22 @@ def plot_ensemble_map_tiles(lon, lat, ensemble_fields, field_compare = None, til
     #gs.update(left=0.02, bottom=0.02, right=0.98, top=0.98, wspace=wspace, hspace=hspace)
 
     if field_compare is None:
-        field_max = 0.7*np.max(ensemble_fields)
-        field_min = 0.7*np.min(ensemble_fields)
+        field_max = np.max(ensemble_fields)
+        field_min = np.min(ensemble_fields)
     else:
-        field_max = 0.7*np.max(field_compare)
-        field_min = 0.7*np.min(field_compare)
+        field_max = np.max(field_compare)
+        field_min = np.min(field_compare)
 
     ens_n = 0
     for i in np.arange(0,tile_size_row):
         for j in np.arange(0,tile_size_column):
-            ens_n += 1
             plot_field = ensemble_fields[:,ens_n]
             ax = fig.add_subplot(gs[i, j], projection=projection)
             ax.set_global()
             im = ax.scatter(lon, lat, s=point_size, c=plot_field, transform=ccrs.PlateCarree(), vmin = field_min, vmax = field_max, cmap=plt.cm.RdBu_r, norm = MidpointNormalize(midpoint=0.))
             ax.coastlines()
-
+            ens_n += 1
+            
     cbax = plt.subplot(gs[tile_size_row,:]) # Set colorbar position
 
     if field_max>limit_for_SF:
