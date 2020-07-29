@@ -425,6 +425,7 @@ def plot_ensemble_map_tiles(lon, lat, ensemble_fields, field_compare = None, til
     import cartopy.crs as ccrs
     import matplotlib.colors as colors
     from matplotlib.colorbar import Colorbar
+    from cartopy.mpl.gridliner import LONGITUDE_FORMATTER, LATITUDE_FORMATTER
 
     class MidpointNormalize(colors.Normalize):
         def __init__(self, vmin=None, vmax=None, midpoint=None, clip=False):
@@ -465,7 +466,18 @@ def plot_ensemble_map_tiles(lon, lat, ensemble_fields, field_compare = None, til
             im = ax.scatter(lon, lat, s=point_size, c=plot_field, transform=ccrs.PlateCarree(), vmin = field_min, vmax = field_max, cmap=plt.cm.RdBu_r, norm = MidpointNormalize(midpoint=0.))
             ax.coastlines()
             ens_n += 1
-            
+
+            #gl = ax.gridlines(crs=ccrs.PlateCarree(), draw_labels=False,
+            #      linewidth=0.5, color='black', alpha=0.5, linestyle='--')
+            #gl.xlabels_top = False
+            #gl.ylabels_left = False
+            #gl.xlines = False
+            #gl.xlocator = tick.FixedLocator([-180, -45, 0, 45, 180])
+            #gl.xformatter = LONGITUDE_FORMATTER
+            #gl.yformatter = LATITUDE_FORMATTER
+            #gl.xlabel_style = {'size': 15, 'color': 'gray'}
+            #gl.xlabel_style = {'color': 'red', 'weight': 'bold'}
+
     cbax = plt.subplot(gs[tile_size_row,:]) # Set colorbar position
 
     if field_max>limit_for_SF:
