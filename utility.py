@@ -416,6 +416,211 @@ def plot_cartopy_animation(lat = None, lon = None, data=None, limits_data = None
     #return HTML(anim.to_html5_video())
     #return anim
 
+def plot_sdssim_reproduce(seqsim_obj, seqsim_res, z_g_lsq = None, lags_use = 300, hist_bins = 100, res_bins = 200,
+                          spec_step = 5, spec_lwidth = 1, spec_r_at = None, spec_r_ref = 6371.2, model_dict = None,
+                          left=0.02, bottom=0.05, right=0.98, top=0.98, wspace = 0.05, hspace=-0.72,
+                          tile_size_row = 3, tile_size_column = 2, figsize=(9,14), savefig = False, save_string = ""):
+    import numpy as np
+    import matplotlib.pyplot as plt
+    import scipy as sp
+    import scipy.io as spio
+    import pyshtools
+
+    # ChaosMagPy modules
+    from chaosmagpy import load_CHAOS_matfile
+    from chaosmagpy.model_utils import synth_values
+    from chaosmagpy.data_utils import mjd2000
+
+
+    N_sim = seqsim_res.shape[1]
+
+    rmse_leg = np.sqrt(np.mean(np.power(seqsim_res,2),axis=0))
+
+    color_rgb = (0.6,0.6,0.6)
+
+    fig = plt.figure(figsize=figsize, constrained_layout=False) # Initiate figure with constrained layout
+
+    # Generate ratio lists
+    h_ratio = [1]*tile_size_row
+    w_ratio = [1]*tile_size_column
+
+    gs = fig.add_gridspec(tile_size_row, tile_size_column, height_ratios=h_ratio, width_ratios=w_ratio) # Add x-by-y grid
+
+    
+    #% RESIDUALS
+    ax = fig.add_subplot(gs[0, 0])
+
+    for i in np.arange(0,N_sim):
+        y,binEdges=np.histogram(seqsim_res[:,[i]],bins=res_bins)
+        bincenters = 0.5*(binEdges[1:]+binEdges[:-1])
+        ax.plot(bincenters,y,'-',color = color_rgb)  
+
+    ax.set_title('Observation estimate residuals')
+    ax.annotate("Mean RMSE: {:.3f}".format(np.mean(rmse_leg)), (0.05, 0.5), xycoords='axes fraction', va='center')
+    ax.set_xlabel("Field residuals [nT]")
+    ax.set_ylabel("Count")
+
+
+    #% HISTOGRAM
+    ax = fig.add_subplot(gs[0, 1])
+
+    for i in np.arange(0,N_sim):
+        y,binEdges=np.histogram(seqsim_obj.zs[:,[i]],bins=hist_bins)
+        bincenters = 0.5*(binEdges[1:]+binEdges[:-1])
+        if i == 0:
+            ax.plot(bincenters,y,'-',color = color_rgb,label='Realizations')  
+        else:
+            ax.plot(bincenters,y,'-',color = color_rgb)     
+
+    if z_g_lsq is not None:
+        y,binEdges=np.histogram(np.array(z_g_lsq),bins=hist_bins)
+        bincenters = 0.5*(binEdges[1:]+binEdges[:-1])
+        ax.plot(bincenters,y,'-',color = 'C3',label='Gaussian LSQ') 
+
+    y,binEdges=np.histogram(seqsim_obj.data,bins=hist_bins)
+    bincenters = 0.5*(binEdges[1:]+binEdges[:-1])
+    ax.plot(bincenters,y,'k--',label='A priori field')
+
+    ax.set_title('Histogram reproduction')
+    ax.legend(loc='best')
+    ax.set_xlabel('Field value [nT]')
+    ax.set_ylabel('Count')
+
+
+    #% SEMI-VARIOGRAM
+    ax = fig.add_subplot(gs[1, :])
+    seqsim_obj.sv_zs(len(seqsim_obj.data), 1, seqsim_obj.data.reshape(-1,1), seqsim_obj.sort_d, seqsim_obj.n_lags, seqsim_obj.max_cloud)
+    ax.plot(seqsim_obj.lags[:lags_use], seqsim_obj.pics_zs[:lags_use,0], 'C4', label='A priori field', linewidth = 0.6) 
+
+    if z_g_lsq is not None:
+        seqsim_obj.sv_zs(len(seqsim_obj.data), 1, np.array(z_g_lsq), seqsim_obj.sort_d, seqsim_obj.n_lags, seqsim_obj.max_cloud)
+        ax.plot(seqsim_obj.lags[:lags_use], seqsim_obj.pics_zs[:lags_use,0], color = 'C3', label='Gaussian LSQ')    
+
+    for i in np.arange(0,N_sim):
+        seqsim_obj.sv_zs(len(seqsim_obj.data), 1, seqsim_obj.zs[:,[i]], seqsim_obj.sort_d, seqsim_obj.n_lags, seqsim_obj.max_cloud)
+        if i == 0:
+            ax.plot(seqsim_obj.lags[:lags_use], seqsim_obj.pics_zs[:lags_use,0], color = color_rgb, label='Realizations', linewidth = 0.6)
+        else:
+            ax.plot(seqsim_obj.lags[:lags_use], seqsim_obj.pics_zs[:lags_use,0], color = color_rgb, linewidth = 0.6) 
+
+    lags_use_max = np.max(seqsim_obj.lags[:lags_use])
+    lags_use_idx_model = seqsim_obj.lags_sv_curve<=lags_use_max
+
+    plot_model_lag = seqsim_obj.lags_sv_curve[lags_use_idx_model]
+    plot_model_sv = seqsim_obj.sv_curve[lags_use_idx_model]
+
+    ax.plot(plot_model_lag, plot_model_sv, color='C1', label='SV model')
+
+    ax.set_title('Semi-variogram reproduction')
+    ax.set_ylabel('Semi-variance [nT²]')
+    ax.set_xlabel('Lag [km]')
+    ax.legend(loc='best')
+
+
+    #% P-SPEC
+    ax = fig.add_subplot(gs[2, :])
+
+    nmax = seqsim_obj.grid_glq_nmax
+    ns = np.arange(1, nmax+1)
+    n_ticks = np.append(np.array([1, 5, 10,]), np.arange(15,np.max(ns)+spec_step, step=spec_step))
+
+    N_ensembles = np.shape(seqsim_obj.g_spec)[-1]
+
+    if  spec_r_at == None:
+        spec_r_at = seqsim_obj.r_sat
+    
+    # Realizations
+    for i in np.arange(0,N_ensembles):
+        ens_cilm = np.array(pyshtools.shio.SHVectorToCilm(np.hstack((np.zeros(1,), seqsim_obj.g_spec[:,i]))))
+        p_spec = pyshtools.gravmag.mag_spectrum(ens_cilm, spec_r_ref, spec_r_at, degrees = np.arange(1,np.shape(ens_cilm)[1]))
+        p_spec = p_spec[:nmax]
+        if i == 0:
+            ax.plot(ns, p_spec, color=color_rgb, label = "Realizations", linewidth = spec_lwidth)
+        else:
+            ax.plot(ns, p_spec, color=color_rgb, linewidth = spec_lwidth)
+    
+    # Prior
+    ens_cilm_compare = np.array(pyshtools.shio.SHVectorToCilm(np.hstack((np.zeros(1,), seqsim_obj.g_prior))))
+    p_spec_compare = pyshtools.gravmag.mag_spectrum(ens_cilm_compare, spec_r_ref, spec_r_at, degrees = np.arange(1,np.shape(ens_cilm_compare)[1])) # degrees to skip zeroth degree
+    p_spec_compare = p_spec_compare[:nmax]
+    ax.plot(ns, p_spec_compare, color = "k", label = "A priori field", linewidth = spec_lwidth, linestyle = "dashed")
+    
+
+    # Models
+    if model_dict is not None: # Load models
+        WDMAM2 = spio.loadmat('lithosphere_prior/grids/models/WDMAM2.mat')
+        LCS1 = load_shc("lithosphere_prior/grids/models/LCS-1.shc")
+        MF7 = load_shc("lithosphere_prior/grids/models/MF7.shc")
+        EMM2017 = np.loadtxt('lithosphere_prior/grids/models/EMM2017.COF',comments="%",skiprows=1)
+
+        # Add zero coefficient to comply with SHTOOLS methods
+        g_LCS1 = np.hstack((np.zeros(1,),LCS1[:,2]))
+        g_WDMAM2 = np.hstack((np.zeros(1,),WDMAM2["gh_wdmam"][:,0]))
+        g_EMM2017 = np.hstack((np.zeros(1,),gauss_vector(EMM2017, 790, i_n = 2, i_m = 3)))
+
+        # Also add "missing" coefficients for degree 0-15
+        g_MF7 = np.hstack((np.zeros(shc_vec_len(15,include_n_zero = True),),MF7[:,2])) 
+
+        # cilm
+        cilm_LCS1 = pyshtools.shio.SHVectorToCilm(g_LCS1)
+        cilm_MF7 = pyshtools.shio.SHVectorToCilm(g_MF7)
+        cilm_WDMAM2 = pyshtools.shio.SHVectorToCilm(g_WDMAM2)
+        cilm_EMM2017 = pyshtools.shio.SHVectorToCilm(g_EMM2017)
+
+        # Pomme
+        Gauss_in_pomme = np.loadtxt('lithosphere_prior/grids/models/POMME_6_main_field.txt')
+        g_pomme = np.hstack((np.zeros(1,), gauss_vector(Gauss_in_pomme, 60, i_n = 2, i_m = 3)))
+        cilm_pomme = pyshtools.shio.SHVectorToCilm(g_pomme)
+
+        # CHAOS 7
+        N_chaos = 20
+        CHAOS7 = load_CHAOS_matfile('lithosphere_prior/grids/models/CHAOS-7.mat')
+        chaos_time = mjd2000(2020, 1, 1)
+        g_CHAOS7 = np.hstack((np.zeros(1,),CHAOS7.synth_coeffs_tdep(chaos_time, nmax=20, deriv=0)))
+        cilm_CHAOS7 = pyshtools.shio.SHVectorToCilm(g_CHAOS7)
+        model_dict_def = {"LCS-1":cilm_LCS1, "MF7":cilm_MF7, "WDMAM2":cilm_WDMAM2, "EMM2017":cilm_EMM2017, "POMME-6":cilm_pomme, "CHAOS-7":cilm_CHAOS7}
+
+    if type(model_dict) is set or model_dict=="default":
+        if model_dict=="default":
+            model_dict = model_dict_def
+
+        i = 0
+        for key in model_dict:
+            ens_cilm = model_dict_def[key]
+            p_spec = pyshtools.gravmag.mag_spectrum(ens_cilm, spec_r_ref, spec_r_at, degrees = np.arange(1,np.shape(ens_cilm)[1]))
+
+            if key == "EMM2017" or key == "CHAOS-7":
+                use_ns = ns[:20]
+                use_p_spec = p_spec[:len(use_ns)]
+            elif key == "MF7" or key == "LCS-1" or key == "WDMAM2":
+                use_ns = ns[16-1:]
+                use_p_spec = p_spec[16-1:nmax]
+            elif key == "POMME-6":
+                use_ns = ns[:60]
+                use_p_spec = p_spec[:len(use_ns)]
+            else:
+                use_ns = ns
+                use_p_spec = p_spec[:nmax]
+
+            ax.plot(use_ns, use_p_spec, color="C{}".format(i), label = key, linewidth = spec_lwidth)
+            i += 1
+    
+    ax.set_title('Power spectra comparison')
+    ax.set_yscale('log')
+    ax.set_xlabel("degree n")
+    ax.set_ylabel("Power [nT²]")
+    ax.set_xticks(n_ticks) #fontsize="small"
+    ax.grid(alpha=0.3)
+    ax.legend(loc = "best")
+
+    #fig.subplots_adjust(left=left, bottom=bottom, right=right, top=top, wspace=wspace, hspace=hspace)
+
+    if savefig == True:
+        fig.savefig('sdssim_reproduce_{}.pdf'.format(save_string), bbox_inches='tight') 
+
+    fig.show()
+    
+
 def plot_ensemble_map_tiles(lon, lat, ensemble_fields, field_compare = None, tile_size_row = 3, tile_size_column = 3, figsize=(8,8), limit_for_SF = 10**6, point_size = 3,
                             left=0.02, bottom=0.05, right=0.98, top=0.98, wspace = 0.05, hspace=-0.72, coast_width = 0.1, coast_color = "grey",
                             savefig = False, save_string = "",  projection = ccrs.Mollweide(), cbar_h = 0.07, cbar_text = "nT", cbar_text_color = "grey", cbar_frac = 0.15):
