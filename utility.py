@@ -731,7 +731,8 @@ def plot_power_spectrum(p_spec, figsize=(14,8)):
     plt.show()
 
 def plot_p_spec(g_spec, p_spec_height, nmax, model_dict = None, figsize = (14,8), lwidth = 2, lwidth_m = 2, step = 5, spec_style = None, 
-                label = "ensemble", color = "lightgray", legend_loc = "best", r_ref = 6371.2, g_spec_compares = None, nmax_pairs = None, nmax_pairs_compare = None, label_compare = None, color_compare = (0,0,0)):
+                label = "ensemble", color = "lightgray", legend_loc = "best", r_ref = 6371.2, g_spec_compares = None, nmax_pairs = None, nmax_pairs_compare = None, label_compare = None, color_compare = (0,0,0),
+                savefig = False, save_string = ""):
 
     import matplotlib.pyplot as plt
     import numpy as np
@@ -744,7 +745,7 @@ def plot_p_spec(g_spec, p_spec_height, nmax, model_dict = None, figsize = (14,8)
     from chaosmagpy.model_utils import synth_values
     from chaosmagpy.data_utils import mjd2000
 
-    plt.figure(figsize=figsize)
+    fig = plt.figure(figsize=figsize)
 
     ns = np.arange(1,nmax+1)
     n_ticks = np.append(np.array([1, 5, 10,]),np.arange(15,np.max(ns)+step,step=step))
@@ -782,11 +783,14 @@ def plot_p_spec(g_spec, p_spec_height, nmax, model_dict = None, figsize = (14,8)
                 plt.plot(ns, p_spec, color=color, linewidth = lwidth)
 
         if g_spec_compares is not None:
-            ens_cilm_compare = np.array(pyshtools.shio.SHVectorToCilm(np.hstack((np.zeros(1,),g_spec_compares))))
-            p_spec_compare = pyshtools.gravmag.mag_spectrum(ens_cilm_compare, r_ref, p_spec_height, degrees = np.arange(1,np.shape(ens_cilm_compare)[1])) # degrees to skip zeroth degree
-            p_spec_compare = p_spec_compare[:nmax]
-            plt.plot(ns, p_spec_compare, color=color_compare, label = label_compare, linewidth = lwidth, linestyle = "dashed")
-
+            for i in np.arange(0,g_spec_compares.shape[1]):
+                ens_cilm_compare = np.array(pyshtools.shio.SHVectorToCilm(np.hstack((np.zeros(1,),g_spec_compares[:,i]))))
+                p_spec_compare = pyshtools.gravmag.mag_spectrum(ens_cilm_compare, r_ref, p_spec_height, degrees = np.arange(1,np.shape(ens_cilm_compare)[1])) # degrees to skip zeroth degree
+                p_spec_compare = p_spec_compare[:nmax]
+                if i == 0:
+                    plt.plot(ns, p_spec_compare, color=color_compare, label = label_compare, linewidth = lwidth, linestyle = "dashed")
+                else:
+                    plt.plot(ns, p_spec_compare, color=color_compare, linewidth = lwidth, linestyle = "dashed")
 
     else:
         N_ensembles = np.shape(g_spec)[-1]
@@ -864,7 +868,11 @@ def plot_p_spec(g_spec, p_spec_height, nmax, model_dict = None, figsize = (14,8)
     plt.xticks(n_ticks, fontsize="small")
     plt.grid(alpha=0.3)
     plt.legend(loc = legend_loc)
-    plt.show()
+
+    if savefig == True:
+        fig.savefig('p_spec_{}.pdf'.format(save_string), bbox_inches='tight') 
+
+    fig.show()
 
 
 def plot_ensemble_histogram(ensemble, N_ensemble, target = None, figsize=(10,10), unit = "", savefig = False, savepath = "./", filename = "file", fontsize = 10, dpi = 100):
