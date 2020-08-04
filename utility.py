@@ -3,10 +3,19 @@ Utility functions by Mikkel Otzen
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
 import matplotlib.pyplot as plt
+from matplotlib.colors import LinearSegmentedColormap
 import os
 import cartopy.crs as ccrs
 
 utility_abs_path = os.path.dirname(__file__)
+
+color_zesty_cbf = [(0.0,  0.10980392156862745,  0.30196078431372547), 
+                   (0.5019607843137255,  0.6862745098039216,  1.0), 
+                   (1, 1, 1), 
+                   (1.0,  0.5372549019607843,  0.30196078431372547), 
+                   (0.30196078431372547,  0.10196078431372549,  0.0)]  # dark bluish -> bright blue -> white -> bright orange -> darker orange
+
+cm_zesty_cbf = LinearSegmentedColormap.from_list("zesty_cbf", color_zesty_cbf, N=10001)
 
 def dict_save(path, name, variable ):
     import pickle
@@ -623,7 +632,7 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, z_g_lsq = None, lags_use = 300
 
 def plot_ensemble_map_tiles(lon, lat, ensemble_fields, field_compare = None, tile_size_row = 3, tile_size_column = 3, figsize=(8,8), limit_for_SF = 10**6, point_size = 3,
                             left=0.02, bottom=0.05, right=0.98, top=0.98, wspace = 0.05, hspace=-0.72, coast_width = 0.1, coast_color = "grey",
-                            savefig = False, save_string = "",  projection = ccrs.Mollweide(), cbar_h = 0.07, cbar_text = "nT", cbar_text_color = "grey", cbar_frac = 0.15):
+                            savefig = False, save_string = "",  projection = ccrs.Mollweide(), cbar_h = 0.07, cbar_text = "nT", cbar_text_color = "grey", cbar_frac = 0.15, use_gridlines = False):
     import numpy as np
     import matplotlib.pyplot as plt
     import matplotlib.ticker as tick
@@ -676,20 +685,35 @@ def plot_ensemble_map_tiles(lon, lat, ensemble_fields, field_compare = None, til
             plot_field = ensemble_fields[:,ens_n]
             ax = fig.add_subplot(gs[i, j], projection=projection)
             ax.set_global()
-            im = ax.scatter(lon, lat, s=point_size, c=plot_field, transform=ccrs.PlateCarree(), vmin = field_min, vmax = field_max, cmap=plt.cm.RdBu_r, norm = MidpointNormalize(midpoint=0.))
+            im = ax.scatter(lon, lat, s=point_size, c=plot_field, transform=ccrs.PlateCarree(), vmin = field_min, vmax = field_max, cmap=cm_zesty_cbf, norm = MidpointNormalize(midpoint=0.))
             ax.coastlines(linewidth = coast_width, color = coast_color)
             ens_n += 1
 
-            #gl = ax.gridlines(crs=ccrs.PlateCarree(), draw_labels=False,
-            #      linewidth=0.5, color='black', alpha=0.5, linestyle='--')
-            #gl.xlabels_top = False
-            #gl.ylabels_left = False
-            #gl.xlines = False
-            #gl.xlocator = tick.FixedLocator([-180, -45, 0, 45, 180])
-            #gl.xformatter = LONGITUDE_FORMATTER
-            #gl.yformatter = LATITUDE_FORMATTER
-            #gl.xlabel_style = {'size': 15, 'color': 'gray'}
-            #gl.xlabel_style = {'color': 'red', 'weight': 'bold'}
+            if use_gridlines == True:
+                gl_lines = ax.gridlines(draw_labels=False,
+                    linewidth=0.2, color='black', alpha=0.5, linestyle='-')
+                gl_lines.xlines = True
+                gl_lines.xlocator = tick.FixedLocator([-180, -135, -90, -45, 0, 45, 90, 135, 180])
+                gl_lines.ylocator = tick.FixedLocator([-90, -60, -30, 0, 30, 60, 90])
+                gl = ax.gridlines(alpha=0.0)
+
+                gl.xlines = True
+                gl.xformatter = LONGITUDE_FORMATTER
+                gl.yformatter = LATITUDE_FORMATTER
+                gl.ylocator = tick.FixedLocator([-90, -60, -30, 0, 30, 60, 90])
+                
+                if i == 0:
+                    if j == 0:
+                        gl.xlocator = tick.FixedLocator([-180, -135, -90, -45, 0, 45, 90, 135])
+                    elif j == tile_size_column-1:
+                        gl.xlocator = tick.FixedLocator([-135, -90, -45, 0, 45, 90, 135, 180])
+                    gl.xlabels_top = True
+                    gl.xlabel_style = {'size': 7, 'color': 'gray'}
+                if j == 0:
+                    gl.ylabels_left = True
+                    gl.ylabel_style = {'size': 7, 'color': 'gray'}
+
+
 
     cbax = plt.subplot(gs[tile_size_row,:]) # Set colorbar position
 
@@ -703,10 +727,28 @@ def plot_ensemble_map_tiles(lon, lat, ensemble_fields, field_compare = None, til
     if field_compare is not None:
         ax = fig.add_subplot(gs[-1, :], projection=projection)
         ax.set_global()
-        im = ax.scatter(lon, lat, s=point_size, c=field_compare, transform=ccrs.PlateCarree(), vmin = field_min, vmax = field_max, cmap=plt.cm.RdBu_r, norm = MidpointNormalize(midpoint=0.))
+        im = ax.scatter(lon, lat, s=point_size, c=field_compare, transform=ccrs.PlateCarree(), vmin = field_min, vmax = field_max, cmap=cm_zesty_cbf, norm = MidpointNormalize(midpoint=0.))
         ax.coastlines(linewidth = coast_width, color = coast_color)
         #ax.set_title('A priori field')
         ax.annotate('A priori field', (0.4, -0.1), xycoords='axes fraction', va='center')
+
+        if use_gridlines == True:
+            gl = ax.gridlines(alpha=0.0)
+            gl.xlabels_top = True
+            gl.xlabel_style = {'size': 7, 'color': 'gray'}
+            gl.ylabels_left = True
+            gl.ylabel_style = {'size': 7, 'color': 'gray'}
+            gl.xlines = True
+            gl.xformatter = LONGITUDE_FORMATTER
+            gl.yformatter = LATITUDE_FORMATTER
+            gl.xlocator = tick.FixedLocator([-180, -135, -90, -45, 0, 45, 90, 135, 180])
+            gl.ylocator = tick.FixedLocator([-90, -60, -30, 0, 30, 60, 90])
+
+            gl_lines = ax.gridlines(draw_labels=False,
+            linewidth=0.2, color='black', alpha=0.5, linestyle='-')
+            gl_lines.xlines = True
+            gl_lines.xlocator = tick.FixedLocator([-180, -135, -90, -45, 0, 45, 90, 135, 180])
+            gl_lines.ylocator = tick.FixedLocator([-90, -60, -30, 0, 30, 60, 90])
 
     fig.subplots_adjust(left=left, bottom=bottom, right=right, top=top, wspace=wspace, hspace=hspace)
 
