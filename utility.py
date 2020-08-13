@@ -428,7 +428,7 @@ def plot_cartopy_animation(lat = None, lon = None, data=None, limits_data = None
 def plot_sdssim_reproduce(seqsim_obj, seqsim_res, z_g_lsq = None, lags_use = 300, hist_bins = 100, res_bins = 200,
                           spec_step = 5, spec_lwidth = 1, spec_r_at = None, spec_r_ref = 6371.2, model_dict = None,
                           left=0.02, bottom=0.05, right=0.98, top=0.98, wspace = 0.05, hspace=-0.72,
-                          tile_size_row = 3, tile_size_column = 2, figsize=(9,14), savefig = False, save_string = ""):
+                          tile_size_row = 3, tile_size_column = 2, figsize=(9,14), savefig = False, save_string = "", save_dpi = 300):
     import numpy as np
     import matplotlib.pyplot as plt
     import scipy as sp
@@ -625,21 +625,20 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, z_g_lsq = None, lags_use = 300
     #fig.subplots_adjust(left=left, bottom=bottom, right=right, top=top, wspace=wspace, hspace=hspace)
 
     if savefig == True:
-        fig.savefig('sdssim_reproduce_{}.pdf'.format(save_string), bbox_inches='tight') 
+        fig.savefig('sdssim_reproduce_{}.pdf'.format(save_string), bbox_inches='tight', dpi = save_dpi) 
 
     fig.show()
     
 
 def plot_ensemble_map_tiles(lon, lat, ensemble_fields, field_compare = None, tile_size_row = 3, tile_size_column = 3, figsize=(8,8), limit_for_SF = 10**6, point_size = 3,
                             left=0.02, bottom=0.05, right=0.98, top=0.98, wspace = 0.05, hspace=-0.72, coast_width = 0.1, coast_color = "grey",
-                            savefig = False, save_string = "",  projection = ccrs.Mollweide(), cbar_h = 0.07, cbar_text = "nT", cbar_text_color = "grey", cbar_frac = 0.15, use_gridlines = False, gridlines_width = 0.2, gridlines_alpha = 0.1):
+                            savefig = False, save_string = "", save_dpi = 300,  projection = ccrs.Mollweide(), cbar_h = 0.07, cbar_text = "nT", cbar_text_color = "grey", cbar_frac = 0.15, use_gridlines = False, gridlines_width = 0.2, gridlines_alpha = 0.1):
     import numpy as np
     import matplotlib.pyplot as plt
     import matplotlib.ticker as tick
     import cartopy.crs as ccrs
     import matplotlib.colors as colors
     from matplotlib.colorbar import Colorbar
-    from cartopy.mpl.gridliner import LONGITUDE_FORMATTER, LATITUDE_FORMATTER
 
     class MidpointNormalize(colors.Normalize):
         def __init__(self, vmin=None, vmax=None, midpoint=None, clip=False):
@@ -653,7 +652,7 @@ def plot_ensemble_map_tiles(lon, lat, ensemble_fields, field_compare = None, til
     SF = tick.ScalarFormatter() # Formatter for colorbar
     SF.set_powerlimits((6, 6)) # Set sci exponent used    
 
-    fig = plt.figure(figsize=figsize, constrained_layout=False) # Initiate figure with constrained layout
+    fig = plt.figure(figsize=figsize, constrained_layout=False, dpi = save_dpi) # Initiate figure with constrained layout
     fig.suptitle("Posterior realizations")
 
     # Generate ratio lists
@@ -685,11 +684,12 @@ def plot_ensemble_map_tiles(lon, lat, ensemble_fields, field_compare = None, til
             plot_field = ensemble_fields[:,ens_n]
             ax = fig.add_subplot(gs[i, j], projection=projection)
             ax.set_global()
-            im = ax.scatter(lon, lat, s=point_size, c=plot_field, transform=ccrs.PlateCarree(), vmin = field_min, vmax = field_max, cmap=cm_zesty_cbf, norm = MidpointNormalize(midpoint=0.))
+            im = ax.scatter(lon, lat, s=point_size, c=plot_field, transform=ccrs.PlateCarree(), rasterized=True, vmin = field_min, vmax = field_max, cmap=cm_zesty_cbf, norm = MidpointNormalize(midpoint=0.))
             ax.coastlines(linewidth = coast_width, color = coast_color)
             ens_n += 1
 
             if use_gridlines == True:
+                from cartopy.mpl.gridliner import LONGITUDE_FORMATTER, LATITUDE_FORMATTER
                 gl_lines = ax.gridlines(draw_labels=False,
                     linewidth=gridlines_width, color='black', alpha=gridlines_alpha, linestyle='-')
                 gl_lines.xlines = True
@@ -707,10 +707,10 @@ def plot_ensemble_map_tiles(lon, lat, ensemble_fields, field_compare = None, til
                         gl.xlocator = tick.FixedLocator([-180, -135, -90, -45, 0, 45, 90, 135])
                     elif j == tile_size_column-1:
                         gl.xlocator = tick.FixedLocator([-135, -90, -45, 0, 45, 90, 135, 180])
-                    gl.xlabels_top = True
+                    gl.top_labels = True
                     gl.xlabel_style = {'size': 7, 'color': 'gray'}
                 if j == 0:
-                    gl.ylabels_left = True
+                    gl.left_labels = True
                     gl.ylabel_style = {'size': 7, 'color': 'gray'}
 
 
@@ -727,16 +727,16 @@ def plot_ensemble_map_tiles(lon, lat, ensemble_fields, field_compare = None, til
     if field_compare is not None:
         ax = fig.add_subplot(gs[-1, :], projection=projection)
         ax.set_global()
-        im = ax.scatter(lon, lat, s=point_size, c=field_compare, transform=ccrs.PlateCarree(), vmin = field_min, vmax = field_max, cmap=cm_zesty_cbf, norm = MidpointNormalize(midpoint=0.))
+        im = ax.scatter(lon, lat, s=point_size, c=field_compare, transform=ccrs.PlateCarree(), rasterized=True, vmin = field_min, vmax = field_max, cmap=cm_zesty_cbf, norm = MidpointNormalize(midpoint=0.))
         ax.coastlines(linewidth = coast_width, color = coast_color)
         #ax.set_title('A priori field')
         ax.annotate('A priori field', (0.4, -0.1), xycoords='axes fraction', va='center')
 
         if use_gridlines == True:
             gl = ax.gridlines(alpha=0.0)
-            gl.xlabels_top = True
+            gl.top_labels = True
             gl.xlabel_style = {'size': 7, 'color': 'gray'}
-            gl.ylabels_left = True
+            gl.left_labels = True
             gl.ylabel_style = {'size': 7, 'color': 'gray'}
             gl.xlines = True
             gl.xformatter = LONGITUDE_FORMATTER
@@ -753,7 +753,7 @@ def plot_ensemble_map_tiles(lon, lat, ensemble_fields, field_compare = None, til
     fig.subplots_adjust(left=left, bottom=bottom, right=right, top=top, wspace=wspace, hspace=hspace)
 
     if savefig == True:
-        fig.savefig('map_tiles_{}.pdf'.format(save_string), bbox_inches='tight') 
+        fig.savefig('map_tiles_{}.pdf'.format(save_string), bbox_inches='tight', dpi = save_dpi) 
 
     fig.show()
 
