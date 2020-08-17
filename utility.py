@@ -425,7 +425,7 @@ def plot_cartopy_animation(lat = None, lon = None, data=None, limits_data = None
     #return HTML(anim.to_html5_video())
     #return anim
 
-def plot_sdssim_reproduce(seqsim_obj, seqsim_res, z_g_lsq = None, lags_use = 300, hist_bins = 100, res_bins = 200,
+def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, lags_use = 300, hist_bins = 100, res_bins = 200,
                           spec_step = 5, spec_lwidth = 1, spec_r_at = None, spec_r_ref = 6371.2, model_dict = None,
                           left=0.02, bottom=0.05, right=0.98, top=0.98, wspace = 0.05, hspace=-0.72,
                           tile_size_row = 3, tile_size_column = 2, figsize=(9,14), savefig = False, save_string = "", save_dpi = 300):
@@ -474,21 +474,21 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, z_g_lsq = None, lags_use = 300
     ax = fig.add_subplot(gs[0, 1])
 
     for i in np.arange(0,N_sim):
-        y,binEdges=np.histogram(seqsim_obj.zs[:,[i]],bins=hist_bins)
+        y,binEdges=np.histogram(seqsim_obj.m_DSS[:,[i]],bins=hist_bins)
         bincenters = 0.5*(binEdges[1:]+binEdges[:-1])
         if i == 0:
             ax.plot(bincenters,y,'-',color = color_rgb,label='Realizations')  
         else:
             ax.plot(bincenters,y,'-',color = color_rgb)     
 
-    if z_g_lsq is not None:
-        y,binEdges=np.histogram(np.array(z_g_lsq),bins=hist_bins)
+    if m_equiv_lsq is not None:
+        y,binEdges=np.histogram(np.array(m_equiv_lsq),bins=hist_bins)
         bincenters = 0.5*(binEdges[1:]+binEdges[:-1])
-        ax.plot(bincenters,y,'-',color = 'C3',label='Gaussian LSQ') 
+        ax.plot(bincenters,y,'-',color = 'C3',label='Equivalent LSQ', linestyle = "dashed") 
 
     y,binEdges=np.histogram(seqsim_obj.data,bins=hist_bins)
     bincenters = 0.5*(binEdges[1:]+binEdges[:-1])
-    ax.plot(bincenters,y,'k--',label='A priori field')
+    ax.plot(bincenters,y,'k--',label='Training Image')
 
     ax.set_title('Histogram reproduction')
     ax.legend(loc='best')
@@ -498,19 +498,19 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, z_g_lsq = None, lags_use = 300
 
     #% SEMI-VARIOGRAM
     ax = fig.add_subplot(gs[1, :])
-    seqsim_obj.sv_zs(len(seqsim_obj.data), 1, seqsim_obj.data.reshape(-1,1), seqsim_obj.sort_d, seqsim_obj.n_lags, seqsim_obj.max_cloud)
-    ax.plot(seqsim_obj.lags[:lags_use], seqsim_obj.pics_zs[:lags_use,0], 'C4', label='A priori field', linewidth = 0.6) 
+    seqsim_obj.sv_m_DSS(len(seqsim_obj.data), 1, seqsim_obj.data.reshape(-1,1), seqsim_obj.sort_d, seqsim_obj.n_lags, seqsim_obj.max_cloud)
+    ax.plot(seqsim_obj.lags[:lags_use], seqsim_obj.pics_m_DSS[:lags_use,0], 'C4', label='Training Image', linewidth = 0.6) 
 
-    if z_g_lsq is not None:
-        seqsim_obj.sv_zs(len(seqsim_obj.data), 1, np.array(z_g_lsq), seqsim_obj.sort_d, seqsim_obj.n_lags, seqsim_obj.max_cloud)
-        ax.plot(seqsim_obj.lags[:lags_use], seqsim_obj.pics_zs[:lags_use,0], color = 'C3', label='Gaussian LSQ')    
+    if m_equiv_lsq is not None:
+        seqsim_obj.sv_m_DSS(len(seqsim_obj.data), 1, np.array(m_equiv_lsq), seqsim_obj.sort_d, seqsim_obj.n_lags, seqsim_obj.max_cloud)
+        ax.plot(seqsim_obj.lags[:lags_use], seqsim_obj.pics_m_DSS[:lags_use,0], color = 'C3', label='Equivalent LSQ', linestyle = "dashed")    
 
     for i in np.arange(0,N_sim):
-        seqsim_obj.sv_zs(len(seqsim_obj.data), 1, seqsim_obj.zs[:,[i]], seqsim_obj.sort_d, seqsim_obj.n_lags, seqsim_obj.max_cloud)
+        seqsim_obj.sv_m_DSS(len(seqsim_obj.data), 1, seqsim_obj.m_DSS[:,[i]], seqsim_obj.sort_d, seqsim_obj.n_lags, seqsim_obj.max_cloud)
         if i == 0:
-            ax.plot(seqsim_obj.lags[:lags_use], seqsim_obj.pics_zs[:lags_use,0], color = color_rgb, label='Realizations', linewidth = 0.6)
+            ax.plot(seqsim_obj.lags[:lags_use], seqsim_obj.pics_m_DSS[:lags_use,0], color = color_rgb, label='Realizations', linewidth = 0.6)
         else:
-            ax.plot(seqsim_obj.lags[:lags_use], seqsim_obj.pics_zs[:lags_use,0], color = color_rgb, linewidth = 0.6) 
+            ax.plot(seqsim_obj.lags[:lags_use], seqsim_obj.pics_m_DSS[:lags_use,0], color = color_rgb, linewidth = 0.6) 
 
     lags_use_max = np.max(seqsim_obj.lags[:lags_use])
     lags_use_idx_model = seqsim_obj.lags_sv_curve<=lags_use_max
@@ -552,8 +552,14 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, z_g_lsq = None, lags_use = 300
     ens_cilm_compare = np.array(pyshtools.shio.SHVectorToCilm(np.hstack((np.zeros(1,), seqsim_obj.g_prior))))
     p_spec_compare = pyshtools.gravmag.mag_spectrum(ens_cilm_compare, spec_r_ref, spec_r_at, degrees = np.arange(1,np.shape(ens_cilm_compare)[1])) # degrees to skip zeroth degree
     p_spec_compare = p_spec_compare[:nmax]
-    ax.plot(ns, p_spec_compare, color = "k", label = "A priori field", linewidth = spec_lwidth, linestyle = "dashed")
+    ax.plot(ns, p_spec_compare, color = "k", label = "Training Image", linewidth = spec_lwidth, linestyle = "dashed")
     
+    # Equivalent LSQ
+    if m_equiv_lsq is not None:
+        ens_cilm_lsq = np.array(pyshtools.shio.SHVectorToCilm(np.hstack((np.zeros(1,), seqsim_obj.g_lsq_equiv))))
+        p_spec_lsq = pyshtools.gravmag.mag_spectrum(ens_cilm_lsq, spec_r_ref, spec_r_at, degrees = np.arange(1,np.shape(ens_cilm_lsq)[1])) # degrees to skip zeroth degree
+        p_spec_lsq = p_spec_lsq[:nmax]
+        ax.plot(ns, p_spec_lsq, color = "C3", label = "Equivalent LSQ", linewidth = spec_lwidth, linestyle = "dashed")
 
     # Models
     if model_dict is not None: # Load models
@@ -631,7 +637,7 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, z_g_lsq = None, lags_use = 300
     
 
 def plot_ensemble_map_tiles(lon, lat, ensemble_fields, field_compare = None, tile_size_row = 3, tile_size_column = 3, figsize=(8,8), limit_for_SF = 10**6, point_size = 3,
-                            left=0.02, bottom=0.05, right=0.98, top=0.98, wspace = 0.05, hspace=-0.72, coast_width = 0.1, coast_color = "grey",
+                            left=0.02, bottom=0.05, right=0.98, top=0.98, wspace = 0.05, hspace=-0.72, coast_width = 0.1, coast_color = "grey", cbar_mm_factor = 3/4, unit_transform_n_to_m = False,
                             savefig = False, save_string = "", save_dpi = 300,  projection = ccrs.Mollweide(), cbar_h = 0.07, cbar_text = "nT", cbar_text_color = "grey", cbar_frac = 0.15, use_gridlines = False, gridlines_width = 0.2, gridlines_alpha = 0.1):
     import numpy as np
     import matplotlib.pyplot as plt
@@ -639,6 +645,11 @@ def plot_ensemble_map_tiles(lon, lat, ensemble_fields, field_compare = None, til
     import cartopy.crs as ccrs
     import matplotlib.colors as colors
     from matplotlib.colorbar import Colorbar
+
+    if unit_transform_n_to_m == True:
+        ensemble_fields = ensemble_fields*10**(-6)
+        if field_compare is not None:
+            field_compare = field_compare*10**(-6)
 
     class MidpointNormalize(colors.Normalize):
         def __init__(self, vmin=None, vmax=None, midpoint=None, clip=False):
@@ -673,9 +684,9 @@ def plot_ensemble_map_tiles(lon, lat, ensemble_fields, field_compare = None, til
         h_ratio.append(1.1)
         gs = fig.add_gridspec(tile_size_row+3, tile_size_column, height_ratios=h_ratio, width_ratios=w_ratio) # Add x-by-y grid
 
-        field_max = np.max(field_compare)
-        field_min = np.min(field_compare)
-        field_max = np.max((abs(field_max),abs(field_min)))
+        field_max_true = np.max(field_compare)
+        field_min_true = np.min(field_compare)
+        field_max = cbar_mm_factor*np.max((abs(field_max_true),abs(field_min_true)))
         field_min = -field_max
         
     ens_n = 0
@@ -722,7 +733,8 @@ def plot_ensemble_map_tiles(lon, lat, ensemble_fields, field_compare = None, til
     else:
         cb = Colorbar(mappable = im, ax = cbax, orientation = "horizontal")
 
-    cb.ax.text(0.5, -20.0, cbar_text, ha='center', va='center', color = cbar_text_color)
+    #cb.ax.text(0.5, -0.0, cbar_text, ha='center', va='center', color = cbar_text_color)
+    cb.set_label(cbar_text)
 
     if field_compare is not None:
         ax = fig.add_subplot(gs[-1, :], projection=projection)
