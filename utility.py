@@ -427,7 +427,7 @@ def plot_cartopy_animation(lat = None, lon = None, data=None, limits_data = None
 
 def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, lags_use = 300, hist_bins = 100, res_bins = 200,
                           spec_step = 5, spec_lwidth = 1, spec_r_at = None, spec_r_ref = 6371.2, model_dict = None,
-                          left=0.02, bottom=0.05, right=0.98, top=0.98, wspace = 0.05, hspace=-0.72,
+                          left=0.02, bottom=0.05, right=0.98, top=0.98, wspace = 0.05, hspace=-0.72, label_fontsize = "x-small",
                           tile_size_row = 3, tile_size_column = 2, figsize=(9,14), savefig = False, save_string = "", save_dpi = 300):
     import numpy as np
     import matplotlib.pyplot as plt
@@ -465,7 +465,7 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, lags_use =
         ax.plot(bincenters,y,'-',color = color_rgb)  
 
     ax.set_title('Observation estimate residuals')
-    ax.annotate("Mean RMSE: {:.3f}".format(np.mean(rmse_leg)), (0.05, 0.5), xycoords='axes fraction', va='center')
+    ax.annotate("Mean RMSE: {:.3f}".format(np.mean(rmse_leg)), (0.05, 0.5), xycoords='axes fraction', va='center', fontsize = label_fontsize)
     ax.set_xlabel("Field residuals [nT]")
     ax.set_ylabel("Count")
 
@@ -477,40 +477,48 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, lags_use =
         y,binEdges=np.histogram(seqsim_obj.m_DSS[:,[i]],bins=hist_bins)
         bincenters = 0.5*(binEdges[1:]+binEdges[:-1])
         if i == 0:
-            ax.plot(bincenters,y,'-',color = color_rgb,label='Realizations')  
+            ax.plot(bincenters,y,'-', color = color_rgb, label='Posterior')  
         else:
-            ax.plot(bincenters,y,'-',color = color_rgb)     
+            ax.plot(bincenters,y,'-', color = color_rgb)     
+
+    y,binEdges=np.histogram(np.mean(seqsim_obj.m_DSS,axis=1),bins=hist_bins)
+    bincenters = 0.5*(binEdges[1:]+binEdges[:-1])
+    ax.plot(bincenters,y,'-',color = "C2", label='Posterior mean')  
 
     if m_equiv_lsq is not None:
         y,binEdges=np.histogram(np.array(m_equiv_lsq),bins=hist_bins)
         bincenters = 0.5*(binEdges[1:]+binEdges[:-1])
-        ax.plot(bincenters,y,'-',color = 'C3',label='Equivalent LSQ', linestyle = "dashed") 
+        ax.plot(bincenters,y,'--',color = 'C3',label='Equivalent LSQ', linestyle = "dashed") 
 
     y,binEdges=np.histogram(seqsim_obj.data,bins=hist_bins)
     bincenters = 0.5*(binEdges[1:]+binEdges[:-1])
-    ax.plot(bincenters,y,'k--',label='Training Image')
+    ax.plot(bincenters,y,'k--',label='Synthetic truth')
 
     ax.set_title('Histogram reproduction')
-    ax.legend(loc='best')
+    ax.legend(loc='upper right', fontsize = label_fontsize) #legend(bbox_to_anchor=(1.05, 1), loc='upper left', borderaxespad=0.)
     ax.set_xlabel('Field value [nT]')
     ax.set_ylabel('Count')
 
 
     #% SEMI-VARIOGRAM
     ax = fig.add_subplot(gs[1, :])
-    seqsim_obj.sv_m_DSS(len(seqsim_obj.data), 1, seqsim_obj.data.reshape(-1,1), seqsim_obj.sort_d, seqsim_obj.n_lags, seqsim_obj.max_cloud)
-    ax.plot(seqsim_obj.lags[:lags_use], seqsim_obj.pics_m_DSS[:lags_use,0], 'C4', label='Training Image', linewidth = 0.6) 
-
-    if m_equiv_lsq is not None:
-        seqsim_obj.sv_m_DSS(len(seqsim_obj.data), 1, np.array(m_equiv_lsq), seqsim_obj.sort_d, seqsim_obj.n_lags, seqsim_obj.max_cloud)
-        ax.plot(seqsim_obj.lags[:lags_use], seqsim_obj.pics_m_DSS[:lags_use,0], color = 'C3', label='Equivalent LSQ', linestyle = "dashed")    
 
     for i in np.arange(0,N_sim):
         seqsim_obj.sv_m_DSS(len(seqsim_obj.data), 1, seqsim_obj.m_DSS[:,[i]], seqsim_obj.sort_d, seqsim_obj.n_lags, seqsim_obj.max_cloud)
         if i == 0:
-            ax.plot(seqsim_obj.lags[:lags_use], seqsim_obj.pics_m_DSS[:lags_use,0], color = color_rgb, label='Realizations', linewidth = 0.6)
+            ax.plot(seqsim_obj.lags[:lags_use], seqsim_obj.pics_m_DSS[:lags_use,0], color = color_rgb, label='Posterior', linewidth = 0.6)
         else:
             ax.plot(seqsim_obj.lags[:lags_use], seqsim_obj.pics_m_DSS[:lags_use,0], color = color_rgb, linewidth = 0.6) 
+
+    seqsim_obj.sv_m_DSS(len(seqsim_obj.data), 1, np.mean(seqsim_obj.m_DSS,axis=1).reshape(-1,1), seqsim_obj.sort_d, seqsim_obj.n_lags, seqsim_obj.max_cloud)
+    ax.plot(seqsim_obj.lags[:lags_use], seqsim_obj.pics_m_DSS[:lags_use,0], color = "C2", label='Posterior mean', linewidth = 1.0)
+
+    if m_equiv_lsq is not None:
+        seqsim_obj.sv_m_DSS(len(seqsim_obj.data), 1, np.array(m_equiv_lsq), seqsim_obj.sort_d, seqsim_obj.n_lags, seqsim_obj.max_cloud)
+        ax.plot(seqsim_obj.lags[:lags_use], seqsim_obj.pics_m_DSS[:lags_use,0], color = 'C3', label='Equivalent LSQ', linestyle = "dashed", linewidth = 1.0)    
+
+    seqsim_obj.sv_m_DSS(len(seqsim_obj.data), 1, seqsim_obj.data.reshape(-1,1), seqsim_obj.sort_d, seqsim_obj.n_lags, seqsim_obj.max_cloud)
+    ax.plot(seqsim_obj.lags[:lags_use], seqsim_obj.pics_m_DSS[:lags_use,0], 'k', label='Synthetic truth', linewidth = 1.0, linestyle = "dashed") 
 
     lags_use_max = np.max(seqsim_obj.lags[:lags_use])
     lags_use_idx_model = seqsim_obj.lags_sv_curve<=lags_use_max
@@ -518,12 +526,12 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, lags_use =
     plot_model_lag = seqsim_obj.lags_sv_curve[lags_use_idx_model]
     plot_model_sv = seqsim_obj.sv_curve[lags_use_idx_model]
 
-    ax.plot(plot_model_lag, plot_model_sv, color='C1', label='SV model')
+    ax.plot(plot_model_lag, plot_model_sv, color='C1', label='TI derived model semi-variogram')
 
     ax.set_title('Semi-variogram reproduction')
     ax.set_ylabel('Semi-variance [nT²]')
     ax.set_xlabel('Lag [km]')
-    ax.legend(loc='best')
+    ax.legend(loc='lower right', fontsize = label_fontsize)
 
 
     #% P-SPEC
@@ -539,20 +547,23 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, lags_use =
         spec_r_at = seqsim_obj.r_sat
     
     # Realizations
+    p_spec_pos_all = []
     for i in np.arange(0,N_ensembles):
         ens_cilm = np.array(pyshtools.shio.SHVectorToCilm(np.hstack((np.zeros(1,), seqsim_obj.g_spec[:,i]))))
-        p_spec = pyshtools.gravmag.mag_spectrum(ens_cilm, spec_r_ref, spec_r_at, degrees = np.arange(1,np.shape(ens_cilm)[1]))
-        p_spec = p_spec[:nmax]
+        p_spec_pos = pyshtools.gravmag.mag_spectrum(ens_cilm, spec_r_ref, spec_r_at, degrees = np.arange(1,np.shape(ens_cilm)[1]))
+        p_spec_pos = p_spec_pos[:nmax]
+        p_spec_pos_all.append(p_spec_pos)
         if i == 0:
-            ax.plot(ns, p_spec, color=color_rgb, label = "Realizations", linewidth = spec_lwidth)
+            ax.plot(ns, p_spec_pos, color=color_rgb, label = "Posterior", linewidth = spec_lwidth)
         else:
-            ax.plot(ns, p_spec, color=color_rgb, linewidth = spec_lwidth)
-    
-    # Prior
-    ens_cilm_compare = np.array(pyshtools.shio.SHVectorToCilm(np.hstack((np.zeros(1,), seqsim_obj.g_prior))))
-    p_spec_compare = pyshtools.gravmag.mag_spectrum(ens_cilm_compare, spec_r_ref, spec_r_at, degrees = np.arange(1,np.shape(ens_cilm_compare)[1])) # degrees to skip zeroth degree
-    p_spec_compare = p_spec_compare[:nmax]
-    ax.plot(ns, p_spec_compare, color = "k", label = "Training Image", linewidth = spec_lwidth, linestyle = "dashed")
+            ax.plot(ns, p_spec_pos, color=color_rgb, linewidth = spec_lwidth)
+    p_spec_pos_all = np.array(p_spec_pos_all)
+
+    # Realization mean
+    ens_cilm = np.array(pyshtools.shio.SHVectorToCilm(np.hstack((np.zeros(1,), seqsim_obj.g_spec_mean))))
+    p_spec_pos_mean = pyshtools.gravmag.mag_spectrum(ens_cilm, spec_r_ref, spec_r_at, degrees = np.arange(1,np.shape(ens_cilm)[1]))
+    p_spec_pos_mean = p_spec_pos_mean[:nmax]
+    ax.plot(ns, p_spec_pos_mean, color="C2", label = "Posterior mean", linewidth = spec_lwidth)
     
     # Equivalent LSQ
     if m_equiv_lsq is not None:
@@ -560,6 +571,24 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, lags_use =
         p_spec_lsq = pyshtools.gravmag.mag_spectrum(ens_cilm_lsq, spec_r_ref, spec_r_at, degrees = np.arange(1,np.shape(ens_cilm_lsq)[1])) # degrees to skip zeroth degree
         p_spec_lsq = p_spec_lsq[:nmax]
         ax.plot(ns, p_spec_lsq, color = "C3", label = "Equivalent LSQ", linewidth = spec_lwidth, linestyle = "dashed")
+
+    # Prior
+    ens_cilm_compare = np.array(pyshtools.shio.SHVectorToCilm(np.hstack((np.zeros(1,), seqsim_obj.g_prior))))
+    p_spec_compare = pyshtools.gravmag.mag_spectrum(ens_cilm_compare, spec_r_ref, spec_r_at, degrees = np.arange(1,np.shape(ens_cilm_compare)[1])) # degrees to skip zeroth degree
+    p_spec_compare = p_spec_compare[:nmax]
+    ax.plot(ns, p_spec_compare, color = "k", label = "Synthetic truth", linewidth = spec_lwidth, linestyle = "dashed")
+
+    # Differences
+    color_rgb_diff = (0.8,0.8,0.8)
+    for i in np.arange(N_sim):
+        if i == 0:
+            ax.plot(ns, np.abs(p_spec_compare - p_spec_pos_all[i,:]), color=color_rgb_diff, label = "Truth - Posterior", linewidth = spec_lwidth, zorder = 0)
+        else:
+            ax.plot(ns, np.abs(p_spec_compare - p_spec_pos_all[i,:]), color=color_rgb_diff, linewidth = spec_lwidth, zorder = 0)
+
+    ax.plot(ns, np.abs(p_spec_compare - p_spec_pos_mean), color="C4", label = "Truth - Posterior mean", linewidth = spec_lwidth, zorder = 0.1)
+    ax.plot(ns, np.abs(p_spec_compare - p_spec_lsq), color = "C5", label = "Truth - Equivalent LSQ", linewidth = spec_lwidth, linestyle = "dashed", zorder = 0.2)
+
 
     # Models
     if model_dict is not None: # Load models
@@ -620,13 +649,13 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, lags_use =
             ax.plot(use_ns, use_p_spec, color="C{}".format(i), label = key, linewidth = spec_lwidth)
             i += 1
     
-    ax.set_title('Power spectra comparison')
+    ax.set_title('Power spectra comparison [r: {}km]'.format(spec_r_at))
     ax.set_yscale('log')
     ax.set_xlabel("degree n")
     ax.set_ylabel("Power [nT²]")
     ax.set_xticks(n_ticks) #fontsize="small"
     ax.grid(alpha=0.3)
-    ax.legend(loc = "best")
+    ax.legend(loc='lower center', fontsize = label_fontsize)
 
     #fig.subplots_adjust(left=left, bottom=bottom, right=right, top=top, wspace=wspace, hspace=hspace)
 
@@ -636,7 +665,7 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, lags_use =
     fig.show()
     
 
-def plot_ensemble_map_tiles(lon, lat, ensemble_fields, field_compare = None, tile_size_row = 3, tile_size_column = 3, figsize=(8,8), limit_for_SF = 10**6, point_size = 3,
+def plot_ensemble_map_tiles(lon, lat, ensemble_fields, field_compare = None, field_lsq = None, field_mean = None, tile_size_row = 3, tile_size_column = 3, figsize=(8,8), limit_for_SF = 10**6, point_size = 3,
                             left=0.02, bottom=0.05, right=0.98, top=0.98, wspace = 0.05, hspace=-0.72, coast_width = 0.1, coast_color = "grey", cbar_mm_factor = 3/4, unit_transform_n_to_m = False,
                             savefig = False, save_string = "", save_dpi = 300,  projection = ccrs.Mollweide(), cbar_h = 0.07, cbar_text = "nT", cbar_text_color = "grey", cbar_frac = 0.15, use_gridlines = False, gridlines_width = 0.2, gridlines_alpha = 0.1):
     import numpy as np
@@ -650,6 +679,8 @@ def plot_ensemble_map_tiles(lon, lat, ensemble_fields, field_compare = None, til
         ensemble_fields = ensemble_fields*10**(-6)
         if field_compare is not None:
             field_compare = field_compare*10**(-6)
+            field_lsq = field_lsq*10**(-6)
+            field_mean = field_mean*10**(-6)
 
     class MidpointNormalize(colors.Normalize):
         def __init__(self, vmin=None, vmax=None, midpoint=None, clip=False):
@@ -692,9 +723,23 @@ def plot_ensemble_map_tiles(lon, lat, ensemble_fields, field_compare = None, til
     ens_n = 0
     for i in np.arange(0,tile_size_row):
         for j in np.arange(0,tile_size_column):
-            plot_field = ensemble_fields[:,ens_n]
+
             ax = fig.add_subplot(gs[i, j], projection=projection)
             ax.set_global()
+
+            if np.logical_and(i == tile_size_row-1, j == 0):
+                plot_field = field_mean
+                ax.set_title("Posterior mean")
+                #ax.set_xlabel("Mean")
+            elif np.logical_and(i == tile_size_row-1, j == tile_size_column-1):
+                #plot_field_idx_max = np.argmax(np.abs(np.diff(ensemble_fields,axis=1)),axis=1)
+                #plot_field = np.diff(ensemble_fields,axis=1)[np.arange(0,len(plot_field_idx_max)),plot_field_idx_max]
+                plot_field = np.std(ensemble_fields,axis=1)
+                ax.set_title("Posterior std. deviation")
+                #ax.set_xlabel("Standard deviation")
+            else:
+                plot_field = ensemble_fields[:,ens_n]
+
             im = ax.scatter(lon, lat, s=point_size, c=plot_field, transform=ccrs.PlateCarree(), rasterized=True, vmin = field_min, vmax = field_max, cmap=cm_zesty_cbf, norm = MidpointNormalize(midpoint=0.))
             ax.coastlines(linewidth = coast_width, color = coast_color)
             ens_n += 1
@@ -724,8 +769,6 @@ def plot_ensemble_map_tiles(lon, lat, ensemble_fields, field_compare = None, til
                     gl.left_labels = True
                     gl.ylabel_style = {'size': 7, 'color': 'gray'}
 
-
-
     cbax = plt.subplot(gs[tile_size_row,:]) # Set colorbar position
 
     if field_max>limit_for_SF:
@@ -737,30 +780,44 @@ def plot_ensemble_map_tiles(lon, lat, ensemble_fields, field_compare = None, til
     cb.set_label(cbar_text)
 
     if field_compare is not None:
-        ax = fig.add_subplot(gs[-1, :], projection=projection)
-        ax.set_global()
-        im = ax.scatter(lon, lat, s=point_size, c=field_compare, transform=ccrs.PlateCarree(), rasterized=True, vmin = field_min, vmax = field_max, cmap=cm_zesty_cbf, norm = MidpointNormalize(midpoint=0.))
-        ax.coastlines(linewidth = coast_width, color = coast_color)
-        #ax.set_title('A priori field')
-        ax.annotate('A priori field', (0.4, -0.1), xycoords='axes fraction', va='center')
+        for i in np.arange(0,tile_size_column):
+            ax = fig.add_subplot(gs[-1, i], projection=projection)
+            ax.set_global()
 
-        if use_gridlines == True:
-            gl = ax.gridlines(alpha=0.0)
-            gl.top_labels = True
-            gl.xlabel_style = {'size': 7, 'color': 'gray'}
-            gl.left_labels = True
-            gl.ylabel_style = {'size': 7, 'color': 'gray'}
-            gl.xlines = True
-            gl.xformatter = LONGITUDE_FORMATTER
-            gl.yformatter = LATITUDE_FORMATTER
-            gl.xlocator = tick.FixedLocator([-180, -135, -90, -45, 0, 45, 90, 135, 180])
-            gl.ylocator = tick.FixedLocator([-90, -60, -30, 0, 30, 60, 90])
+            if i == tile_size_column-1:
+                im = ax.scatter(lon, lat, s=point_size, c=field_compare, transform=ccrs.PlateCarree(), rasterized=True, vmin = field_min, vmax = field_max, cmap=cm_zesty_cbf, norm = MidpointNormalize(midpoint=0.))
+                #ax.annotate('Training image', (0.4, -0.1), xycoords='axes fraction', va='center')
+                ax.set_title("Synthetic truth")
+                #ax.set_xlabel("Training image")
+            elif i == 0:
+                im = ax.scatter(lon, lat, s=point_size, c=field_lsq, transform=ccrs.PlateCarree(), rasterized=True, vmin = field_min, vmax = field_max, cmap=cm_zesty_cbf, norm = MidpointNormalize(midpoint=0.))
+                #ax.annotate('Equivalent LSQ', (0.4, -0.1), xycoords='axes fraction', va='center')
+                ax.set_title("Equivalent LSQ")
+                #ax.set_xlabel("Equivalent LSQ")
 
-            gl_lines = ax.gridlines(draw_labels=False,
-            linewidth=gridlines_width, color='black', alpha=gridlines_alpha, linestyle='-')
-            gl_lines.xlines = True
-            gl_lines.xlocator = tick.FixedLocator([-180, -135, -90, -45, 0, 45, 90, 135, 180])
-            gl_lines.ylocator = tick.FixedLocator([-90, -60, -30, 0, 30, 60, 90])
+            ax.coastlines(linewidth = coast_width, color = coast_color)
+            if use_gridlines == True:
+
+                gl = ax.gridlines(alpha=0.0)
+                #gl.top_labels = True
+                #gl.xlabel_style = {'size': 7, 'color': 'gray'}
+                #gl.left_labels = True
+                #gl.ylabel_style = {'size': 7, 'color': 'gray'}
+                gl.xlines = True
+                gl.xformatter = LONGITUDE_FORMATTER
+                gl.yformatter = LATITUDE_FORMATTER
+                #gl.xlocator = tick.FixedLocator([-180, -135, -90, -45, 0, 45, 90, 135, 180])
+                gl.ylocator = tick.FixedLocator([-90, -60, -30, 0, 30, 60, 90])
+
+                gl_lines = ax.gridlines(draw_labels=False,
+                linewidth=gridlines_width, color='black', alpha=gridlines_alpha, linestyle='-')
+                gl_lines.xlines = True
+                gl_lines.xlocator = tick.FixedLocator([-180, -135, -90, -45, 0, 45, 90, 135, 180])
+                gl_lines.ylocator = tick.FixedLocator([-90, -60, -30, 0, 30, 60, 90])
+
+                if i == 0:
+                    gl.left_labels = True
+                    gl.ylabel_style = {'size': 7, 'color': 'gray'}
 
     fig.subplots_adjust(left=left, bottom=bottom, right=right, top=top, wspace=wspace, hspace=hspace)
 
