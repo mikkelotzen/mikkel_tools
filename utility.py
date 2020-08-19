@@ -474,30 +474,30 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, lags_use =
     ax = fig.add_subplot(gs[0, 1])
 
     for i in np.arange(0,N_sim):
-        y,binEdges=np.histogram(seqsim_obj.m_DSS[:,[i]],bins=hist_bins)
+        y,binEdges=np.histogram(seqsim_obj.m_DSS[:,[i]],bins=hist_bins, density = True)
         bincenters = 0.5*(binEdges[1:]+binEdges[:-1])
         if i == 0:
             ax.plot(bincenters,y,'-', color = color_rgb, label='Posterior')  
         else:
             ax.plot(bincenters,y,'-', color = color_rgb)     
 
-    y,binEdges=np.histogram(np.mean(seqsim_obj.m_DSS,axis=1),bins=hist_bins)
+    y,binEdges=np.histogram(np.mean(seqsim_obj.m_DSS,axis=1),bins=hist_bins, density = True)
     bincenters = 0.5*(binEdges[1:]+binEdges[:-1])
     ax.plot(bincenters,y,'-',color = "C2", label='Posterior mean')  
 
     if m_equiv_lsq is not None:
-        y,binEdges=np.histogram(np.array(m_equiv_lsq),bins=hist_bins)
+        y,binEdges=np.histogram(np.array(m_equiv_lsq),bins=hist_bins, density = True)
         bincenters = 0.5*(binEdges[1:]+binEdges[:-1])
         ax.plot(bincenters,y,'--',color = 'C3',label='Equivalent LSQ', linestyle = "dashed") 
 
-    y,binEdges=np.histogram(seqsim_obj.data,bins=hist_bins)
+    y,binEdges=np.histogram(seqsim_obj.data,bins=hist_bins, density = True)
     bincenters = 0.5*(binEdges[1:]+binEdges[:-1])
     ax.plot(bincenters,y,'k--',label='Synthetic truth')
 
     ax.set_title('Histogram reproduction')
     ax.legend(loc='upper right', fontsize = label_fontsize) #legend(bbox_to_anchor=(1.05, 1), loc='upper left', borderaxespad=0.)
     ax.set_xlabel('Field value [nT]')
-    ax.set_ylabel('Count')
+    ax.set_ylabel('Pdf')
 
 
     #% SEMI-VARIOGRAM
