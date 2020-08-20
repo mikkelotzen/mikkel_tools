@@ -474,23 +474,23 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, lags_use =
     ax = fig.add_subplot(gs[0, 1])
 
     for i in np.arange(0,N_sim):
-        y,binEdges=np.histogram(seqsim_obj.m_DSS[:,[i]],bins=hist_bins, density = True)
+        y,binEdges=np.histogram(seqsim_obj.m_DSS[:,[i]],bins=hist_bins, density = False)
         bincenters = 0.5*(binEdges[1:]+binEdges[:-1])
         if i == 0:
             ax.plot(bincenters,y,'-', color = color_rgb, label='Posterior')  
         else:
             ax.plot(bincenters,y,'-', color = color_rgb)     
 
-    y,binEdges=np.histogram(np.mean(seqsim_obj.m_DSS,axis=1),bins=hist_bins, density = True)
+    y,binEdges=np.histogram(np.mean(seqsim_obj.m_DSS,axis=1),bins=hist_bins, density = False)
     bincenters = 0.5*(binEdges[1:]+binEdges[:-1])
     ax.plot(bincenters,y,'-',color = "C2", label='Posterior mean')  
 
     if m_equiv_lsq is not None:
-        y,binEdges=np.histogram(np.array(m_equiv_lsq),bins=hist_bins, density = True)
+        y,binEdges=np.histogram(np.array(m_equiv_lsq),bins=hist_bins, density = False)
         bincenters = 0.5*(binEdges[1:]+binEdges[:-1])
         ax.plot(bincenters,y,'--',color = 'C3',label='Equivalent LSQ', linestyle = "dashed") 
 
-    y,binEdges=np.histogram(seqsim_obj.data,bins=hist_bins, density = True)
+    y,binEdges=np.histogram(seqsim_obj.data,bins=hist_bins, density = False)
     bincenters = 0.5*(binEdges[1:]+binEdges[:-1])
     ax.plot(bincenters,y,'k--',label='Synthetic truth')
 
@@ -679,7 +679,8 @@ def plot_ensemble_map_tiles(lon, lat, ensemble_fields, field_compare = None, fie
         ensemble_fields = ensemble_fields*10**(-6)
         if field_compare is not None:
             field_compare = field_compare*10**(-6)
-            field_lsq = field_lsq*10**(-6)
+            if field_lsq is not None:
+                field_lsq = field_lsq*10**(-6)
             field_mean = field_mean*10**(-6)
 
     class MidpointNormalize(colors.Normalize):
@@ -780,33 +781,57 @@ def plot_ensemble_map_tiles(lon, lat, ensemble_fields, field_compare = None, fie
     cb.set_label(cbar_text)
 
     if field_compare is not None:
-        for i in np.arange(0,tile_size_column):
-            ax = fig.add_subplot(gs[-1, i], projection=projection)
+        if field_lsq is not None:
+            for i in np.arange(0,tile_size_column):
+                ax = fig.add_subplot(gs[-1, i], projection=projection)
+                ax.set_global()
+
+                if i == tile_size_column-1:
+                    im = ax.scatter(lon, lat, s=point_size, c=field_compare, transform=ccrs.PlateCarree(), rasterized=True, vmin = field_min, vmax = field_max, cmap=cm_zesty_cbf, norm = MidpointNormalize(midpoint=0.))
+                    #ax.annotate('Training image', (0.4, -0.1), xycoords='axes fraction', va='center')
+                    ax.set_title("Synthetic truth")
+                    #ax.set_xlabel("Training image")
+                elif i == 0:
+                    im = ax.scatter(lon, lat, s=point_size, c=field_lsq, transform=ccrs.PlateCarree(), rasterized=True, vmin = field_min, vmax = field_max, cmap=cm_zesty_cbf, norm = MidpointNormalize(midpoint=0.))
+                    #ax.annotate('Equivalent LSQ', (0.4, -0.1), xycoords='axes fraction', va='center')
+                    ax.set_title("Equivalent LSQ")
+                    #ax.set_xlabel("Equivalent LSQ")
+
+                ax.coastlines(linewidth = coast_width, color = coast_color)
+                if use_gridlines == True:
+
+                    gl = ax.gridlines(alpha=0.0)
+                    #gl.top_labels = True
+                    #gl.xlabel_style = {'size': 7, 'color': 'gray'}
+                    #gl.left_labels = True
+                    #gl.ylabel_style = {'size': 7, 'color': 'gray'}
+                    gl.xlines = True
+                    gl.xformatter = LONGITUDE_FORMATTER
+                    gl.yformatter = LATITUDE_FORMATTER
+                    #gl.xlocator = tick.FixedLocator([-180, -135, -90, -45, 0, 45, 90, 135, 180])
+                    gl.ylocator = tick.FixedLocator([-90, -60, -30, 0, 30, 60, 90])
+
+                    gl_lines = ax.gridlines(draw_labels=False,
+                    linewidth=gridlines_width, color='black', alpha=gridlines_alpha, linestyle='-')
+                    gl_lines.xlines = True
+                    gl_lines.xlocator = tick.FixedLocator([-180, -135, -90, -45, 0, 45, 90, 135, 180])
+                    gl_lines.ylocator = tick.FixedLocator([-90, -60, -30, 0, 30, 60, 90])
+
+                    if i == 0:
+                        gl.left_labels = True
+                        gl.ylabel_style = {'size': 7, 'color': 'gray'}
+        else:
+            ax = fig.add_subplot(gs[-1, :], projection=projection)
             ax.set_global()
-
-            if i == tile_size_column-1:
-                im = ax.scatter(lon, lat, s=point_size, c=field_compare, transform=ccrs.PlateCarree(), rasterized=True, vmin = field_min, vmax = field_max, cmap=cm_zesty_cbf, norm = MidpointNormalize(midpoint=0.))
-                #ax.annotate('Training image', (0.4, -0.1), xycoords='axes fraction', va='center')
-                ax.set_title("Synthetic truth")
-                #ax.set_xlabel("Training image")
-            elif i == 0:
-                im = ax.scatter(lon, lat, s=point_size, c=field_lsq, transform=ccrs.PlateCarree(), rasterized=True, vmin = field_min, vmax = field_max, cmap=cm_zesty_cbf, norm = MidpointNormalize(midpoint=0.))
-                #ax.annotate('Equivalent LSQ', (0.4, -0.1), xycoords='axes fraction', va='center')
-                ax.set_title("Equivalent LSQ")
-                #ax.set_xlabel("Equivalent LSQ")
-
+            im = ax.scatter(lon, lat, s=point_size, c=field_compare, transform=ccrs.PlateCarree(), rasterized=True, vmin = field_min, vmax = field_max, cmap=cm_zesty_cbf, norm = MidpointNormalize(midpoint=0.))
+            ax.set_title("Synthetic truth")
             ax.coastlines(linewidth = coast_width, color = coast_color)
             if use_gridlines == True:
 
                 gl = ax.gridlines(alpha=0.0)
-                #gl.top_labels = True
-                #gl.xlabel_style = {'size': 7, 'color': 'gray'}
-                #gl.left_labels = True
-                #gl.ylabel_style = {'size': 7, 'color': 'gray'}
                 gl.xlines = True
                 gl.xformatter = LONGITUDE_FORMATTER
                 gl.yformatter = LATITUDE_FORMATTER
-                #gl.xlocator = tick.FixedLocator([-180, -135, -90, -45, 0, 45, 90, 135, 180])
                 gl.ylocator = tick.FixedLocator([-90, -60, -30, 0, 30, 60, 90])
 
                 gl_lines = ax.gridlines(draw_labels=False,
@@ -815,9 +840,9 @@ def plot_ensemble_map_tiles(lon, lat, ensemble_fields, field_compare = None, fie
                 gl_lines.xlocator = tick.FixedLocator([-180, -135, -90, -45, 0, 45, 90, 135, 180])
                 gl_lines.ylocator = tick.FixedLocator([-90, -60, -30, 0, 30, 60, 90])
 
-                if i == 0:
-                    gl.left_labels = True
-                    gl.ylabel_style = {'size': 7, 'color': 'gray'}
+                gl.left_labels = True
+                gl.ylabel_style = {'size': 7, 'color': 'gray'}
+
 
     fig.subplots_adjust(left=left, bottom=bottom, right=right, top=top, wspace=wspace, hspace=hspace)
 
