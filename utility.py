@@ -81,7 +81,11 @@ def printProgressBar (iteration, total, *args, subject='', prefix = '', suffix =
         print()
 
 
-def plot_cartopy_global(lat = None, lon = None, data=None, limits_data = None, shape = (360,720), plot_quality = None, unit = "[nT]", cmap = plt.cm.RdBu_r, projection_transformation = "Mollweide", figsize=(10,10), title='Cartopy Earth plot', lat_0 = 0.0, lon_0 = 0.0, point_size=2, showfig=True, norm_class = False, scale_uneven = False, flip_shape = False, flip_grid = True, transpose_grid = False, shift_grid = False, savefig = False, dpi = 100, path = None, saveformat = ".png"):
+def plot_cartopy_global(lat = None, lon = None, data=None, limits_data = None, shape = (360,720), plot_quality = None,
+                        unit = "[nT]", cmap = plt.cm.RdBu_r, projection_transformation = "Mollweide", figsize=(10,10),
+                        title='Cartopy Earth plot', lat_0 = 0.0, lon_0 = 0.0, point_size=2, showfig=True, norm_class = False,
+                        scale_uneven = False, flip_shape = False, flip_grid = True, transpose_grid = False, shift_grid = False,
+                        savefig = False, dpi = 100, path = None, saveformat = ".png"):
 
     import cartopy.crs as ccrs
     from cartopy.mpl.geoaxes import GeoAxes
