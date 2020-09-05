@@ -429,7 +429,7 @@ def plot_cartopy_animation(lat = None, lon = None, data=None, limits_data = None
     #return HTML(anim.to_html5_video())
     #return anim
 
-def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, lags_use = 300, hist_bins = 100, res_bins = 200,
+def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, lags_use = 300, hist_bins = 100, res_bins = 200, spec_use = True,
                           spec_step = 5, spec_lwidth = 1, spec_r_at = None, spec_r_ref = 6371.2, model_dict = None,
                           left=0.02, bottom=0.05, right=0.98, top=0.98, wspace = 0.05, hspace=-0.72, label_fontsize = "x-small",
                           tile_size_row = 3, tile_size_column = 2, figsize=(9,14), savefig = False, save_string = "", save_dpi = 300):
@@ -453,11 +453,16 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, lags_use =
 
     fig = plt.figure(figsize=figsize, constrained_layout=False) # Initiate figure with constrained layout
 
-    # Generate ratio lists
-    h_ratio = [1]*tile_size_row
-    w_ratio = [1]*tile_size_column
-
-    gs = fig.add_gridspec(tile_size_row, tile_size_column, height_ratios=h_ratio, width_ratios=w_ratio) # Add x-by-y grid
+    if spec_use == True:
+        # Generate ratio lists
+        h_ratio = [1]*tile_size_row
+        w_ratio = [1]*tile_size_column
+        gs = fig.add_gridspec(tile_size_row, tile_size_column, height_ratios=h_ratio, width_ratios=w_ratio) # Add x-by-y grid
+    else:
+        # Generate ratio lists
+        h_ratio = [1]*(tile_size_row-1)
+        w_ratio = [1]*tile_size_column
+        gs = fig.add_gridspec(tile_size_row-1, tile_size_column, height_ratios=h_ratio, width_ratios=w_ratio) # Add x-by-y grid
 
     
     #% RESIDUALS
@@ -537,129 +542,129 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, lags_use =
     ax.set_xlabel('Lag [km]')
     ax.legend(loc='lower right', fontsize = label_fontsize)
 
+    if spec_use == True:
+        #% P-SPEC
+        ax = fig.add_subplot(gs[2, :])
 
-    #% P-SPEC
-    ax = fig.add_subplot(gs[2, :])
+        nmax = seqsim_obj.grid_glq_nmax
+        ns = np.arange(1, nmax+1)
+        n_ticks = np.append(np.array([1, 5, 10,]), np.arange(15,np.max(ns)+spec_step, step=spec_step))
 
-    nmax = seqsim_obj.grid_glq_nmax
-    ns = np.arange(1, nmax+1)
-    n_ticks = np.append(np.array([1, 5, 10,]), np.arange(15,np.max(ns)+spec_step, step=spec_step))
+        N_ensembles = np.shape(seqsim_obj.g_spec)[-1]
 
-    N_ensembles = np.shape(seqsim_obj.g_spec)[-1]
-
-    if  spec_r_at == None:
-        spec_r_at = seqsim_obj.r_sat
-    
-    # Realizations
-    p_spec_pos_all = []
-    for i in np.arange(0,N_ensembles):
-        ens_cilm = np.array(pyshtools.shio.SHVectorToCilm(np.hstack((np.zeros(1,), seqsim_obj.g_spec[:,i]))))
-        p_spec_pos = pyshtools.gravmag.mag_spectrum(ens_cilm, spec_r_ref, spec_r_at, degrees = np.arange(1,np.shape(ens_cilm)[1]))
-        p_spec_pos = p_spec_pos[:nmax]
-        p_spec_pos_all.append(p_spec_pos)
-        if i == 0:
-            ax.plot(ns, p_spec_pos, color=color_rgb, label = "Posterior", linewidth = spec_lwidth)
-        else:
-            ax.plot(ns, p_spec_pos, color=color_rgb, linewidth = spec_lwidth)
-    p_spec_pos_all = np.array(p_spec_pos_all)
-
-    # Realization mean
-    ens_cilm = np.array(pyshtools.shio.SHVectorToCilm(np.hstack((np.zeros(1,), seqsim_obj.g_spec_mean))))
-    p_spec_pos_mean = pyshtools.gravmag.mag_spectrum(ens_cilm, spec_r_ref, spec_r_at, degrees = np.arange(1,np.shape(ens_cilm)[1]))
-    p_spec_pos_mean = p_spec_pos_mean[:nmax]
-    ax.plot(ns, p_spec_pos_mean, color="C2", label = "Posterior mean", linewidth = spec_lwidth)
-    
-    # Equivalent LSQ
-    if m_equiv_lsq is not None:
-        ens_cilm_lsq = np.array(pyshtools.shio.SHVectorToCilm(np.hstack((np.zeros(1,), seqsim_obj.g_lsq_equiv))))
-        p_spec_lsq = pyshtools.gravmag.mag_spectrum(ens_cilm_lsq, spec_r_ref, spec_r_at, degrees = np.arange(1,np.shape(ens_cilm_lsq)[1])) # degrees to skip zeroth degree
-        p_spec_lsq = p_spec_lsq[:nmax]
-        ax.plot(ns, p_spec_lsq, color = "C3", label = "Equivalent LSQ", linewidth = spec_lwidth, linestyle = "dashed")
-
-    # Prior
-    ens_cilm_compare = np.array(pyshtools.shio.SHVectorToCilm(np.hstack((np.zeros(1,), seqsim_obj.g_prior))))
-    p_spec_compare = pyshtools.gravmag.mag_spectrum(ens_cilm_compare, spec_r_ref, spec_r_at, degrees = np.arange(1,np.shape(ens_cilm_compare)[1])) # degrees to skip zeroth degree
-    p_spec_compare = p_spec_compare[:nmax]
-    ax.plot(ns, p_spec_compare, color = "k", label = "Synthetic truth", linewidth = spec_lwidth, linestyle = "dashed")
-
-    # Differences
-    color_rgb_diff = (0.8,0.8,0.8)
-    for i in np.arange(N_sim):
-        if i == 0:
-            ax.plot(ns, np.abs(p_spec_compare - p_spec_pos_all[i,:]), color=color_rgb_diff, label = "Truth - Posterior", linewidth = spec_lwidth, zorder = 0)
-        else:
-            ax.plot(ns, np.abs(p_spec_compare - p_spec_pos_all[i,:]), color=color_rgb_diff, linewidth = spec_lwidth, zorder = 0)
-
-    ax.plot(ns, np.abs(p_spec_compare - p_spec_pos_mean), color="C4", label = "Truth - Posterior mean", linewidth = spec_lwidth, zorder = 0.1)
-    ax.plot(ns, np.abs(p_spec_compare - p_spec_lsq), color = "C5", label = "Truth - Equivalent LSQ", linewidth = spec_lwidth, linestyle = "dashed", zorder = 0.2)
-
-
-    # Models
-    if model_dict is not None: # Load models
-        WDMAM2 = spio.loadmat('lithosphere_prior/grids/models/WDMAM2.mat')
-        LCS1 = load_shc("lithosphere_prior/grids/models/LCS-1.shc")
-        MF7 = load_shc("lithosphere_prior/grids/models/MF7.shc")
-        EMM2017 = np.loadtxt('lithosphere_prior/grids/models/EMM2017.COF',comments="%",skiprows=1)
-
-        # Add zero coefficient to comply with SHTOOLS methods
-        g_LCS1 = np.hstack((np.zeros(1,),LCS1[:,2]))
-        g_WDMAM2 = np.hstack((np.zeros(1,),WDMAM2["gh_wdmam"][:,0]))
-        g_EMM2017 = np.hstack((np.zeros(1,),gauss_vector(EMM2017, 790, i_n = 2, i_m = 3)))
-
-        # Also add "missing" coefficients for degree 0-15
-        g_MF7 = np.hstack((np.zeros(shc_vec_len(15,include_n_zero = True),),MF7[:,2])) 
-
-        # cilm
-        cilm_LCS1 = pyshtools.shio.SHVectorToCilm(g_LCS1)
-        cilm_MF7 = pyshtools.shio.SHVectorToCilm(g_MF7)
-        cilm_WDMAM2 = pyshtools.shio.SHVectorToCilm(g_WDMAM2)
-        cilm_EMM2017 = pyshtools.shio.SHVectorToCilm(g_EMM2017)
-
-        # Pomme
-        Gauss_in_pomme = np.loadtxt('lithosphere_prior/grids/models/POMME_6_main_field.txt')
-        g_pomme = np.hstack((np.zeros(1,), gauss_vector(Gauss_in_pomme, 60, i_n = 2, i_m = 3)))
-        cilm_pomme = pyshtools.shio.SHVectorToCilm(g_pomme)
-
-        # CHAOS 7
-        N_chaos = 20
-        CHAOS7 = load_CHAOS_matfile('lithosphere_prior/grids/models/CHAOS-7.mat')
-        chaos_time = mjd2000(2020, 1, 1)
-        g_CHAOS7 = np.hstack((np.zeros(1,),CHAOS7.synth_coeffs_tdep(chaos_time, nmax=20, deriv=0)))
-        cilm_CHAOS7 = pyshtools.shio.SHVectorToCilm(g_CHAOS7)
-        model_dict_def = {"LCS-1":cilm_LCS1, "MF7":cilm_MF7, "WDMAM2":cilm_WDMAM2, "EMM2017":cilm_EMM2017, "POMME-6":cilm_pomme, "CHAOS-7":cilm_CHAOS7}
-
-    if type(model_dict) is set or model_dict=="default":
-        if model_dict=="default":
-            model_dict = model_dict_def
-
-        i = 0
-        for key in model_dict:
-            ens_cilm = model_dict_def[key]
-            p_spec = pyshtools.gravmag.mag_spectrum(ens_cilm, spec_r_ref, spec_r_at, degrees = np.arange(1,np.shape(ens_cilm)[1]))
-
-            if key == "EMM2017" or key == "CHAOS-7":
-                use_ns = ns[:20]
-                use_p_spec = p_spec[:len(use_ns)]
-            elif key == "MF7" or key == "LCS-1" or key == "WDMAM2":
-                use_ns = ns[16-1:]
-                use_p_spec = p_spec[16-1:nmax]
-            elif key == "POMME-6":
-                use_ns = ns[:60]
-                use_p_spec = p_spec[:len(use_ns)]
+        if  spec_r_at == None:
+            spec_r_at = seqsim_obj.r_sat
+        
+        # Realizations
+        p_spec_pos_all = []
+        for i in np.arange(0,N_ensembles):
+            ens_cilm = np.array(pyshtools.shio.SHVectorToCilm(np.hstack((np.zeros(1,), seqsim_obj.g_spec[:,i]))))
+            p_spec_pos = pyshtools.gravmag.mag_spectrum(ens_cilm, spec_r_ref, spec_r_at, degrees = np.arange(1,np.shape(ens_cilm)[1]))
+            p_spec_pos = p_spec_pos[:nmax]
+            p_spec_pos_all.append(p_spec_pos)
+            if i == 0:
+                ax.plot(ns, p_spec_pos, color=color_rgb, label = "Posterior", linewidth = spec_lwidth)
             else:
-                use_ns = ns
-                use_p_spec = p_spec[:nmax]
+                ax.plot(ns, p_spec_pos, color=color_rgb, linewidth = spec_lwidth)
+        p_spec_pos_all = np.array(p_spec_pos_all)
 
-            ax.plot(use_ns, use_p_spec, color="C{}".format(i), label = key, linewidth = spec_lwidth)
-            i += 1
-    
-    ax.set_title('Power spectra comparison [r: {}km]'.format(spec_r_at))
-    ax.set_yscale('log')
-    ax.set_xlabel("degree n")
-    ax.set_ylabel("Power [nT²]")
-    ax.set_xticks(n_ticks) #fontsize="small"
-    ax.grid(alpha=0.3)
-    ax.legend(loc='lower center', fontsize = label_fontsize)
+        # Realization mean
+        ens_cilm = np.array(pyshtools.shio.SHVectorToCilm(np.hstack((np.zeros(1,), seqsim_obj.g_spec_mean))))
+        p_spec_pos_mean = pyshtools.gravmag.mag_spectrum(ens_cilm, spec_r_ref, spec_r_at, degrees = np.arange(1,np.shape(ens_cilm)[1]))
+        p_spec_pos_mean = p_spec_pos_mean[:nmax]
+        ax.plot(ns, p_spec_pos_mean, color="C2", label = "Posterior mean", linewidth = spec_lwidth)
+        
+        # Equivalent LSQ
+        if m_equiv_lsq is not None:
+            ens_cilm_lsq = np.array(pyshtools.shio.SHVectorToCilm(np.hstack((np.zeros(1,), seqsim_obj.g_lsq_equiv))))
+            p_spec_lsq = pyshtools.gravmag.mag_spectrum(ens_cilm_lsq, spec_r_ref, spec_r_at, degrees = np.arange(1,np.shape(ens_cilm_lsq)[1])) # degrees to skip zeroth degree
+            p_spec_lsq = p_spec_lsq[:nmax]
+            ax.plot(ns, p_spec_lsq, color = "C3", label = "Equivalent LSQ", linewidth = spec_lwidth, linestyle = "dashed")
+
+        # Prior
+        ens_cilm_compare = np.array(pyshtools.shio.SHVectorToCilm(np.hstack((np.zeros(1,), seqsim_obj.g_prior))))
+        p_spec_compare = pyshtools.gravmag.mag_spectrum(ens_cilm_compare, spec_r_ref, spec_r_at, degrees = np.arange(1,np.shape(ens_cilm_compare)[1])) # degrees to skip zeroth degree
+        p_spec_compare = p_spec_compare[:nmax]
+        ax.plot(ns, p_spec_compare, color = "k", label = "Synthetic truth", linewidth = spec_lwidth, linestyle = "dashed")
+
+        # Differences
+        color_rgb_diff = (0.8,0.8,0.8)
+        for i in np.arange(N_sim):
+            if i == 0:
+                ax.plot(ns, np.abs(p_spec_compare - p_spec_pos_all[i,:]), color=color_rgb_diff, label = "Truth - Posterior", linewidth = spec_lwidth, zorder = 0)
+            else:
+                ax.plot(ns, np.abs(p_spec_compare - p_spec_pos_all[i,:]), color=color_rgb_diff, linewidth = spec_lwidth, zorder = 0)
+
+        ax.plot(ns, np.abs(p_spec_compare - p_spec_pos_mean), color="C4", label = "Truth - Posterior mean", linewidth = spec_lwidth, zorder = 0.1)
+        ax.plot(ns, np.abs(p_spec_compare - p_spec_lsq), color = "C5", label = "Truth - Equivalent LSQ", linewidth = spec_lwidth, linestyle = "dashed", zorder = 0.2)
+
+
+        # Models
+        if model_dict is not None: # Load models
+            WDMAM2 = spio.loadmat('lithosphere_prior/grids/models/WDMAM2.mat')
+            LCS1 = load_shc("lithosphere_prior/grids/models/LCS-1.shc")
+            MF7 = load_shc("lithosphere_prior/grids/models/MF7.shc")
+            EMM2017 = np.loadtxt('lithosphere_prior/grids/models/EMM2017.COF',comments="%",skiprows=1)
+
+            # Add zero coefficient to comply with SHTOOLS methods
+            g_LCS1 = np.hstack((np.zeros(1,),LCS1[:,2]))
+            g_WDMAM2 = np.hstack((np.zeros(1,),WDMAM2["gh_wdmam"][:,0]))
+            g_EMM2017 = np.hstack((np.zeros(1,),gauss_vector(EMM2017, 790, i_n = 2, i_m = 3)))
+
+            # Also add "missing" coefficients for degree 0-15
+            g_MF7 = np.hstack((np.zeros(shc_vec_len(15,include_n_zero = True),),MF7[:,2])) 
+
+            # cilm
+            cilm_LCS1 = pyshtools.shio.SHVectorToCilm(g_LCS1)
+            cilm_MF7 = pyshtools.shio.SHVectorToCilm(g_MF7)
+            cilm_WDMAM2 = pyshtools.shio.SHVectorToCilm(g_WDMAM2)
+            cilm_EMM2017 = pyshtools.shio.SHVectorToCilm(g_EMM2017)
+
+            # Pomme
+            Gauss_in_pomme = np.loadtxt('lithosphere_prior/grids/models/POMME_6_main_field.txt')
+            g_pomme = np.hstack((np.zeros(1,), gauss_vector(Gauss_in_pomme, 60, i_n = 2, i_m = 3)))
+            cilm_pomme = pyshtools.shio.SHVectorToCilm(g_pomme)
+
+            # CHAOS 7
+            N_chaos = 20
+            CHAOS7 = load_CHAOS_matfile('lithosphere_prior/grids/models/CHAOS-7.mat')
+            chaos_time = mjd2000(2020, 1, 1)
+            g_CHAOS7 = np.hstack((np.zeros(1,),CHAOS7.synth_coeffs_tdep(chaos_time, nmax=20, deriv=0)))
+            cilm_CHAOS7 = pyshtools.shio.SHVectorToCilm(g_CHAOS7)
+            model_dict_def = {"LCS-1":cilm_LCS1, "MF7":cilm_MF7, "WDMAM2":cilm_WDMAM2, "EMM2017":cilm_EMM2017, "POMME-6":cilm_pomme, "CHAOS-7":cilm_CHAOS7}
+
+        if type(model_dict) is set or model_dict=="default":
+            if model_dict=="default":
+                model_dict = model_dict_def
+
+            i = 0
+            for key in model_dict:
+                ens_cilm = model_dict_def[key]
+                p_spec = pyshtools.gravmag.mag_spectrum(ens_cilm, spec_r_ref, spec_r_at, degrees = np.arange(1,np.shape(ens_cilm)[1]))
+
+                if key == "EMM2017" or key == "CHAOS-7":
+                    use_ns = ns[:20]
+                    use_p_spec = p_spec[:len(use_ns)]
+                elif key == "MF7" or key == "LCS-1" or key == "WDMAM2":
+                    use_ns = ns[16-1:]
+                    use_p_spec = p_spec[16-1:nmax]
+                elif key == "POMME-6":
+                    use_ns = ns[:60]
+                    use_p_spec = p_spec[:len(use_ns)]
+                else:
+                    use_ns = ns
+                    use_p_spec = p_spec[:nmax]
+
+                ax.plot(use_ns, use_p_spec, color="C{}".format(i), label = key, linewidth = spec_lwidth)
+                i += 1
+        
+        ax.set_title('Power spectra comparison [r: {}km]'.format(spec_r_at))
+        ax.set_yscale('log')
+        ax.set_xlabel("degree n")
+        ax.set_ylabel("Power [nT²]")
+        ax.set_xticks(n_ticks) #fontsize="small"
+        ax.grid(alpha=0.3)
+        ax.legend(loc='lower center', fontsize = label_fontsize)
 
     #fig.subplots_adjust(left=left, bottom=bottom, right=right, top=top, wspace=wspace, hspace=hspace)
 
@@ -1104,6 +1109,26 @@ def haversine(radius, lon1, lat1, lon2, lat2):
     return km
 
 
+def array_nm(nmax):
+    import numpy as np
+    # Generate (degree,order) pairs
+    N_SH_m_len = np.sum(np.arange(1,nmax+1)+1) # Number of (degree,order) pairs
+    m_max = np.arange(0,nmax+1) # Orders for degree N
+    m = np.zeros(N_SH_m_len) # Pre-allocate orders
+    n = np.zeros(N_SH_m_len) # Pre-allocate degrees
+    len_m_in = 0 # initiate count of inserted order lengths
+    for i in range(0,nmax): # walk through degrees - 1
+        m_in = m_max[:(i+2)] # Get orders for current degree, i+1
+        i_m_in = m_in + len_m_in # Determine index for insertion
+        m[i_m_in] = m_in # Insert orders for current degree, i+1
+        n[i_m_in] = i+1 # Insert current degree
+        len_m_in += len(m_in) # Update insertion index for next iteration
+
+    nm = np.hstack((n.reshape(-1,1),m.reshape(-1,1))) # Collect (degree,order) pairs
+
+    return nm
+
+
 def gauss_vector(g_in, N_deg, i_n = 0, i_m = 1):
     # Function for computing a vector of Gauss coefficicents given standard input
     import numpy as np
@@ -1126,6 +1151,63 @@ def gauss_vector(g_in, N_deg, i_n = 0, i_m = 1):
                 i_line += 1
 
     return g 
+
+
+def gauss_vector_zeroth(g_in, N_deg, i_n = 0, i_m = 1):
+    # Function for computing a vector of Gauss coefficicents given standard input
+    import numpy as np
+
+    i=0
+    i_line=0
+
+    g = np.zeros(2*np.sum(np.arange(1,N_deg+1)+1) - N_deg + 1)
+
+    for n in range(0,N_deg+1):
+        for m in range(0,n+1):
+            if m == 0: 
+                g[i]=g_in[i_line,i_n]
+                i += 1
+                i_line += 1            
+            else:
+                g[i]=g_in[i_line,i_n]
+                g[i+1]=g_in[i_line,i_m]
+                i+= 2  
+                i_line += 1
+
+    return g
+
+
+def sh_expand_glq(glq_field, glq_nmax, glq_w, glq_zero, set_nmax, set_norm = 1, geomag_scale = True, geomag_ref = 6371.2, geomag_r_at = 3480.0):
+    import pyshtools
+    import numpy as np
+
+    if geomag_scale == True:
+        # Schmidt semi-normalized
+        C_cilm = pyshtools.expand.SHExpandGLQ(glq_field.reshape(glq_nmax+1,2*glq_nmax+1), glq_w, glq_zero, [2, 1, set_nmax])
+        C_index = np.transpose(pyshtools.shio.SHCilmToCindex(C_cilm))
+
+        nm_C = array_nm(set_nmax)
+        C_corr_sh = 1/(nm_C[:,[0]]+1)*1/(geomag_ref/geomag_r_at)**(nm_C[:,[0]]+2)
+        C_index = C_index[1:,:]*C_corr_sh
+        C_vec = gauss_vector(C_index, set_nmax, i_n = 0, i_m = 1)
+    else:
+        C_cilm = pyshtools.expand.SHExpandGLQ(glq_field.reshape(glq_nmax+1,2*glq_nmax+1), glq_w, glq_zero, [set_norm, 1, set_nmax])
+        #C_index = np.transpose(pyshtools.shio.SHCilmToCindex(C_cilm))
+        #C_vec = gauss_vector_zeroth(C_index, set_nmax, i_n = 0, i_m = 1)
+        C_vec = pyshtools.shio.SHCilmToVector(C_cilm)
+    
+    return C_vec, C_cilm
+
+
+def sh_makegrid_glq(C_vec, glq_nmax, glq_zero, set_nmax, set_norm = 1):        
+    import pyshtools
+
+    C_cilm = pyshtools.shio.SHVectorToCilm(C_vec)
+
+    gridglq = pyshtools.expand.MakeGridGLQ(C_cilm, glq_zero, [glq_nmax, set_norm, 1, set_nmax, False])
+
+    return gridglq
+
 
 def shc_vec_len(nmax, nmin = 1, include_n_zero = False, include_zeros = False):
     """
@@ -1153,24 +1235,6 @@ def shc_vec_len(nmax, nmin = 1, include_n_zero = False, include_zeros = False):
 
     return vec_len
 
-def array_nm(nmax):
-    import numpy as np
-    # Generate (degree,order) pairs
-    N_SH_m_len = np.sum(np.arange(1,nmax+1)+1) # Number of (degree,order) pairs
-    m_max = np.arange(0,nmax+1) # Orders for degree N
-    m = np.zeros(N_SH_m_len) # Pre-allocate orders
-    n = np.zeros(N_SH_m_len) # Pre-allocate degrees
-    len_m_in = 0 # initiate count of inserted order lengths
-    for i in range(0,nmax): # walk through degrees - 1
-        m_in = m_max[:(i+2)] # Get orders for current degree, i+1
-        i_m_in = m_in + len_m_in # Determine index for insertion
-        m[i_m_in] = m_in # Insert orders for current degree, i+1
-        n[i_m_in] = i+1 # Insert current degree
-        len_m_in += len(m_in) # Update insertion index for next iteration
-
-    nm = np.hstack((n.reshape(-1,1),m.reshape(-1,1))) # Collect (degree,order) pairs
-
-    return nm
 
 def plot_clip_loss(epoch, train_loss, valid_loss, train_L_Li, train_L_C, valid_L_Li, valid_L_C, figsize=(10,5)):
     import numpy as np
