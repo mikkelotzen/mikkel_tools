@@ -172,10 +172,10 @@ def plot_cartopy_global(lat = None, lon = None, data=None, limits_data = None, s
         axgr[0].set_global()
         
         if data is None:
-            axgr[0].scatter(lon, lat, s=point_size, transform=ccrs.PlateCarree(), cmap=cmap)
+            axgr[0].scatter(lon, lat, s=point_size, transform=ccrs.PlateCarree(), cmap=cm_zesty_cbf)
 
         else:
-            cb = axgr[0].scatter(lon, lat, s=point_size, c=data, transform=ccrs.PlateCarree(), vmin = vmin, vmax = vmax, cmap=cmap, norm = norm_in)
+            cb = axgr[0].scatter(lon, lat, s=point_size, c=data, transform=ccrs.PlateCarree(), vmin = vmin, vmax = vmax, cmap=cm_zesty_cbf, norm = norm_in)
 
             cax,kw = matplotlib.colorbar.make_axes(axgr[0],location='bottom', shrink=0.7, aspect=40, fraction = 0.23)
             out=fig.colorbar(cb,cax=cax,extend='neither',**kw)
@@ -207,7 +207,7 @@ def plot_cartopy_global(lat = None, lon = None, data=None, limits_data = None, s
             shift_axis = np.min(shape)
             data_in = np.hstack((data_in[:,shift_axis:],data_in[:,:shift_axis]))
 
-        cs = ax.imshow(data_in,  vmin = vmin, vmax = vmax, cmap = cmap, norm=norm_in, transform=ccrs.PlateCarree(), extent=[-180, 180, -90, 90])
+        cs = ax.imshow(data_in,  vmin = vmin, vmax = vmax, cmap = cm_zesty_cbf, norm=norm_in, transform=ccrs.PlateCarree(), extent=[-180, 180, -90, 90])
 
         cax,kw = matplotlib.colorbar.make_axes(ax,location='bottom', pad=0.02, shrink=0.7, aspect=60)
         out=fig.colorbar(cs,cax=cax,extend='neither',**kw)
@@ -328,7 +328,7 @@ def plot_cartopy_animation(lat = None, lon = None, data=None, limits_data = None
         axgr[0].set_global()
         
 
-        cb = axgr[0].scatter(lon, lat, s=point_size, c=limits_data, transform=ccrs.PlateCarree(), vmin = vmin, vmax = vmax, cmap=cmap, norm = norm_in)
+        cb = axgr[0].scatter(lon, lat, s=point_size, c=limits_data, transform=ccrs.PlateCarree(), vmin = vmin, vmax = vmax, cmap=cm_zesty_cbf, norm = norm_in)
 
         cax,kw = matplotlib.colorbar.make_axes(axgr[0],location='bottom', shrink=0.7, aspect=40, fraction = 0.23)
         out=fig.colorbar(cb,cax=cax,extend='neither',**kw)
@@ -362,7 +362,7 @@ def plot_cartopy_animation(lat = None, lon = None, data=None, limits_data = None
         # out.set_label('%s %s' %(title,unit), size=10)
 
         def animate(i):
-            cb = axgr[0].scatter(lon, lat, s=point_size, c=data[:,i], transform=ccrs.PlateCarree(), cmap=cmap, norm = norm_in, vmin = vmin, vmax = vmax)
+            cb = axgr[0].scatter(lon, lat, s=point_size, c=data[:,i], transform=ccrs.PlateCarree(), cmap=cm_zesty_cbf, norm = norm_in, vmin = vmin, vmax = vmax)
             return (cb,)
         
     else:
@@ -387,7 +387,7 @@ def plot_cartopy_animation(lat = None, lon = None, data=None, limits_data = None
         if shift_grid == True:
             data_init = np.hstack((data_init[:,shape[0]:],data_init[:,:shape[0]]))
 
-        cs = ax.imshow(data_init,  vmin = vmin, vmax = vmax, cmap = cmap, norm=norm_in, transform=ccrs.PlateCarree(), extent=[-180, 180, -90, 90])
+        cs = ax.imshow(data_init,  vmin = vmin, vmax = vmax, cmap = cm_zesty_cbf, norm=norm_in, transform=ccrs.PlateCarree(), extent=[-180, 180, -90, 90])
 
         cax,kw = matplotlib.colorbar.make_axes(ax,location='bottom', pad=0.02, shrink=0.7, aspect=60)
         out=fig.colorbar(cs,cax=cax,extend='neither',**kw)
@@ -407,7 +407,7 @@ def plot_cartopy_animation(lat = None, lon = None, data=None, limits_data = None
             #data_i = np.flipud(np.ravel(data_i).reshape(shape[0],shape[1]))
             if shift_grid == True:
                 data_i = np.hstack((data_i[:,shape[0]:],data_i[:,:shape[0]]))
-            cs = ax.imshow(data_i,  vmin = vmin, vmax = vmax, cmap = cmap, norm=norm_in, transform=ccrs.PlateCarree(), extent=[-180, 180, -90, 90])
+            cs = ax.imshow(data_i,  vmin = vmin, vmax = vmax, cmap = cm_zesty_cbf, norm=norm_in, transform=ccrs.PlateCarree(), extent=[-180, 180, -90, 90])
             return (cs,)
 
     anim = animation.FuncAnimation(fig, animate, frames=frames, interval=interval)
@@ -429,8 +429,8 @@ def plot_cartopy_animation(lat = None, lon = None, data=None, limits_data = None
     #return HTML(anim.to_html5_video())
     #return anim
 
-def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, lags_use = 300, hist_bins = 100, res_bins = 200, spec_use = True,
-                          spec_step = 5, spec_lwidth = 1, spec_r_at = None, spec_r_ref = 6371.2, model_dict = None,
+def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, truth_obj = None, lags_use = 300, hist_bins = 100, res_bins = 200, spec_use = True,
+                          spec_step = 5, spec_lwidth = 1, spec_r_at = None, spec_r_ref = 6371.2, spec_show_differences = True, model_dict = None,
                           left=0.02, bottom=0.05, right=0.98, top=0.98, wspace = 0.05, hspace=-0.72, label_fontsize = "x-small",
                           tile_size_row = 3, tile_size_column = 2, figsize=(9,14), savefig = False, save_string = "", save_dpi = 300):
     import numpy as np
@@ -501,7 +501,12 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, lags_use =
 
     y,binEdges=np.histogram(seqsim_obj.data,bins=hist_bins, density = False)
     bincenters = 0.5*(binEdges[1:]+binEdges[:-1])
-    ax.plot(bincenters,y,'k--',label='Synthetic truth')
+    ax.plot(bincenters,y,'C4',label='Training image',linestyle = "dashed")
+
+    if truth_obj is not None:
+        y,binEdges=np.histogram(truth_obj.data,bins=hist_bins, density = False)
+        bincenters = 0.5*(binEdges[1:]+binEdges[:-1])
+        ax.plot(bincenters,y,'k--',label='Synthetic truth')
 
     ax.set_title('Histogram reproduction')
     ax.legend(loc='upper right', fontsize = label_fontsize) #legend(bbox_to_anchor=(1.05, 1), loc='upper left', borderaxespad=0.)
@@ -512,6 +517,7 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, lags_use =
     #% SEMI-VARIOGRAM
     ax = fig.add_subplot(gs[1, :])
 
+    # Realizations
     for i in np.arange(0,N_sim):
         seqsim_obj.sv_m_DSS(len(seqsim_obj.data), 1, seqsim_obj.m_DSS[:,[i]], seqsim_obj.sort_d, seqsim_obj.n_lags, seqsim_obj.max_cloud)
         if i == 0:
@@ -519,23 +525,30 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, lags_use =
         else:
             ax.plot(seqsim_obj.lags[:lags_use], seqsim_obj.pics_m_DSS[:lags_use,0], color = color_rgb, linewidth = 0.6) 
 
+    # Model SV
+    lags_use_max = np.max(seqsim_obj.lags[:lags_use])
+    lags_use_idx_model = seqsim_obj.lags_sv_curve<=lags_use_max
+    plot_model_lag = seqsim_obj.lags_sv_curve[lags_use_idx_model]
+    plot_model_sv = seqsim_obj.sv_curve[lags_use_idx_model]
+    ax.plot(plot_model_lag, plot_model_sv, color='C1', label='TI derived model semi-variogram')
+
+    # Training image
+    seqsim_obj.sv_m_DSS(len(seqsim_obj.data), 1, seqsim_obj.data.reshape(-1,1), seqsim_obj.sort_d, seqsim_obj.n_lags, seqsim_obj.max_cloud)
+    ax.plot(seqsim_obj.lags[:lags_use], seqsim_obj.pics_m_DSS[:lags_use,0],'o', markersize=2, color = 'C4', label='Training image') #linewidth = 1.0, linestyle = "dashed"
+
+    # Realization mean
     seqsim_obj.sv_m_DSS(len(seqsim_obj.data), 1, np.mean(seqsim_obj.m_DSS,axis=1).reshape(-1,1), seqsim_obj.sort_d, seqsim_obj.n_lags, seqsim_obj.max_cloud)
     ax.plot(seqsim_obj.lags[:lags_use], seqsim_obj.pics_m_DSS[:lags_use,0], color = "C2", label='Posterior mean', linewidth = 1.0)
 
+    # Equivalent LSQ
     if m_equiv_lsq is not None:
         seqsim_obj.sv_m_DSS(len(seqsim_obj.data), 1, np.array(m_equiv_lsq), seqsim_obj.sort_d, seqsim_obj.n_lags, seqsim_obj.max_cloud)
         ax.plot(seqsim_obj.lags[:lags_use], seqsim_obj.pics_m_DSS[:lags_use,0], color = 'C3', label='Equivalent LSQ', linestyle = "dashed", linewidth = 1.0)    
 
-    seqsim_obj.sv_m_DSS(len(seqsim_obj.data), 1, seqsim_obj.data.reshape(-1,1), seqsim_obj.sort_d, seqsim_obj.n_lags, seqsim_obj.max_cloud)
-    ax.plot(seqsim_obj.lags[:lags_use], seqsim_obj.pics_m_DSS[:lags_use,0], 'k', label='Synthetic truth', linewidth = 1.0, linestyle = "dashed") 
-
-    lags_use_max = np.max(seqsim_obj.lags[:lags_use])
-    lags_use_idx_model = seqsim_obj.lags_sv_curve<=lags_use_max
-
-    plot_model_lag = seqsim_obj.lags_sv_curve[lags_use_idx_model]
-    plot_model_sv = seqsim_obj.sv_curve[lags_use_idx_model]
-
-    ax.plot(plot_model_lag, plot_model_sv, color='C1', label='TI derived model semi-variogram')
+    # Observed truth
+    if truth_obj is not None:
+        seqsim_obj.sv_m_DSS(len(truth_obj.data), 1, truth_obj.data.reshape(-1,1), seqsim_obj.sort_d, seqsim_obj.n_lags, seqsim_obj.max_cloud)
+        ax.plot(seqsim_obj.lags[:lags_use], seqsim_obj.pics_m_DSS[:lags_use,0], 'k', label='Synthetic truth', linewidth = 1.0, linestyle = "dashed") 
 
     ax.set_title('Semi-variogram reproduction')
     ax.set_ylabel('Semi-variance [nT²]')
@@ -546,7 +559,7 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, lags_use =
         #% P-SPEC
         ax = fig.add_subplot(gs[2, :])
 
-        nmax = seqsim_obj.grid_glq_nmax
+        nmax = seqsim_obj.N_SH
         ns = np.arange(1, nmax+1)
         n_ticks = np.append(np.array([1, 5, 10,]), np.arange(15,np.max(ns)+spec_step, step=spec_step))
 
@@ -582,21 +595,29 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, lags_use =
             ax.plot(ns, p_spec_lsq, color = "C3", label = "Equivalent LSQ", linewidth = spec_lwidth, linestyle = "dashed")
 
         # Prior
-        ens_cilm_compare = np.array(pyshtools.shio.SHVectorToCilm(np.hstack((np.zeros(1,), seqsim_obj.g_prior))))
-        p_spec_compare = pyshtools.gravmag.mag_spectrum(ens_cilm_compare, spec_r_ref, spec_r_at, degrees = np.arange(1,np.shape(ens_cilm_compare)[1])) # degrees to skip zeroth degree
-        p_spec_compare = p_spec_compare[:nmax]
-        ax.plot(ns, p_spec_compare, color = "k", label = "Synthetic truth", linewidth = spec_lwidth, linestyle = "dashed")
+        ens_cilm_prior = np.array(pyshtools.shio.SHVectorToCilm(np.hstack((np.zeros(1,), seqsim_obj.g_prior))))
+        p_spec_prior = pyshtools.gravmag.mag_spectrum(ens_cilm_prior, spec_r_ref, spec_r_at, degrees = np.arange(1,np.shape(ens_cilm_prior)[1])) # degrees to skip zeroth degree
+        p_spec_prior = p_spec_prior[:nmax]
+        ax.plot(ns, p_spec_prior, color = "C4", label = "Training image", linewidth = spec_lwidth, linestyle = "dashed")
 
-        # Differences
-        color_rgb_diff = (0.8,0.8,0.8)
-        for i in np.arange(N_sim):
-            if i == 0:
-                ax.plot(ns, np.abs(p_spec_compare - p_spec_pos_all[i,:]), color=color_rgb_diff, label = "Truth - Posterior", linewidth = spec_lwidth, zorder = 0)
-            else:
-                ax.plot(ns, np.abs(p_spec_compare - p_spec_pos_all[i,:]), color=color_rgb_diff, linewidth = spec_lwidth, zorder = 0)
+        # Observed truth
+        if truth_obj is not None:
+            ens_cilm_compare = np.array(pyshtools.shio.SHVectorToCilm(np.hstack((np.zeros(1,), truth_obj.g_prior))))
+            p_spec_compare = pyshtools.gravmag.mag_spectrum(ens_cilm_compare, spec_r_ref, spec_r_at, degrees = np.arange(1,np.shape(ens_cilm_compare)[1])) # degrees to skip zeroth degree
+            p_spec_compare = p_spec_compare[:nmax]
+            ax.plot(ns, p_spec_compare, color = "k", label = "Synthetic truth", linewidth = spec_lwidth, linestyle = "dashed")
 
-        ax.plot(ns, np.abs(p_spec_compare - p_spec_pos_mean), color="C4", label = "Truth - Posterior mean", linewidth = spec_lwidth, zorder = 0.1)
-        ax.plot(ns, np.abs(p_spec_compare - p_spec_lsq), color = "C5", label = "Truth - Equivalent LSQ", linewidth = spec_lwidth, linestyle = "dashed", zorder = 0.2)
+        if spec_show_differences == True:
+            # Differences
+            color_rgb_diff = (0.8,0.8,0.8)
+            for i in np.arange(N_sim):
+                if i == 0:
+                    ax.plot(ns, np.abs(p_spec_compare - p_spec_pos_all[i,:]), color=color_rgb_diff, label = "Truth - Posterior", linewidth = spec_lwidth, zorder = 0)
+                else:
+                    ax.plot(ns, np.abs(p_spec_compare - p_spec_pos_all[i,:]), color=color_rgb_diff, linewidth = spec_lwidth, zorder = 0)
+
+            ax.plot(ns, np.abs(p_spec_compare - p_spec_pos_mean), color="C5", label = "Truth - Posterior mean", linewidth = spec_lwidth, zorder = 0.1)
+            ax.plot(ns, np.abs(p_spec_compare - p_spec_lsq), color = "C6", label = "Truth - Equivalent LSQ", linewidth = spec_lwidth, linestyle = "dashed", zorder = 0.2)
 
 
         # Models
@@ -676,7 +697,7 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, lags_use =
 
 def plot_ensemble_map_tiles(lon, lat, ensemble_fields, field_compare = None, field_lsq = None, field_mean = None, tile_size_row = 3, tile_size_column = 3, figsize=(8,8), limit_for_SF = 10**6, point_size = 3,
                             left=0.02, bottom=0.05, right=0.98, top=0.98, wspace = 0.05, hspace=-0.72, coast_width = 0.1, coast_color = "grey", cbar_mm_factor = 3/4, unit_transform_n_to_m = False,
-                            savefig = False, save_string = "", save_dpi = 300,  projection = ccrs.Mollweide(), cbar_h = 0.07, cbar_text = "nT", cbar_text_color = "grey", cbar_frac = 0.15, use_gridlines = False, gridlines_width = 0.2, gridlines_alpha = 0.1):
+                            savefig = False, save_string = "", save_dpi = 300,  projection = ccrs.Mollweide(), cbar_h = 0.07, cbar_text = "nT", cbar_text_color = "grey", use_gridlines = False, gridlines_width = 0.2, gridlines_alpha = 0.1):
     import numpy as np
     import matplotlib.pyplot as plt
     import matplotlib.ticker as tick
@@ -686,11 +707,12 @@ def plot_ensemble_map_tiles(lon, lat, ensemble_fields, field_compare = None, fie
 
     if unit_transform_n_to_m == True:
         ensemble_fields = ensemble_fields*10**(-6)
+        field_mean = field_mean*10**(-6)
         if field_compare is not None:
             field_compare = field_compare*10**(-6)
             if field_lsq is not None:
                 field_lsq = field_lsq*10**(-6)
-            field_mean = field_mean*10**(-6)
+            
 
     class MidpointNormalize(colors.Normalize):
         def __init__(self, vmin=None, vmax=None, midpoint=None, clip=False):
@@ -709,18 +731,21 @@ def plot_ensemble_map_tiles(lon, lat, ensemble_fields, field_compare = None, fie
 
     # Generate ratio lists
     h_ratio = [1]*tile_size_row
-    h_ratio.append(cbar_h)
+    #h_ratio.append(cbar_h)
     w_ratio = [1]*tile_size_column
 
-    #gs = fig.add_gridspec(tile_size_row+1, tile_size_column, height_ratios=h_ratio, width_ratios=w_ratio) # Add x-by-y grid
-
-    #gs.update(left=0.02, bottom=0.02, right=0.98, top=0.98, wspace=wspace, hspace=hspace)
-
     if field_compare is None:
+        h_ratio.append(1)
+        h_ratio[-2] = cbar_h
         gs = fig.add_gridspec(tile_size_row+1, tile_size_column, height_ratios=h_ratio, width_ratios=w_ratio) # Add x-by-y grid
-        field_max = np.max(ensemble_fields)
-        field_min = np.min(ensemble_fields)
+        #field_max = np.max(ensemble_fields)
+        #field_min = np.min(ensemble_fields)
+        field_max_true = np.max(ensemble_fields)
+        field_min_true = np.min(ensemble_fields)
+        field_max = cbar_mm_factor*np.max((abs(field_max_true),abs(field_min_true)))
+        field_min = -field_max
     else:
+        h_ratio.append(cbar_h)
         h_ratio.append(0.01)
         h_ratio.append(1.1)
         gs = fig.add_gridspec(tile_size_row+3, tile_size_column, height_ratios=h_ratio, width_ratios=w_ratio) # Add x-by-y grid
@@ -737,16 +762,22 @@ def plot_ensemble_map_tiles(lon, lat, ensemble_fields, field_compare = None, fie
             ax = fig.add_subplot(gs[i, j], projection=projection)
             ax.set_global()
 
-            if np.logical_and(i == tile_size_row-1, j == 0):
+            if np.logical_and.reduce((i == tile_size_row-1, j == 0, field_compare is not None)):
                 plot_field = field_mean
                 ax.set_title("Posterior mean")
-                #ax.set_xlabel("Mean")
-            elif np.logical_and(i == tile_size_row-1, j == tile_size_column-1):
-                #plot_field_idx_max = np.argmax(np.abs(np.diff(ensemble_fields,axis=1)),axis=1)
-                #plot_field = np.diff(ensemble_fields,axis=1)[np.arange(0,len(plot_field_idx_max)),plot_field_idx_max]
+            elif np.logical_and.reduce((i == tile_size_row-1, j == 0, field_compare is None)):
+                ax = fig.add_subplot(gs[i+1, j], projection=projection)
+                ax.set_global()
+                plot_field = field_mean
+                ax.set_title("Posterior mean")
+            elif np.logical_and.reduce((i == tile_size_row-1, j == tile_size_column-1, field_compare is not None)):
                 plot_field = np.std(ensemble_fields,axis=1)
                 ax.set_title("Posterior std. deviation")
-                #ax.set_xlabel("Standard deviation")
+            elif np.logical_and.reduce((i == tile_size_row-1, j == tile_size_column-1, field_compare is None)):
+                ax = fig.add_subplot(gs[i+1, j], projection=projection)
+                ax.set_global()
+                plot_field = np.std(ensemble_fields,axis=1)
+                ax.set_title("Posterior std. deviation")
             else:
                 plot_field = ensemble_fields[:,ens_n]
 
@@ -779,7 +810,10 @@ def plot_ensemble_map_tiles(lon, lat, ensemble_fields, field_compare = None, fie
                     gl.left_labels = True
                     gl.ylabel_style = {'size': 7, 'color': 'gray'}
 
-    cbax = plt.subplot(gs[tile_size_row,:]) # Set colorbar position
+    if field_compare is None:
+        cbax = plt.subplot(gs[tile_size_row-1,:]) # Set colorbar position
+    else:
+        cbax = plt.subplot(gs[tile_size_row,:]) # Set colorbar position
 
     if field_max>limit_for_SF:
         cb = Colorbar(mappable = im, ax = cbax, orientation = "horizontal", format = SF) # im, ax=ax, 
@@ -857,6 +891,111 @@ def plot_ensemble_map_tiles(lon, lat, ensemble_fields, field_compare = None, fie
 
     if savefig == True:
         fig.savefig('map_tiles_{}.pdf'.format(save_string), bbox_inches='tight', dpi = save_dpi) 
+
+    fig.show()
+
+
+def plot_global(lat = None, lon = None, data=None, limits_data = None, 
+                cbar_h = 0.05, cbar_mm_factor = 3/4, cbar_text = "nT", cbar_text_color = "grey",
+                unit_transform_n_to_m = False, projection_transformation = "Mollweide", figsize=(10,10),
+                coast_width = 0.4, coast_color = "grey", limit_for_SF = 10**6,
+                left=0.03, bottom=0.12, right=0.97, top=0.95, wspace = 0.05, hspace=0.25,
+                title='Cartopy Earth plot', lat_0 = 0.0, lon_0 = 0.0, point_size=2,
+                savefig = False, save_dpi = 100, save_string ="",
+                use_gridlines = False, gridlines_width = 0.2, gridlines_alpha = 0.1):
+
+    import numpy as np
+    import matplotlib.pyplot as plt
+    import matplotlib.ticker as tick
+    import cartopy.crs as ccrs
+    import matplotlib.colors as colors
+    from matplotlib.colorbar import Colorbar
+
+    # Plotting init
+    if projection_transformation == "ortho":
+        projection = ccrs.Orthographic(central_longitude=lon_0, central_latitude=lat_0)
+    else:
+        projection = ccrs.Mollweide()
+
+    if unit_transform_n_to_m == True:
+        data = data*10**(-6)
+        if limits_data is not None:
+            limits_data = limits_data*10**(-6)            
+
+    class MidpointNormalize(colors.Normalize):
+        def __init__(self, vmin=None, vmax=None, midpoint=None, clip=False):
+            self.midpoint = midpoint
+            colors.Normalize.__init__(self, vmin, vmax, clip)
+    
+        def __call__(self, value, clip=None):
+            x, y = [self.vmin, self.midpoint, self.vmax], [0.0, 0.5, 1.0]
+            return np.ma.masked_array(np.interp(value, x, y))
+
+    SF = tick.ScalarFormatter() # Formatter for colorbar
+    SF.set_powerlimits((6, 6)) # Set sci exponent used    
+
+    fig = plt.figure(figsize=figsize, constrained_layout=False, dpi = save_dpi) # Initiate figure with constrained layout
+    fig.suptitle("{}".format(title))
+
+    # Generate ratio lists
+    h_ratio = [1]
+    h_ratio.append(cbar_h)
+    w_ratio = [1]
+
+    # Gridspec
+    gs = fig.add_gridspec(2, 1, height_ratios=h_ratio, width_ratios=w_ratio) # Add x-by-y grid
+
+    # Plotting ranges and norms
+    if limits_data is None:
+        field_max_true = np.max(data)
+        field_min_true = np.min(data)
+    else:
+        field_max_true = np.max(limits_data)
+        field_min_true = np.min(limits_data)
+
+    field_max = cbar_mm_factor*np.max((abs(field_max_true),abs(field_min_true)))
+    field_min = -field_max
+    
+    ax = fig.add_subplot(gs[0, 0], projection=projection)
+    ax.set_global()
+    #ax.set_title("{}".format(title))
+
+    im = ax.scatter(lon, lat, s=point_size, c=data, transform=ccrs.PlateCarree(), rasterized=True, vmin = field_min, vmax = field_max, cmap=cm_zesty_cbf, norm = MidpointNormalize(midpoint=0.))
+    ax.coastlines(linewidth = coast_width, color = coast_color)
+    
+    if use_gridlines == True:
+        from cartopy.mpl.gridliner import LONGITUDE_FORMATTER, LATITUDE_FORMATTER
+        gl_lines = ax.gridlines(draw_labels=False,
+            linewidth=gridlines_width, color='black', alpha=gridlines_alpha, linestyle='-')
+        gl_lines.xlines = True
+        gl_lines.xlocator = tick.FixedLocator([-180, -135, -90, -45, 0, 45, 90, 135, 180])
+        gl_lines.ylocator = tick.FixedLocator([-90, -60, -30, 0, 30, 60, 90])
+        gl = ax.gridlines(alpha=0.0)
+
+        gl.xlines = True
+        gl.xformatter = LONGITUDE_FORMATTER
+        gl.yformatter = LATITUDE_FORMATTER
+        gl.ylocator = tick.FixedLocator([-90, -60, -30, 0, 30, 60, 90])
+        gl.xlocator = tick.FixedLocator([-180, -135, -90, -45, 0, 45, 90, 135])
+        gl.top_labels = True
+        gl.xlabel_style = {'size': 7, 'color': 'gray'}
+        gl.left_labels = True
+        gl.ylabel_style = {'size': 7, 'color': 'gray'}
+
+
+    cbax = plt.subplot(gs[1,:]) # Set colorbar position
+
+    if field_max>limit_for_SF:
+        cb = Colorbar(mappable = im, ax = cbax, orientation = "horizontal", format = SF) # im, ax=ax, 
+    else:
+        cb = Colorbar(mappable = im, ax = cbax, orientation = "horizontal")
+
+    cb.set_label(cbar_text)
+        
+    fig.subplots_adjust(left=left, bottom=bottom, right=right, top=top, wspace=wspace, hspace=hspace)
+
+    if savefig == True:
+        fig.savefig('map_{}.pdf'.format(save_string), bbox_inches='tight', dpi = save_dpi) 
 
     fig.show()
 
@@ -1183,10 +1322,10 @@ def sh_expand_glq(glq_field, glq_nmax, glq_w, glq_zero, set_nmax, set_norm = 1, 
 
     if geomag_scale == True:
         # Schmidt semi-normalized
-        C_cilm = pyshtools.expand.SHExpandGLQ(glq_field.reshape(glq_nmax+1,2*glq_nmax+1), glq_w, glq_zero, [2, 1, set_nmax])
+        C_cilm = pyshtools.expand.SHExpandGLQ(glq_field.reshape(glq_nmax+1,2*glq_nmax+1), glq_w, glq_zero, [2, 1, glq_nmax])
         C_index = np.transpose(pyshtools.shio.SHCilmToCindex(C_cilm))
 
-        nm_C = array_nm(set_nmax)
+        nm_C = array_nm(glq_nmax)
         C_corr_sh = 1/(nm_C[:,[0]]+1)*1/(geomag_ref/geomag_r_at)**(nm_C[:,[0]]+2)
         C_index = C_index[1:,:]*C_corr_sh
         C_vec = gauss_vector(C_index, set_nmax, i_n = 0, i_m = 1)
@@ -1300,8 +1439,8 @@ def plot_clip_grid_comparison(epoch_i, Li_out, C_out, sat_in, batch_labels, clip
             x, y = [self.vmin, self.midpoint, self.vmax], [0.0, 0.5, 1.0]
             return np.ma.masked_array(np.interp(value, x, y))
 
-    size_lat_in = clip.grid_even_shape[1]
-    size_lon_in = clip.grid_even_shape[0]
+    size_lat_in = clip.grid_shape[1]
+    size_lon_in = clip.grid_shape[0]
     size_lat_out_Li = clip.ens_Li.shape[1]
     size_lon_out_Li = clip.ens_Li.shape[2]
     size_lat_out_C = clip.ens_C.shape[1]
@@ -1504,8 +1643,8 @@ def plot_clip_grid_residuals(epoch_i, Li_out, C_out, sat_in, batch_labels, clip,
     import matplotlib.pyplot as plt
     import matplotlib.ticker as tick
 
-    size_lat_in = clip.grid_even_shape[1]
-    size_lon_in = clip.grid_even_shape[0]
+    size_lat_in = clip.grid_shape[1]
+    size_lon_in = clip.grid_shape[0]
     size_lat_out_Li = clip.ens_Li.shape[1]
     size_lon_out_Li = clip.ens_Li.shape[2]
     size_lat_out_C = clip.ens_C.shape[1]
