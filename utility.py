@@ -530,7 +530,7 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, truth_obj 
     lags_use_idx_model = seqsim_obj.lags_sv_curve<=lags_use_max
     plot_model_lag = seqsim_obj.lags_sv_curve[lags_use_idx_model]
     plot_model_sv = seqsim_obj.sv_curve[lags_use_idx_model]
-    ax.plot(plot_model_lag, plot_model_sv, color='C1', label='TI derived model semi-variogram')
+    ax.plot(plot_model_lag, plot_model_sv, color='C1', label='Model')
 
     # Training image
     seqsim_obj.sv_m_DSS(len(seqsim_obj.data), 1, seqsim_obj.data.reshape(-1,1), seqsim_obj.sort_d, seqsim_obj.n_lags, seqsim_obj.max_cloud)
@@ -576,9 +576,9 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, truth_obj 
             p_spec_pos = p_spec_pos[:nmax]
             p_spec_pos_all.append(p_spec_pos)
             if i == 0:
-                ax.plot(ns, p_spec_pos, color=color_rgb, label = "Posterior", linewidth = spec_lwidth)
+                ax.plot(ns, p_spec_pos, color=color_rgb, label = "Posterior", linewidth = spec_lwidth, zorder = 0.05)
             else:
-                ax.plot(ns, p_spec_pos, color=color_rgb, linewidth = spec_lwidth)
+                ax.plot(ns, p_spec_pos, color=color_rgb, linewidth = spec_lwidth, zorder = 0.05)
         p_spec_pos_all = np.array(p_spec_pos_all)
 
         # Realization mean
@@ -609,15 +609,16 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, truth_obj 
 
         if spec_show_differences == True:
             # Differences
-            color_rgb_diff = (0.8,0.8,0.8)
+            #color_rgb_diff = (0.8,0.8,0.8)
+            color_rgb_diff = "C0"
             for i in np.arange(N_sim):
                 if i == 0:
                     ax.plot(ns, np.abs(p_spec_compare - p_spec_pos_all[i,:]), color=color_rgb_diff, label = "Truth - Posterior", linewidth = spec_lwidth, zorder = 0)
                 else:
                     ax.plot(ns, np.abs(p_spec_compare - p_spec_pos_all[i,:]), color=color_rgb_diff, linewidth = spec_lwidth, zorder = 0)
 
-            ax.plot(ns, np.abs(p_spec_compare - p_spec_pos_mean), color="C5", label = "Truth - Posterior mean", linewidth = spec_lwidth, zorder = 0.1)
-            ax.plot(ns, np.abs(p_spec_compare - p_spec_lsq), color = "C6", label = "Truth - Equivalent LSQ", linewidth = spec_lwidth, linestyle = "dashed", zorder = 0.2)
+            ax.plot(ns, np.abs(p_spec_compare - p_spec_pos_mean), color="C1", label = "Truth - Posterior mean", linewidth = spec_lwidth, zorder = 0.1)
+            ax.plot(ns, np.abs(p_spec_compare - p_spec_lsq), color = "C5", label = "Truth - Equivalent LSQ", linewidth = spec_lwidth, linestyle = "dashed", zorder = 0.2)
 
 
         # Models
@@ -735,7 +736,7 @@ def plot_ensemble_map_tiles(lon, lat, ensemble_fields, field_compare = None, fie
     w_ratio = [1]*tile_size_column
 
     if field_compare is None:
-        h_ratio.append(1)
+        h_ratio.append(1.5)
         h_ratio[-2] = cbar_h
         gs = fig.add_gridspec(tile_size_row+1, tile_size_column, height_ratios=h_ratio, width_ratios=w_ratio) # Add x-by-y grid
         #field_max = np.max(ensemble_fields)
