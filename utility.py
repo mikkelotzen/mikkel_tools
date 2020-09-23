@@ -511,7 +511,7 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, truth_obj 
     ax.set_title('Histogram reproduction')
     ax.legend(loc='upper right', fontsize = label_fontsize) #legend(bbox_to_anchor=(1.05, 1), loc='upper left', borderaxespad=0.)
     ax.set_xlabel('Field value [nT]')
-    ax.set_ylabel('Pdf')
+    ax.set_ylabel('Count')
 
 
     #% SEMI-VARIOGRAM
