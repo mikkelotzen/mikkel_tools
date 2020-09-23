@@ -915,6 +915,10 @@ def plot_global(lat = None, lon = None, data=None, limits_data = None,
     # Plotting init
     if projection_transformation == "ortho":
         projection = ccrs.Orthographic(central_longitude=lon_0, central_latitude=lat_0)
+    elif projection_transformation == "Miller":
+        projection = ccrs.Miller()
+    elif projection_transformation == "PlateCarree":
+        projection = ccrs.PlateCarree()
     else:
         projection = ccrs.Mollweide()
 
@@ -977,7 +981,7 @@ def plot_global(lat = None, lon = None, data=None, limits_data = None,
         gl.xformatter = LONGITUDE_FORMATTER
         gl.yformatter = LATITUDE_FORMATTER
         gl.ylocator = tick.FixedLocator([-90, -60, -30, 0, 30, 60, 90])
-        gl.xlocator = tick.FixedLocator([-180, -135, -90, -45, 0, 45, 90, 135])
+        gl.xlocator = tick.FixedLocator([-180, -135, -90, -45, 0, 45, 90, 135, 180])
         gl.top_labels = True
         gl.xlabel_style = {'size': 7, 'color': 'gray'}
         gl.left_labels = True
