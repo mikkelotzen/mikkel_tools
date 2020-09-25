@@ -430,7 +430,7 @@ def plot_cartopy_animation(lat = None, lon = None, data=None, limits_data = None
     #return anim
 
 def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, truth_obj = None, lags_use = 300, hist_bins = 100, res_bins = 200, spec_use = True,
-                          spec_step = 5, spec_lwidth = 1, spec_r_at = None, spec_r_ref = 6371.2, spec_show_differences = True, model_dict = None,
+                          spec_step = 5, spec_lwidth = 1, spec_r_at = None, spec_r_ref = 6371.2, spec_show_differences = True, model_dict = None, spec_chaos_time = [2020,1,1],
                           left=0.02, bottom=0.05, right=0.98, top=0.98, wspace = 0.05, hspace=-0.72, label_fontsize = "x-small",
                           tile_size_row = 3, tile_size_column = 2, figsize=(9,14), savefig = False, save_string = "", save_dpi = 300):
     import numpy as np
@@ -650,7 +650,7 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, truth_obj 
             # CHAOS 7
             N_chaos = 20
             CHAOS7 = load_CHAOS_matfile('lithosphere_prior/grids/models/CHAOS-7.mat')
-            chaos_time = mjd2000(2020, 1, 1)
+            chaos_time = mjd2000(spec_chaos_time[0], spec_chaos_time[1], spec_chaos_time[2])
             g_CHAOS7 = np.hstack((np.zeros(1,),CHAOS7.synth_coeffs_tdep(chaos_time, nmax=20, deriv=0)))
             cilm_CHAOS7 = pyshtools.shio.SHVectorToCilm(g_CHAOS7)
             model_dict_def = {"LCS-1":cilm_LCS1, "MF7":cilm_MF7, "WDMAM2":cilm_WDMAM2, "EMM2017":cilm_EMM2017, "POMME-6":cilm_pomme, "CHAOS-7":cilm_CHAOS7}
