@@ -430,7 +430,8 @@ def plot_cartopy_animation(lat = None, lon = None, data=None, limits_data = None
     #return anim
 
 def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, truth_obj = None, lags_use = 300, hist_bins = 100, res_bins = 200, spec_use = True,
-                          spec_step = 5, spec_lwidth = 1, spec_r_at = None, spec_r_ref = 6371.2, spec_show_differences = True, model_dict = None, spec_chaos_time = [2020,1,1],
+                          spec_step = 5, spec_lwidth = 1, spec_r_at = None, spec_r_ref = 6371.2, spec_show_differences = True, spec_mag = True, 
+                          model_dict = None, spec_chaos_time = [2020,1,1], unit_var = "[nT²]", unit_lag = "[km]", unit_field = "[nT]",
                           left=0.02, bottom=0.05, right=0.98, top=0.98, wspace = 0.05, hspace=-0.72, label_fontsize = "x-small",
                           tile_size_row = 3, tile_size_column = 2, figsize=(9,14), savefig = False, save_string = "", save_dpi = 300):
     import numpy as np
@@ -475,7 +476,7 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, truth_obj 
 
     ax.set_title('Observation estimate residuals')
     ax.annotate("Mean RMSE: {:.3f}".format(np.mean(rmse_leg)), (0.05, 0.5), xycoords='axes fraction', va='center', fontsize = label_fontsize)
-    ax.set_xlabel("Field residuals [nT]")
+    ax.set_xlabel("Field residuals {}".format(unit_field))
     ax.set_ylabel("Count")
 
 
@@ -509,8 +510,8 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, truth_obj 
         ax.plot(bincenters,y,'k--',label='Synthetic truth')
 
     ax.set_title('Histogram reproduction')
-    ax.legend(loc='upper right', fontsize = label_fontsize) #legend(bbox_to_anchor=(1.05, 1), loc='upper left', borderaxespad=0.)
-    ax.set_xlabel('Field value [nT]')
+    ax.legend(loc='best', fontsize = label_fontsize) #legend(bbox_to_anchor=(1.05, 1), loc='upper left', borderaxespad=0.)
+    ax.set_xlabel('Field value {}'.format(unit_field))
     ax.set_ylabel('Count')
 
 
@@ -551,9 +552,9 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, truth_obj 
         ax.plot(seqsim_obj.lags[:lags_use], seqsim_obj.pics_m_DSS[:lags_use,0], 'k', label='Synthetic truth', linewidth = 1.0, linestyle = "dashed") 
 
     ax.set_title('Semi-variogram reproduction')
-    ax.set_ylabel('Semi-variance [nT²]')
-    ax.set_xlabel('Lag [km]')
-    ax.legend(loc='lower right', fontsize = label_fontsize)
+    ax.set_ylabel('Semi-variance {}'.format(unit_var))
+    ax.set_xlabel('Lag {}'.format(unit_lag))
+    ax.legend(loc='best', fontsize = label_fontsize)
 
     if spec_use == True:
         #% P-SPEC
@@ -572,7 +573,10 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, truth_obj 
         p_spec_pos_all = []
         for i in np.arange(0,N_ensembles):
             ens_cilm = np.array(pyshtools.shio.SHVectorToCilm(np.hstack((np.zeros(1,), seqsim_obj.g_spec[:,i]))))
-            p_spec_pos = pyshtools.gravmag.mag_spectrum(ens_cilm, spec_r_ref, spec_r_at, degrees = np.arange(1,np.shape(ens_cilm)[1]))
+            if spec_mag == True:
+                p_spec_pos = pyshtools.gravmag.mag_spectrum(ens_cilm, spec_r_ref, spec_r_at, degrees = np.arange(1,np.shape(ens_cilm)[1]))
+            else:
+                p_spec_pos = pyshtools.spectralanalysis.spectrum(ens_cilm, degrees = np.arange(1,np.shape(ens_cilm)[1]))
             p_spec_pos = p_spec_pos[:nmax]
             p_spec_pos_all.append(p_spec_pos)
             if i == 0:
@@ -583,27 +587,43 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, truth_obj 
 
         # Realization mean
         ens_cilm = np.array(pyshtools.shio.SHVectorToCilm(np.hstack((np.zeros(1,), seqsim_obj.g_spec_mean))))
-        p_spec_pos_mean = pyshtools.gravmag.mag_spectrum(ens_cilm, spec_r_ref, spec_r_at, degrees = np.arange(1,np.shape(ens_cilm)[1]))
+        #p_spec_pos_mean = pyshtools.gravmag.mag_spectrum(ens_cilm, spec_r_ref, spec_r_at, degrees = np.arange(1,np.shape(ens_cilm)[1]))
+        if spec_mag == True:
+            p_spec_pos_mean = pyshtools.gravmag.mag_spectrum(ens_cilm, spec_r_ref, spec_r_at, degrees = np.arange(1,np.shape(ens_cilm)[1]))
+        else:
+            p_spec_pos_mean = pyshtools.spectralanalysis.spectrum(ens_cilm, degrees = np.arange(1,np.shape(ens_cilm)[1]))
         p_spec_pos_mean = p_spec_pos_mean[:nmax]
         ax.plot(ns, p_spec_pos_mean, color="C2", label = "Posterior mean", linewidth = spec_lwidth)
         
         # Equivalent LSQ
         if m_equiv_lsq is not None:
             ens_cilm_lsq = np.array(pyshtools.shio.SHVectorToCilm(np.hstack((np.zeros(1,), seqsim_obj.g_lsq_equiv))))
-            p_spec_lsq = pyshtools.gravmag.mag_spectrum(ens_cilm_lsq, spec_r_ref, spec_r_at, degrees = np.arange(1,np.shape(ens_cilm_lsq)[1])) # degrees to skip zeroth degree
+            #p_spec_lsq = pyshtools.gravmag.mag_spectrum(ens_cilm_lsq, spec_r_ref, spec_r_at, degrees = np.arange(1,np.shape(ens_cilm_lsq)[1])) # degrees to skip zeroth degree
+            if spec_mag == True:
+                p_spec_lsq = pyshtools.gravmag.mag_spectrum(ens_cilm_lsq, spec_r_ref, spec_r_at, degrees = np.arange(1,np.shape(ens_cilm_lsq)[1]))
+            else:
+                p_spec_lsq = pyshtools.spectralanalysis.spectrum(ens_cilm_lsq, degrees = np.arange(1,np.shape(ens_cilm_lsq)[1]))
             p_spec_lsq = p_spec_lsq[:nmax]
             ax.plot(ns, p_spec_lsq, color = "C3", label = "Equivalent LSQ", linewidth = spec_lwidth, linestyle = "dashed")
 
         # Prior
         ens_cilm_prior = np.array(pyshtools.shio.SHVectorToCilm(np.hstack((np.zeros(1,), seqsim_obj.g_prior))))
-        p_spec_prior = pyshtools.gravmag.mag_spectrum(ens_cilm_prior, spec_r_ref, spec_r_at, degrees = np.arange(1,np.shape(ens_cilm_prior)[1])) # degrees to skip zeroth degree
+        #p_spec_prior = pyshtools.gravmag.mag_spectrum(ens_cilm_prior, spec_r_ref, spec_r_at, degrees = np.arange(1,np.shape(ens_cilm_prior)[1])) # degrees to skip zeroth degree
+        if spec_mag == True:
+            p_spec_prior = pyshtools.gravmag.mag_spectrum(ens_cilm_prior, spec_r_ref, spec_r_at, degrees = np.arange(1,np.shape(ens_cilm_prior)[1]))
+        else:
+            p_spec_prior = pyshtools.spectralanalysis.spectrum(ens_cilm_prior, degrees = np.arange(1,np.shape(ens_cilm_prior)[1]))
         p_spec_prior = p_spec_prior[:nmax]
         ax.plot(ns, p_spec_prior, color = "C4", label = "Training image", linewidth = spec_lwidth, linestyle = "dashed")
 
         # Observed truth
         if truth_obj is not None:
             ens_cilm_compare = np.array(pyshtools.shio.SHVectorToCilm(np.hstack((np.zeros(1,), truth_obj.g_prior))))
-            p_spec_compare = pyshtools.gravmag.mag_spectrum(ens_cilm_compare, spec_r_ref, spec_r_at, degrees = np.arange(1,np.shape(ens_cilm_compare)[1])) # degrees to skip zeroth degree
+            #p_spec_compare = pyshtools.gravmag.mag_spectrum(ens_cilm_compare, spec_r_ref, spec_r_at, degrees = np.arange(1,np.shape(ens_cilm_compare)[1])) # degrees to skip zeroth degree
+            if spec_mag == True:
+                p_spec_compare = pyshtools.gravmag.mag_spectrum(ens_cilm_compare, spec_r_ref, spec_r_at, degrees = np.arange(1,np.shape(ens_cilm_compare)[1]))
+            else:
+                p_spec_compare = pyshtools.spectralanalysis.spectrum(ens_cilm_compare, degrees = np.arange(1,np.shape(ens_cilm_compare)[1]))
             p_spec_compare = p_spec_compare[:nmax]
             ax.plot(ns, p_spec_compare, color = "k", label = "Synthetic truth", linewidth = spec_lwidth, linestyle = "dashed")
 
@@ -680,13 +700,17 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, truth_obj 
                 ax.plot(use_ns, use_p_spec, color="C{}".format(i), label = key, linewidth = spec_lwidth)
                 i += 1
         
-        ax.set_title('Power spectra comparison [r: {}km]'.format(spec_r_at))
         ax.set_yscale('log')
         ax.set_xlabel("degree n")
-        ax.set_ylabel("Power [nT²]")
+        if spec_mag == True:
+            ax.set_title('Power spectra comparison [r: {}{}]'.format(spec_r_at,unit_lag[1:-1]))
+            ax.set_ylabel("Power {}".format(unit_var))
+        else:
+            ax.set_title('Power spectra comparison')
+            ax.set_ylabel("Power")    
         ax.set_xticks(n_ticks) #fontsize="small"
         ax.grid(alpha=0.3)
-        ax.legend(loc='lower center', fontsize = label_fontsize)
+        ax.legend(loc='best', fontsize = label_fontsize)
 
     #fig.subplots_adjust(left=left, bottom=bottom, right=right, top=top, wspace=wspace, hspace=hspace)
 
@@ -697,7 +721,7 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, truth_obj 
     
 
 def plot_ensemble_map_tiles(lon, lat, ensemble_fields, field_compare = None, field_lsq = None, field_mean = None, tile_size_row = 3, tile_size_column = 3, figsize=(8,8), limit_for_SF = 10**6, point_size = 3,
-                            left=0.02, bottom=0.05, right=0.98, top=0.98, wspace = 0.05, hspace=-0.72, coast_width = 0.1, coast_color = "grey", cbar_mm_factor = 3/4, unit_transform_n_to_m = False,
+                            left=0.02, bottom=0.05, right=0.98, top=0.98, wspace = 0.05, hspace=-0.72, coast_width = 0.1, coast_color = "grey", cbar_mm_factor = 1, unit_transform_n_to_m = False,
                             savefig = False, save_string = "", save_dpi = 300,  projection = ccrs.Mollweide(), cbar_limit = None, cbar_h = 0.07, cbar_text = "nT", cbar_text_color = "grey", use_gridlines = False, gridlines_width = 0.2, gridlines_alpha = 0.1):
     import numpy as np
     import matplotlib.pyplot as plt
