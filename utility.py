@@ -698,7 +698,7 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, truth_obj 
 
 def plot_ensemble_map_tiles(lon, lat, ensemble_fields, field_compare = None, field_lsq = None, field_mean = None, tile_size_row = 3, tile_size_column = 3, figsize=(8,8), limit_for_SF = 10**6, point_size = 3,
                             left=0.02, bottom=0.05, right=0.98, top=0.98, wspace = 0.05, hspace=-0.72, coast_width = 0.1, coast_color = "grey", cbar_mm_factor = 3/4, unit_transform_n_to_m = False,
-                            savefig = False, save_string = "", save_dpi = 300,  projection = ccrs.Mollweide(), cbar_h = 0.07, cbar_text = "nT", cbar_text_color = "grey", use_gridlines = False, gridlines_width = 0.2, gridlines_alpha = 0.1):
+                            savefig = False, save_string = "", save_dpi = 300,  projection = ccrs.Mollweide(), cbar_limit = None, cbar_h = 0.07, cbar_text = "nT", cbar_text_color = "grey", use_gridlines = False, gridlines_width = 0.2, gridlines_alpha = 0.1):
     import numpy as np
     import matplotlib.pyplot as plt
     import matplotlib.ticker as tick
@@ -755,7 +755,11 @@ def plot_ensemble_map_tiles(lon, lat, ensemble_fields, field_compare = None, fie
         field_min_true = np.min(field_compare)
         field_max = cbar_mm_factor*np.max((abs(field_max_true),abs(field_min_true)))
         field_min = -field_max
-        
+    
+    if cbar_limit is not None:
+        field_max = np.max(cbar_limit)
+        field_min = np.min(cbar_limit)
+
     ens_n = 0
     for i in np.arange(0,tile_size_row):
         for j in np.arange(0,tile_size_column):
@@ -897,13 +901,13 @@ def plot_ensemble_map_tiles(lon, lat, ensemble_fields, field_compare = None, fie
 
 
 def plot_global(lat = None, lon = None, data=None, limits_data = None, 
-                cbar_h = 0.05, cbar_mm_factor = 3/4, cbar_text = "nT", cbar_text_color = "grey",
-                unit_transform_n_to_m = False, projection_transformation = "Mollweide", figsize=(10,10),
+                cbar_h = 0.075, cbar_even = True, cbar_mm_factor = 1, cbar_text = "", cbar_text_color = "grey",
+                unit_transform_n_to_m = False, projection_transformation = "Mollweide", figsize=(6,6),
                 coast_width = 0.4, coast_color = "grey", limit_for_SF = 10**6,
-                left=0.03, bottom=0.12, right=0.97, top=0.95, wspace = 0.05, hspace=0.25,
-                title='Cartopy Earth plot', lat_0 = 0.0, lon_0 = 0.0, point_size=2,
+                left=0.03, bottom=0.35, right=0.97, top=0.95, wspace = 0.05, hspace=0.01,
+                title='Cartopy Earth plot', lat_0 = 0.0, lon_0 = 0.0, point_size=1,
                 savefig = False, save_dpi = 100, save_string ="",
-                use_gridlines = False, gridlines_width = 0.2, gridlines_alpha = 0.1):
+                use_gridlines = False, gridlines_width = 0.4, gridlines_alpha = 0.4):
 
     import numpy as np
     import matplotlib.pyplot as plt
@@ -958,9 +962,13 @@ def plot_global(lat = None, lon = None, data=None, limits_data = None,
         field_max_true = np.max(limits_data)
         field_min_true = np.min(limits_data)
 
-    field_max = cbar_mm_factor*np.max((abs(field_max_true),abs(field_min_true)))
-    field_min = -field_max
-    
+    if cbar_even == True:
+        field_max = cbar_mm_factor*np.max((abs(field_max_true),abs(field_min_true)))
+        field_min = -field_max
+    else:
+        field_max = cbar_mm_factor*field_max_true
+        field_min = cbar_mm_factor*field_min_true
+
     ax = fig.add_subplot(gs[0, 0], projection=projection)
     ax.set_global()
     #ax.set_title("{}".format(title))
