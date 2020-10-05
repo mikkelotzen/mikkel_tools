@@ -472,13 +472,21 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, truth_obj 
     for i in np.arange(0,N_sim):
         y,binEdges=np.histogram(seqsim_res[:,[i]],bins=res_bins)
         bincenters = 0.5*(binEdges[1:]+binEdges[:-1])
-        ax.plot(bincenters,y,'-',color = color_rgb)  
+        if i == 0:
+            ax.plot(bincenters, y, '-', color = color_rgb, label='Posterior') 
+        else:
+            ax.plot(bincenters, y, '-', color = color_rgb) 
 
-    ax.set_title('Observation estimate residuals')
+    if m_equiv_lsq is not None:
+        y,binEdges=np.histogram(seqsim_obj.lsq_equiv_res,bins=res_bins)
+        bincenters = 0.5*(binEdges[1:]+binEdges[:-1])
+        ax.plot(bincenters, y, '-', color = "C3", label='Equivalent LSQ',linestyle = "dashed")
+
+    ax.set_title('(a) Observation estimate residuals')
     ax.annotate("Mean RMSE: {:.3f}".format(np.mean(rmse_leg)), (0.05, 0.5), xycoords='axes fraction', va='center', fontsize = label_fontsize)
     ax.set_xlabel("Field residuals {}".format(unit_field))
     ax.set_ylabel("Count")
-
+    ax.legend(loc='best', fontsize = label_fontsize)
 
     #% HISTOGRAM
     ax = fig.add_subplot(gs[0, 1])
@@ -493,7 +501,7 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, truth_obj 
 
     y,binEdges=np.histogram(np.mean(seqsim_obj.m_DSS,axis=1),bins=hist_bins, density = False)
     bincenters = 0.5*(binEdges[1:]+binEdges[:-1])
-    ax.plot(bincenters,y,'-',color = "C2", label='Posterior mean')  
+    ax.plot(bincenters,y,'-',color = "C0", label='Posterior mean')  
 
     if m_equiv_lsq is not None:
         y,binEdges=np.histogram(np.array(m_equiv_lsq),bins=hist_bins, density = False)
@@ -502,14 +510,14 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, truth_obj 
 
     y,binEdges=np.histogram(seqsim_obj.data,bins=hist_bins, density = False)
     bincenters = 0.5*(binEdges[1:]+binEdges[:-1])
-    ax.plot(bincenters,y,'C4',label='Training image',linestyle = "dashed")
+    ax.plot(bincenters,y, color = 'C4',label='Training image',linestyle = "dashed")
 
     if truth_obj is not None:
         y,binEdges=np.histogram(truth_obj.data,bins=hist_bins, density = False)
         bincenters = 0.5*(binEdges[1:]+binEdges[:-1])
         ax.plot(bincenters,y,'k--',label='Synthetic truth')
 
-    ax.set_title('Histogram reproduction')
+    ax.set_title('(b) Histogram reproduction')
     ax.legend(loc='best', fontsize = label_fontsize) #legend(bbox_to_anchor=(1.05, 1), loc='upper left', borderaxespad=0.)
     ax.set_xlabel('Field value {}'.format(unit_field))
     ax.set_ylabel('Count')
@@ -539,7 +547,7 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, truth_obj 
 
     # Realization mean
     seqsim_obj.sv_m_DSS(len(seqsim_obj.data), 1, np.mean(seqsim_obj.m_DSS,axis=1).reshape(-1,1), seqsim_obj.sort_d, seqsim_obj.n_lags, seqsim_obj.max_cloud)
-    ax.plot(seqsim_obj.lags[:lags_use], seqsim_obj.pics_m_DSS[:lags_use,0], color = "C2", label='Posterior mean', linewidth = 1.0)
+    ax.plot(seqsim_obj.lags[:lags_use], seqsim_obj.pics_m_DSS[:lags_use,0], color = "C0", label='Posterior mean', linewidth = 1.0)
 
     # Equivalent LSQ
     if m_equiv_lsq is not None:
@@ -551,7 +559,7 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, truth_obj 
         seqsim_obj.sv_m_DSS(len(truth_obj.data), 1, truth_obj.data.reshape(-1,1), seqsim_obj.sort_d, seqsim_obj.n_lags, seqsim_obj.max_cloud)
         ax.plot(seqsim_obj.lags[:lags_use], seqsim_obj.pics_m_DSS[:lags_use,0], 'k', label='Synthetic truth', linewidth = 1.0, linestyle = "dashed") 
 
-    ax.set_title('Semi-variogram reproduction')
+    ax.set_title('(c) Semi-variogram reproduction')
     ax.set_ylabel('Semi-variance {}'.format(unit_var))
     ax.set_xlabel('Lag {}'.format(unit_lag))
     ax.legend(loc='best', fontsize = label_fontsize)
@@ -593,7 +601,7 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, truth_obj 
         else:
             p_spec_pos_mean = pyshtools.spectralanalysis.spectrum(ens_cilm, degrees = np.arange(1,np.shape(ens_cilm)[1]))
         p_spec_pos_mean = p_spec_pos_mean[:nmax]
-        ax.plot(ns, p_spec_pos_mean, color="C2", label = "Posterior mean", linewidth = spec_lwidth)
+        ax.plot(ns, p_spec_pos_mean, color="C0", label = "Posterior mean", linewidth = spec_lwidth)
         
         # Equivalent LSQ
         if m_equiv_lsq is not None:
@@ -630,7 +638,7 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, truth_obj 
         if spec_show_differences == True:
             # Differences
             #color_rgb_diff = (0.8,0.8,0.8)
-            color_rgb_diff = "C0"
+            color_rgb_diff = "C8"
             for i in np.arange(N_sim):
                 if i == 0:
                     ax.plot(ns, np.abs(p_spec_compare - p_spec_pos_all[i,:]), color=color_rgb_diff, label = "Truth - Posterior", linewidth = spec_lwidth, zorder = 0)
@@ -697,16 +705,16 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, truth_obj 
                     use_ns = ns
                     use_p_spec = p_spec[:nmax]
 
-                ax.plot(use_ns, use_p_spec, color="C{}".format(i), label = key, linewidth = spec_lwidth)
+                ax.plot(use_ns, use_p_spec, color="C{}".format(i+5), label = key, linewidth = spec_lwidth)
                 i += 1
         
         ax.set_yscale('log')
         ax.set_xlabel("degree n")
         if spec_mag == True:
-            ax.set_title('Power spectra comparison [r: {}{}]'.format(spec_r_at,unit_lag[1:-1]))
+            ax.set_title('(d) Power spectra comparison [r: {}{}]'.format(spec_r_at,unit_lag[1:-1]))
             ax.set_ylabel("Power {}".format(unit_var))
         else:
-            ax.set_title('Power spectra comparison')
+            ax.set_title('(d) Power spectra comparison')
             ax.set_ylabel("Power")    
         ax.set_xticks(n_ticks) #fontsize="small"
         ax.grid(alpha=0.3)
@@ -953,7 +961,8 @@ def plot_global(lat = None, lon = None, data=None, limits_data = None,
     if unit_transform_n_to_m == True:
         data = data*10**(-6)
         if limits_data is not None:
-            limits_data = limits_data*10**(-6)            
+            if len(limits_data)>2:
+                limits_data = limits_data*10**(-6)            
 
     class MidpointNormalize(colors.Normalize):
         def __init__(self, vmin=None, vmax=None, midpoint=None, clip=False):
