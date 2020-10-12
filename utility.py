@@ -1314,6 +1314,29 @@ def array_nm(nmax):
     return nm
 
 
+def lowe_shspec(n,c,a,g):
+    import numpy as np
+    # Compute Lowes spherical harmonic power spectrum up to degree n at radius c given reference a and coefficient vector g
+
+    g_cut = g[:n*(2+n)] # Truncate g
+
+    i = np.arange(1,n+1) # Degree array
+    reps = (i*(2+i)-(i-1)*(1+i)) # Coefficients per degree
+    ns = np.repeat(i,reps) # Repeat degrees for each corresponding coefficient
+
+    const = (ns+1)*(a/c)**(2*ns+4) # Array of constants for each corresponding coefficient
+
+    g_const_sq = const*np.power(g_cut,2) # Multiply constant with squared g
+
+    rep_cs = np.cumsum(reps) # Cumsum to split array for each degree
+
+    split = np.split(g_const_sq,rep_cs)[:-1] # Perform split
+
+    R = np.array([sum(i) for i in split]) # Sum coefficients for each degree
+    
+    return R
+
+
 def gauss_vector(g_in, N_deg, i_n = 0, i_m = 1):
     # Function for computing a vector of Gauss coefficicents given standard input
     import numpy as np
