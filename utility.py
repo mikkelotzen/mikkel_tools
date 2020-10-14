@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 from matplotlib.colors import LinearSegmentedColormap
 import os
 import cartopy.crs as ccrs
+import time
 
 utility_abs_path = os.path.dirname(__file__)
 
@@ -56,7 +57,7 @@ def load_shc(filepath, comments = "#"):
     file = np.loadtxt(filepath, comments=comments, skiprows=n_comments+2)
     return file
 
-def printProgressBar (iteration, total, *args, subject='', prefix = '', suffix = '', decimals = 1, length = 10, fill = 'O'):
+def printProgressBar (iteration, total, *args, subject='', prefix = '', suffix = '', decimals = 1, length = 10, fill = 'O', notebook_style = True, sleep_time = 0.0001):
     """
     Call in a loop to create terminal progress bar
     @params:
@@ -73,9 +74,16 @@ def printProgressBar (iteration, total, *args, subject='', prefix = '', suffix =
     bar = fill * filledLength + '-' * (length - filledLength)
     
     if args:
-        print('\r%s |%s| %s%% %s %s. Counter: %s/%s, Running error magnitude: %.1f' % (prefix, bar, percent, suffix, subject, iteration, total, args[0]), end = '\r')
+        if notebook_style == True:
+            print("\r%s |%s| %s%% %s %s. Counter: %s/%s, Running error magnitude: %.1f" % (prefix, bar, percent, suffix, subject, iteration, total, args[0]), end = "")
+        else:
+            print('\r%s |%s| %s%% %s %s. Counter: %s/%s, Running error magnitude: %.1f' % (prefix, bar, percent, suffix, subject, iteration, total, args[0]), end = '\r')
     else:
-        print('\r%s |%s| %s%% %s %s. Counter: %s/%s' % (prefix, bar, percent, suffix, subject, iteration, total), end = '\r')
+        if notebook_style == True:
+            print("\r%s |%s| %s%% %s %s. Counter: %s/%s" % (prefix, bar, percent, suffix, subject, iteration, total), end = "")
+        else:
+            print('\r%s |%s| %s%% %s %s. Counter: %s/%s' % (prefix, bar, percent, suffix, subject, iteration, total), end = '\r')
+    #time.sleep(sleep_time)
     # Print New Line on Complete
     if iteration == total: 
         print()
@@ -568,7 +576,11 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, truth_obj 
         #% P-SPEC
         ax = fig.add_subplot(gs[2, :])
 
-        nmax = seqsim_obj.N_SH
+        if seqsim_obj.grid_nmax < seqsim_obj.N_SH:
+            nmax = seqsim_obj.grid_nmax
+        else:
+            nmax = seqsim_obj.N_SH
+            
         ns = np.arange(1, nmax+1)
         n_ticks = np.append(np.array([1, 5, 10,]), np.arange(15,np.max(ns)+spec_step, step=spec_step))
 
