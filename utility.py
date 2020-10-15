@@ -740,7 +740,7 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, truth_obj 
     fig.show()
     
 
-def plot_ensemble_map_tiles(lon, lat, ensemble_fields, field_compare = None, field_lsq = None, field_mean = None, tile_size_row = 3, tile_size_column = 3, figsize=(8,8), limit_for_SF = 10**6, point_size = 3,
+def plot_ensemble_map_tiles(lon, lat, ensemble_fields, field_compare = None, field_lsq = None, field_mean = None, tile_size_row = 3, tile_size_column = 3, figsize=(8,8), limit_for_SF = 10**6, point_size = 1,
                             left=0.02, bottom=0.05, right=0.98, top=0.98, wspace = 0.05, hspace=-0.72, coast_width = 0.1, coast_color = "grey", cbar_mm_factor = 1, unit_transform_n_to_m = False,
                             savefig = False, save_string = "", save_dpi = 300,  projection = ccrs.Mollweide(), cbar_limit = None, cbar_h = 0.07, cbar_text = "nT", cbar_text_color = "grey", use_gridlines = False, gridlines_width = 0.2, gridlines_alpha = 0.1):
     import numpy as np
@@ -950,7 +950,7 @@ def plot_global(lat = None, lon = None, data=None, limits_data = None,
                 coast_width = 0.4, coast_color = "grey", limit_for_SF = 10**6,
                 left=0.03, bottom=0.35, right=0.97, top=0.95, wspace = 0.05, hspace=0.01,
                 title='Cartopy Earth plot', lat_0 = 0.0, lon_0 = 0.0, point_size=1,
-                savefig = False, save_dpi = 100, save_string ="",
+                savefig = False, save_dpi = 100, save_string ="", rasterize = True,
                 use_gridlines = False, gridlines_width = 0.4, gridlines_alpha = 0.4):
 
     import numpy as np
@@ -1019,6 +1019,8 @@ def plot_global(lat = None, lon = None, data=None, limits_data = None,
     #ax.set_title("{}".format(title))
 
     im = ax.scatter(lon, lat, s=point_size, c=data, transform=ccrs.PlateCarree(), rasterized=True, vmin = field_min, vmax = field_max, cmap=cm_zesty_cbf, norm = MidpointNormalize(midpoint=0.))
+    #im = ax.imshow(data, transform=ccrs.PlateCarree(), cmap=cm_zesty_cbf, vmin = field_min, vmax = field_max, norm = MidpointNormalize(midpoint=0.))
+    
     ax.coastlines(linewidth = coast_width, color = coast_color)
     
     if use_gridlines == True:
