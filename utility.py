@@ -438,7 +438,7 @@ def plot_cartopy_animation(lat = None, lon = None, data=None, limits_data = None
     #return anim
 
 def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, truth_obj = None, lags_use = 300, hist_bins = 100, hist_pos_mean = True, res_bins = 200, spec_use = True,
-                          spec_step = 5, spec_lwidth = 1, spec_r_at = None, spec_r_ref = 6371.2, spec_show_differences = True, spec_mag = True, 
+                          spec_step = 5, spec_lwidth = 1, spec_r_at = None, spec_r_ref = 6371.2, spec_show_differences = True, spec_mag = True, sv_pos_mean = True,
                           model_dict = None, spec_chaos_time = [2020,1,1], unit_var = "[nT²]", unit_lag = "[km]", unit_field = "[nT]",
                           left=0.02, bottom=0.05, right=0.98, top=0.98, wspace = 0.05, hspace=-0.72, label_fontsize = "x-small",
                           tile_size_row = 3, tile_size_column = 2, figsize=(9,14), savefig = False, save_string = "", save_dpi = 300):
@@ -554,9 +554,10 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, truth_obj 
     seqsim_obj.sv_m_DSS(len(seqsim_obj.data), 1, seqsim_obj.data.reshape(-1,1), seqsim_obj.sort_d, seqsim_obj.n_lags, seqsim_obj.max_cloud)
     ax.plot(seqsim_obj.lags[:lags_use], seqsim_obj.pics_m_DSS[:lags_use,0],'o', markersize=2, color = 'C4', label='Training image') #linewidth = 1.0, linestyle = "dashed"
 
-    # Realization mean
-    seqsim_obj.sv_m_DSS(len(seqsim_obj.data), 1, np.mean(seqsim_obj.m_DSS,axis=1).reshape(-1,1), seqsim_obj.sort_d, seqsim_obj.n_lags, seqsim_obj.max_cloud)
-    ax.plot(seqsim_obj.lags[:lags_use], seqsim_obj.pics_m_DSS[:lags_use,0], color = "C0", label='Posterior mean', linewidth = 1.0)
+    if sv_pos_mean == True:
+        # Realization mean
+        seqsim_obj.sv_m_DSS(len(seqsim_obj.data), 1, np.mean(seqsim_obj.m_DSS,axis=1).reshape(-1,1), seqsim_obj.sort_d, seqsim_obj.n_lags, seqsim_obj.max_cloud)
+        ax.plot(seqsim_obj.lags[:lags_use], seqsim_obj.pics_m_DSS[:lags_use,0], color = "C0", label='Posterior mean', linewidth = 1.0)
 
     # Equivalent LSQ
     if m_equiv_lsq is not None:
@@ -741,7 +742,7 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, truth_obj 
     fig.show()
     
 
-def plot_ensemble_map_tiles(lon, lat, ensemble_fields, field_compare = None, field_lsq = None, field_mean = None, tile_size_row = 3, tile_size_column = 3, figsize=(8,8), limit_for_SF = 10**6, point_size = 1,
+def plot_ensemble_map_tiles(lon, lat, ensemble_fields, field_compare = None, field_lsq = None, field_mean = None, tile_size_row = 3, tile_size_column = 3, figsize=(8,8), limit_for_SF = 10**6, point_size = 0.01,
                             left=0.02, bottom=0.05, right=0.98, top=0.98, wspace = 0.05, hspace=-0.72, coast_width = 0.1, coast_color = "grey", cbar_mm_factor = 1, unit_transform_n_to_m = False,
                             savefig = False, save_string = "", save_dpi = 300,  projection = ccrs.Mollweide(), cbar_limit = None, cbar_h = 0.07, cbar_text = "nT", cbar_text_color = "grey", use_gridlines = False, gridlines_width = 0.2, gridlines_alpha = 0.1):
     import numpy as np
