@@ -437,7 +437,7 @@ def plot_cartopy_animation(lat = None, lon = None, data=None, limits_data = None
     #return HTML(anim.to_html5_video())
     #return anim
 
-def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, truth_obj = None, lags_use = 300, hist_bins = 100, res_bins = 200, spec_use = True,
+def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, truth_obj = None, lags_use = 300, hist_bins = 100, hist_pos_mean = True, res_bins = 200, spec_use = True,
                           spec_step = 5, spec_lwidth = 1, spec_r_at = None, spec_r_ref = 6371.2, spec_show_differences = True, spec_mag = True, 
                           model_dict = None, spec_chaos_time = [2020,1,1], unit_var = "[nT²]", unit_lag = "[km]", unit_field = "[nT]",
                           left=0.02, bottom=0.05, right=0.98, top=0.98, wspace = 0.05, hspace=-0.72, label_fontsize = "x-small",
@@ -507,9 +507,10 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, truth_obj 
         else:
             ax.plot(bincenters,y,'-', color = color_rgb)     
 
-    y,binEdges=np.histogram(np.mean(seqsim_obj.m_DSS,axis=1),bins=hist_bins, density = False)
-    bincenters = 0.5*(binEdges[1:]+binEdges[:-1])
-    ax.plot(bincenters,y,'-',color = "C0", label='Posterior mean')  
+    if hist_pos_mean == True:
+        y,binEdges=np.histogram(np.mean(seqsim_obj.m_DSS,axis=1),bins=hist_bins, density = False)
+        bincenters = 0.5*(binEdges[1:]+binEdges[:-1])
+        ax.plot(bincenters,y,'-',color = "C0", label='Posterior mean')  
 
     if m_equiv_lsq is not None:
         y,binEdges=np.histogram(np.array(m_equiv_lsq),bins=hist_bins, density = False)
