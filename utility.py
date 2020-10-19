@@ -519,7 +519,7 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, truth_obj 
 
     y,binEdges=np.histogram(seqsim_obj.data,bins=hist_bins, density = False)
     bincenters = 0.5*(binEdges[1:]+binEdges[:-1])
-    ax.plot(bincenters,y, color = 'C4',label='Training image',linestyle = "dashed")
+    ax.plot(bincenters,y, color = 'C4',label='Training image',linestyle = "dashed", linewidth = int(2*spec_lwidth))
 
     if truth_obj is not None:
         y,binEdges=np.histogram(truth_obj.data,bins=hist_bins, density = False)
@@ -552,7 +552,7 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, truth_obj 
 
     # Training image
     seqsim_obj.sv_m_DSS(len(seqsim_obj.data), 1, seqsim_obj.data.reshape(-1,1), seqsim_obj.sort_d, seqsim_obj.n_lags, seqsim_obj.max_cloud)
-    ax.plot(seqsim_obj.lags[:lags_use], seqsim_obj.pics_m_DSS[:lags_use,0],'o', markersize=2, color = 'C4', label='Training image') #linewidth = 1.0, linestyle = "dashed"
+    ax.plot(seqsim_obj.lags[:lags_use], seqsim_obj.pics_m_DSS[:lags_use,0],'o', markersize=5, color = 'C4', label='Training image') #linewidth = 1.0, linestyle = "dashed"
 
     if sv_pos_mean == True:
         # Realization mean
@@ -636,7 +636,7 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, truth_obj 
         else:
             p_spec_prior = pyshtools.spectralanalysis.spectrum(ens_cilm_prior, degrees = np.arange(1,np.shape(ens_cilm_prior)[1]))
         p_spec_prior = p_spec_prior[:nmax]
-        ax.plot(ns, p_spec_prior, color = "C4", label = "Training image", linewidth = spec_lwidth, linestyle = "dashed")
+        ax.plot(ns, p_spec_prior, color = "C4", label = "Training image", linewidth = int(2*spec_lwidth), linestyle = "dashed")
 
         # Observed truth
         if truth_obj is not None:
