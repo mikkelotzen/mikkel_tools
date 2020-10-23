@@ -437,8 +437,8 @@ def plot_cartopy_animation(lat = None, lon = None, data=None, limits_data = None
     #return HTML(anim.to_html5_video())
     #return anim
 
-def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, truth_obj = None, lags_use = 300, hist_bins = 100, hist_pos_mean = True, res_bins = 200, spec_use = True,
-                          spec_step = 5, spec_lwidth = 1, spec_r_at = None, spec_r_ref = 6371.2, spec_show_differences = True, spec_mag = True, sv_pos_mean = True,
+def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, truth_obj = None, lags_use = 300, hist_bins = 100, hist_pos_mean = True, hist_ti_ens = False, hist_density = False, 
+                          res_bins = 200, spec_use = True, spec_step = 5, spec_lwidth = 1, spec_r_at = None, spec_r_ref = 6371.2, spec_show_differences = True, spec_mag = True, sv_pos_mean = True,
                           model_dict = None, spec_chaos_time = [2020,1,1], unit_var = "[nT²]", unit_lag = "[km]", unit_field = "[nT]",
                           left=0.02, bottom=0.05, right=0.98, top=0.98, wspace = 0.05, hspace=-0.72, label_fontsize = "x-small",
                           tile_size_row = 3, tile_size_column = 2, figsize=(9,14), savefig = False, save_string = "", save_dpi = 300):
@@ -500,7 +500,7 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, truth_obj 
     ax = fig.add_subplot(gs[0, 1])
 
     for i in np.arange(0,N_sim):
-        y,binEdges=np.histogram(seqsim_obj.m_DSS[:,[i]],bins=hist_bins, density = False)
+        y,binEdges=np.histogram(seqsim_obj.m_DSS[:,[i]],bins=hist_bins, density = hist_density)
         bincenters = 0.5*(binEdges[1:]+binEdges[:-1])
         if i == 0:
             ax.plot(bincenters,y,'-', color = color_rgb, label='Posterior')  
@@ -508,21 +508,26 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, truth_obj 
             ax.plot(bincenters,y,'-', color = color_rgb)     
 
     if hist_pos_mean == True:
-        y,binEdges=np.histogram(np.mean(seqsim_obj.m_DSS,axis=1),bins=hist_bins, density = False)
+        y,binEdges=np.histogram(np.mean(seqsim_obj.m_DSS,axis=1),bins=hist_bins, density = hist_density)
         bincenters = 0.5*(binEdges[1:]+binEdges[:-1])
         ax.plot(bincenters,y,'-',color = "C0", label='Posterior mean')  
 
     if m_equiv_lsq is not None:
-        y,binEdges=np.histogram(np.array(m_equiv_lsq),bins=hist_bins, density = False)
+        y,binEdges=np.histogram(np.array(m_equiv_lsq),bins=hist_bins, density = hist_density)
         bincenters = 0.5*(binEdges[1:]+binEdges[:-1])
         ax.plot(bincenters,y,'--',color = 'C3',label='Equivalent LSQ', linestyle = "dashed") 
 
-    y,binEdges=np.histogram(seqsim_obj.data,bins=hist_bins, density = False)
+    if hist_ti_ens == True:
+        ti_hist_data = seqsim_obj.m_core_ens
+    else:
+        ti_hist_data = seqsim_obj.data
+
+    y,binEdges=np.histogram(ti_hist_data,bins=hist_bins, density = hist_density)
     bincenters = 0.5*(binEdges[1:]+binEdges[:-1])
     ax.plot(bincenters,y, color = 'C4',label='Training image',linestyle = "dashed", linewidth = int(2*spec_lwidth))
 
     if truth_obj is not None:
-        y,binEdges=np.histogram(truth_obj.data,bins=hist_bins, density = False)
+        y,binEdges=np.histogram(truth_obj.data,bins=hist_bins, density = hist_density)
         bincenters = 0.5*(binEdges[1:]+binEdges[:-1])
         ax.plot(bincenters,y,'k--',label='Synthetic truth')
 
