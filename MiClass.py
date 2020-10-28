@@ -70,8 +70,8 @@ class MiClass(object):
             
                 dict_obj_shape = np.shape(dict_obj)
                 dict_obj_shape_len = len(dict_obj_shape)
-                
-                if dict_obj_shape == ():
+
+                if dict_obj_shape == () or dict_obj_shape[0] == 0:
                     string_return = string_return + (str(entry) + ": ").ljust(key_width) + str(dict_obj) + "\n"
                 elif dict_obj_shape_len >= 3:
                     string_return = string_return + (str(entry) + ": ").ljust(key_width) + str(dict_obj_shape) + "\n"

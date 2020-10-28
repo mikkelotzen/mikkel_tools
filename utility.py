@@ -4,6 +4,7 @@ Utility functions by Mikkel Otzen
 
 import matplotlib.pyplot as plt
 from matplotlib.colors import LinearSegmentedColormap
+import matplotlib.patches as mpatches
 import os
 import cartopy.crs as ccrs
 import time
@@ -17,6 +18,9 @@ color_zesty_cbf = [(0.0,  0.10980392156862745,  0.30196078431372547),
                    (0.30196078431372547,  0.10196078431372549,  0.0)]  # dark bluish -> bright blue -> white -> bright orange -> darker orange
 
 cm_zesty_cbf = LinearSegmentedColormap.from_list("zesty_cbf", color_zesty_cbf, N=10001)
+
+color_rgb_zesty_pos = (1.0,  0.5372549019607843,  0.30196078431372547)
+color_rgb_zesty_neg = (0.5019607843137255,  0.6862745098039216,  1.0)
 
 def dict_save(path, name, variable ):
     import pickle
@@ -439,20 +443,43 @@ def plot_cartopy_animation(lat = None, lon = None, data=None, limits_data = None
 
 def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, truth_obj = None, lags_use = 300, hist_bins = 100, hist_pos_mean = True, hist_ti_ens = False, hist_density = False, 
                           res_bins = 200, spec_use = True, spec_step = 5, spec_lwidth = 1, spec_r_at = None, spec_r_ref = 6371.2, spec_show_differences = True, spec_mag = True, sv_pos_mean = True,
+                          sv_use = True, spec_ti_ens = False, res_use = True, unit_transform_n_to_m = False, patch_legend = False,
                           model_dict = None, spec_chaos_time = [2020,1,1], unit_var = "[nT²]", unit_lag = "[km]", unit_field = "[nT]",
-                          left=0.02, bottom=0.05, right=0.98, top=0.98, wspace = 0.05, hspace=-0.72, label_fontsize = "x-small",
+                          left=0.08, bottom=0.12, right=0.92, top=0.95, wspace = 0.2, hspace=0.25, label_fontsize = "small",
                           tile_size_row = 3, tile_size_column = 2, figsize=(9,14), savefig = False, save_string = "", save_dpi = 300):
     import numpy as np
     import matplotlib.pyplot as plt
     import scipy as sp
     import scipy.io as spio
     import pyshtools
+    import matplotlib.ticker as tick
 
     # ChaosMagPy modules
     from chaosmagpy import load_CHAOS_matfile
     from chaosmagpy.model_utils import synth_values
     from chaosmagpy.data_utils import mjd2000
 
+    # Scale from nano to mili
+    if unit_transform_n_to_m == True:
+            posterior_fields = seqsim_obj.m_DSS*10**(-6)
+            prior_ens = seqsim_obj.m_core_ens*10**(-6)
+            seqsim_res = seqsim_res*10**(-6)
+            if m_equiv_lsq is not None:
+                m_equiv_lsq = m_equiv_lsq*10**(-6)
+                lsq_equiv_res = seqsim_obj.lsq_equiv_res*10**(-6)
+            if truth_obj is not None:
+                truth_data = truth_obj.data*10**(-6)
+    else:
+        posterior_fields = seqsim_obj.m_DSS
+        prior_ens = seqsim_obj.m_core_ens
+        if m_equiv_lsq is not None:
+            m_equiv_lsq = m_equiv_lsq
+            lsq_equiv_res = seqsim_obj.lsq_equiv_res
+        if truth_obj is not None:
+            truth_data = truth_obj.data
+
+    SF = tick.ScalarFormatter() # Formatter for colorbar
+    SF.set_powerlimits((6, 6)) # Set sci exponent used
 
     N_sim = seqsim_res.shape[1]
 
@@ -467,6 +494,11 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, truth_obj 
         h_ratio = [1]*tile_size_row
         w_ratio = [1]*tile_size_column
         gs = fig.add_gridspec(tile_size_row, tile_size_column, height_ratios=h_ratio, width_ratios=w_ratio) # Add x-by-y grid
+    elif sv_use == False:
+        # Generate ratio lists
+        h_ratio = [1]*(tile_size_row-1)
+        w_ratio = [1]*tile_size_column
+        gs = fig.add_gridspec(tile_size_row-1, tile_size_column, height_ratios=h_ratio, width_ratios=w_ratio) # Add x-by-y grid
     else:
         # Generate ratio lists
         h_ratio = [1]*(tile_size_row-1)
@@ -475,113 +507,169 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, truth_obj 
 
     
     #% RESIDUALS
-    ax = fig.add_subplot(gs[0, 0])
+    if res_use == True:
+        ax = fig.add_subplot(gs[0, 0])
 
-    for i in np.arange(0,N_sim):
-        y,binEdges=np.histogram(seqsim_res[:,[i]],bins=res_bins)
-        bincenters = 0.5*(binEdges[1:]+binEdges[:-1])
-        if i == 0:
-            ax.plot(bincenters, y, '-', color = color_rgb, label='Posterior') 
+        for i in np.arange(0,N_sim):
+            y,binEdges=np.histogram(seqsim_res[:,[i]],bins=res_bins)
+            bincenters = 0.5*(binEdges[1:]+binEdges[:-1])
+            if i == 0:
+                ax.plot(bincenters, y, '-', color = color_rgb, label='Posterior', linewidth = spec_lwidth) 
+            else:
+                ax.plot(bincenters, y, '-', color = color_rgb, linewidth = spec_lwidth) 
+        leg1 = mpatches.Patch(color=color_rgb, label='Posterior')
+
+        if m_equiv_lsq is not None:
+            y,binEdges=np.histogram(lsq_equiv_res,bins=res_bins)
+            bincenters = 0.5*(binEdges[1:]+binEdges[:-1])
+            ax.plot(bincenters, y, '-', color = "C3", label='Equivalent LSQ',linestyle = "dashed", linewidth = spec_lwidth)
+
+        if unit_transform_n_to_m == False:
+            ax.xaxis.set_major_formatter(SF)
+
+        ax.set_title('(a) Observation estimate residuals')
+        ax.annotate("Mean RMSE: {:.3f}".format(np.mean(rmse_leg)), (0.05, 0.5), xycoords='axes fraction', va='center', fontsize = label_fontsize)
+        ax.set_xlabel("Field residuals {}".format(unit_field))
+        ax.set_ylabel("Count")
+
+        if patch_legend == True:
+            ax.legend(handles=[leg1], numpoints=1, labelspacing=1, loc='best', fontsize=label_fontsize, frameon=False)
         else:
-            ax.plot(bincenters, y, '-', color = color_rgb) 
-
-    if m_equiv_lsq is not None:
-        y,binEdges=np.histogram(seqsim_obj.lsq_equiv_res,bins=res_bins)
-        bincenters = 0.5*(binEdges[1:]+binEdges[:-1])
-        ax.plot(bincenters, y, '-', color = "C3", label='Equivalent LSQ',linestyle = "dashed")
-
-    ax.set_title('(a) Observation estimate residuals')
-    ax.annotate("Mean RMSE: {:.3f}".format(np.mean(rmse_leg)), (0.05, 0.5), xycoords='axes fraction', va='center', fontsize = label_fontsize)
-    ax.set_xlabel("Field residuals {}".format(unit_field))
-    ax.set_ylabel("Count")
-    ax.legend(loc='best', fontsize = label_fontsize)
+            ax.legend(loc='best', fontsize = label_fontsize)
 
     #% HISTOGRAM
-    ax = fig.add_subplot(gs[0, 1])
+    if res_use == False:
+        ax = fig.add_subplot(gs[0, :])
+        plot_letter = "a"
+    else:
+        plot_letter = "b"
+        ax = fig.add_subplot(gs[0, 1])
 
     for i in np.arange(0,N_sim):
-        y,binEdges=np.histogram(seqsim_obj.m_DSS[:,[i]],bins=hist_bins, density = hist_density)
+        y,binEdges=np.histogram(posterior_fields[:,[i]], bins=hist_bins, density = hist_density)
         bincenters = 0.5*(binEdges[1:]+binEdges[:-1])
         if i == 0:
-            ax.plot(bincenters,y,'-', color = color_rgb, label='Posterior')  
+            ax.plot(bincenters,y,'-', color = color_rgb_zesty_pos, label='Global posterior', linewidth = spec_lwidth)  
         else:
-            ax.plot(bincenters,y,'-', color = color_rgb)     
+            ax.plot(bincenters,y,'-', color = color_rgb_zesty_pos, linewidth = spec_lwidth)     
+    leg1 = mpatches.Patch(color=color_rgb_zesty_pos, label='Global posterior')
+
+    for i in np.arange(0,len(posterior_fields)):
+        y,binEdges=np.histogram(posterior_fields[[i],:], bins=hist_bins, density = hist_density)
+        bincenters = 0.5*(binEdges[1:]+binEdges[:-1])
+        if i == 0:
+            ax.plot(bincenters,y,'-', color = color_rgb_zesty_neg, label='Local posterior', linewidth = spec_lwidth)  
+        else:
+            ax.plot(bincenters,y,'-', color = color_rgb_zesty_neg, linewidth = spec_lwidth)   
+    leg2 = mpatches.Patch(color=color_rgb_zesty_neg, label='Local posterior')
 
     if hist_pos_mean == True:
-        y,binEdges=np.histogram(np.mean(seqsim_obj.m_DSS,axis=1),bins=hist_bins, density = hist_density)
+        y,binEdges=np.histogram(np.mean(posterior_fields,axis=1), bins=hist_bins, density = hist_density)
         bincenters = 0.5*(binEdges[1:]+binEdges[:-1])
-        ax.plot(bincenters,y,'-',color = "C0", label='Posterior mean')  
+        ax.plot(bincenters, y, '-', color = color_rgb_zesty_neg, label='Posterior mean', linewidth = spec_lwidth)  
 
     if m_equiv_lsq is not None:
-        y,binEdges=np.histogram(np.array(m_equiv_lsq),bins=hist_bins, density = hist_density)
+        y,binEdges=np.histogram(np.array(m_equiv_lsq), bins=hist_bins, density = hist_density)
         bincenters = 0.5*(binEdges[1:]+binEdges[:-1])
-        ax.plot(bincenters,y,'--',color = 'C3',label='Equivalent LSQ', linestyle = "dashed") 
+        ax.plot(bincenters, y, '--', color = 'C3', label='Equivalent LSQ', linestyle = "dashed", linewidth = spec_lwidth) 
 
     if hist_ti_ens == True:
-        ti_hist_data = seqsim_obj.m_core_ens
+        #ti_hist_data = prior_ens
+        ti_hist_data = np.ravel(prior_ens)
+        ti_hist_data = ti_hist_data[0.5*np.max(np.abs(ti_hist_data))>np.abs(ti_hist_data)]
+        ti_label = "Training ensemble"
     else:
         ti_hist_data = seqsim_obj.data
+        ti_label = "Training image"
 
+    # Training
     y,binEdges=np.histogram(ti_hist_data,bins=hist_bins, density = hist_density)
     bincenters = 0.5*(binEdges[1:]+binEdges[:-1])
-    ax.plot(bincenters,y, color = 'C4',label='Training image',linestyle = "dashed", linewidth = int(2*spec_lwidth))
+    ax.plot(bincenters,y, color = 'k', label=ti_label, linewidth = 1)
+
+    #leg3 = ax.plot([], [], c="k", linewidth = 1, linestyle='dashed')
+    leg3 = mpatches.Patch(color="k", label=ti_label)
 
     if truth_obj is not None:
-        y,binEdges=np.histogram(truth_obj.data,bins=hist_bins, density = hist_density)
+        y,binEdges=np.histogram(truth_data, bins=hist_bins, density = hist_density)
         bincenters = 0.5*(binEdges[1:]+binEdges[:-1])
-        ax.plot(bincenters,y,'k--',label='Synthetic truth')
+        ax.plot(bincenters,y,'C1--', label='Synthetic truth', linewidth = spec_lwidth)
 
-    ax.set_title('(b) Histogram reproduction')
-    ax.legend(loc='best', fontsize = label_fontsize) #legend(bbox_to_anchor=(1.05, 1), loc='upper left', borderaxespad=0.)
+    ax.set_title('({}) Histogram reproduction'.format(plot_letter))
+
+    if patch_legend == True:
+        ax.legend(handles=[leg1,leg2,leg3], numpoints=1, labelspacing=1, loc='best', fontsize=label_fontsize, frameon=False)
+    else:
+        ax.legend(loc='best', fontsize = label_fontsize)
+    
     ax.set_xlabel('Field value {}'.format(unit_field))
-    ax.set_ylabel('Count')
-
+    if hist_density == True:
+        ax.set_ylabel('PDF')
+    else:
+        ax.set_ylabel('Count')
 
     #% SEMI-VARIOGRAM
-    ax = fig.add_subplot(gs[1, :])
-
-    # Realizations
-    for i in np.arange(0,N_sim):
-        seqsim_obj.sv_m_DSS(len(seqsim_obj.data), 1, seqsim_obj.m_DSS[:,[i]], seqsim_obj.sort_d, seqsim_obj.n_lags, seqsim_obj.max_cloud)
-        if i == 0:
-            ax.plot(seqsim_obj.lags[:lags_use], seqsim_obj.pics_m_DSS[:lags_use,0], color = color_rgb, label='Posterior', linewidth = 0.6)
+    if sv_use == True:
+        if res_use == False:
+            plot_letter = "b"
         else:
-            ax.plot(seqsim_obj.lags[:lags_use], seqsim_obj.pics_m_DSS[:lags_use,0], color = color_rgb, linewidth = 0.6) 
+            plot_letter = "c"
 
-    # Model SV
-    lags_use_max = np.max(seqsim_obj.lags[:lags_use])
-    lags_use_idx_model = seqsim_obj.lags_sv_curve<=lags_use_max
-    plot_model_lag = seqsim_obj.lags_sv_curve[lags_use_idx_model]
-    plot_model_sv = seqsim_obj.sv_curve[lags_use_idx_model]
-    ax.plot(plot_model_lag, plot_model_sv, color='C1', label='Model')
+        ax = fig.add_subplot(gs[1, :])
 
-    # Training image
-    seqsim_obj.sv_m_DSS(len(seqsim_obj.data), 1, seqsim_obj.data.reshape(-1,1), seqsim_obj.sort_d, seqsim_obj.n_lags, seqsim_obj.max_cloud)
-    ax.plot(seqsim_obj.lags[:lags_use], seqsim_obj.pics_m_DSS[:lags_use,0],'o', markersize=5, color = 'C4', label='Training image') #linewidth = 1.0, linestyle = "dashed"
+        # Realizations
+        for i in np.arange(0,N_sim):
+            seqsim_obj.sv_m_DSS(len(seqsim_obj.data), 1, posterior_fields[:,[i]], seqsim_obj.sort_d, seqsim_obj.n_lags, seqsim_obj.max_cloud)
+            if i == 0:
+                ax.plot(seqsim_obj.lags[:lags_use], seqsim_obj.pics_m_DSS[:lags_use,0], color = color_rgb, label='Posterior', linewidth = spec_lwidth)
+            else:
+                ax.plot(seqsim_obj.lags[:lags_use], seqsim_obj.pics_m_DSS[:lags_use,0], color = color_rgb, linewidth = spec_lwidth) 
 
-    if sv_pos_mean == True:
-        # Realization mean
-        seqsim_obj.sv_m_DSS(len(seqsim_obj.data), 1, np.mean(seqsim_obj.m_DSS,axis=1).reshape(-1,1), seqsim_obj.sort_d, seqsim_obj.n_lags, seqsim_obj.max_cloud)
-        ax.plot(seqsim_obj.lags[:lags_use], seqsim_obj.pics_m_DSS[:lags_use,0], color = "C0", label='Posterior mean', linewidth = 1.0)
+        # Model SV
+        lags_use_max = np.max(seqsim_obj.lags[:lags_use])
+        lags_use_idx_model = seqsim_obj.lags_sv_curve<=lags_use_max
+        plot_model_lag = seqsim_obj.lags_sv_curve[lags_use_idx_model]
+        plot_model_sv = seqsim_obj.sv_curve[lags_use_idx_model]
+        ax.plot(plot_model_lag, plot_model_sv, color='C2', label='Model')
 
-    # Equivalent LSQ
-    if m_equiv_lsq is not None:
-        seqsim_obj.sv_m_DSS(len(seqsim_obj.data), 1, np.array(m_equiv_lsq), seqsim_obj.sort_d, seqsim_obj.n_lags, seqsim_obj.max_cloud)
-        ax.plot(seqsim_obj.lags[:lags_use], seqsim_obj.pics_m_DSS[:lags_use,0], color = 'C3', label='Equivalent LSQ', linestyle = "dashed", linewidth = 1.0)    
+        # Training image
+        seqsim_obj.sv_m_DSS(len(seqsim_obj.data), 1, seqsim_obj.data.reshape(-1,1), seqsim_obj.sort_d, seqsim_obj.n_lags, seqsim_obj.max_cloud)
+        ax.plot(seqsim_obj.lags[:lags_use], seqsim_obj.pics_m_DSS[:lags_use,0],'o', markersize=5, color = 'k', label='Training image') #linewidth = 1.0, linestyle = "dashed"
 
-    # Observed truth
-    if truth_obj is not None:
-        seqsim_obj.sv_m_DSS(len(truth_obj.data), 1, truth_obj.data.reshape(-1,1), seqsim_obj.sort_d, seqsim_obj.n_lags, seqsim_obj.max_cloud)
-        ax.plot(seqsim_obj.lags[:lags_use], seqsim_obj.pics_m_DSS[:lags_use,0], 'k', label='Synthetic truth', linewidth = 1.0, linestyle = "dashed") 
+        if sv_pos_mean == True:
+            # Realization mean
+            seqsim_obj.sv_m_DSS(len(seqsim_obj.data), 1, np.mean(posterior_fields,axis=1).reshape(-1,1), seqsim_obj.sort_d, seqsim_obj.n_lags, seqsim_obj.max_cloud)
+            ax.plot(seqsim_obj.lags[:lags_use], seqsim_obj.pics_m_DSS[:lags_use,0], color = "C0", label='Posterior mean', linewidth = spec_lwidth)
 
-    ax.set_title('(c) Semi-variogram reproduction')
-    ax.set_ylabel('Semi-variance {}'.format(unit_var))
-    ax.set_xlabel('Lag {}'.format(unit_lag))
-    ax.legend(loc='best', fontsize = label_fontsize)
+        # Equivalent LSQ
+        if m_equiv_lsq is not None:
+            seqsim_obj.sv_m_DSS(len(seqsim_obj.data), 1, np.array(m_equiv_lsq), seqsim_obj.sort_d, seqsim_obj.n_lags, seqsim_obj.max_cloud)
+            ax.plot(seqsim_obj.lags[:lags_use], seqsim_obj.pics_m_DSS[:lags_use,0], color = 'C3', label='Equivalent LSQ', linestyle = "dashed", linewidth = spec_lwidth)    
+
+        # Observed truth
+        if truth_obj is not None:
+            seqsim_obj.sv_m_DSS(len(truth_data), 1, truth_data.reshape(-1,1), seqsim_obj.sort_d, seqsim_obj.n_lags, seqsim_obj.max_cloud)
+            ax.plot(seqsim_obj.lags[:lags_use], seqsim_obj.pics_m_DSS[:lags_use,0], 'C1', label='Synthetic truth', linewidth = spec_lwidth, linestyle = "dashed") 
+
+        ax.set_title('({}) Semi-variogram reproduction'.format(plot_letter))
+        ax.set_ylabel('Semi-variance {}'.format(unit_var))
+        ax.set_xlabel('Lag {}'.format(unit_lag))
+        ax.legend(loc='best', fontsize = label_fontsize)
 
     if spec_use == True:
         #% P-SPEC
-        ax = fig.add_subplot(gs[2, :])
+        if sv_use == False:
+            if res_use == False:
+                plot_letter = "b"
+            else:
+                plot_letter = "c"
+            ax = fig.add_subplot(gs[1, :])
+        else:
+            if res_use == False:
+                plot_letter = "c"
+            else:
+                plot_letter = "d"
+            ax = fig.add_subplot(gs[2, :])
 
         if seqsim_obj.grid_nmax < seqsim_obj.N_SH:
             nmax = seqsim_obj.grid_nmax
@@ -607,10 +695,11 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, truth_obj 
             p_spec_pos = p_spec_pos[:nmax]
             p_spec_pos_all.append(p_spec_pos)
             if i == 0:
-                ax.plot(ns, p_spec_pos, color=color_rgb, label = "Posterior", linewidth = spec_lwidth, zorder = 0.05)
+                ax.plot(ns, p_spec_pos, color=color_rgb_zesty_pos, label = "Posterior", linewidth = spec_lwidth, zorder = 0.05)
             else:
-                ax.plot(ns, p_spec_pos, color=color_rgb, linewidth = spec_lwidth, zorder = 0.05)
+                ax.plot(ns, p_spec_pos, color=color_rgb_zesty_pos, linewidth = spec_lwidth, zorder = 0.05) #color=color_rgb
         p_spec_pos_all = np.array(p_spec_pos_all)
+        leg1 = mpatches.Patch(color=color_rgb_zesty_pos, label='Posterior')
 
         # Realization mean
         ens_cilm = np.array(pyshtools.shio.SHVectorToCilm(np.hstack((np.zeros(1,), seqsim_obj.g_spec_mean))))
@@ -620,8 +709,9 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, truth_obj 
         else:
             p_spec_pos_mean = pyshtools.spectralanalysis.spectrum(ens_cilm, degrees = np.arange(1,np.shape(ens_cilm)[1]))
         p_spec_pos_mean = p_spec_pos_mean[:nmax]
-        ax.plot(ns, p_spec_pos_mean, color="C0", label = "Posterior mean", linewidth = spec_lwidth)
-        
+        ax.plot(ns, p_spec_pos_mean, color=color_rgb_zesty_neg, label = "Posterior mean", linewidth = 1)
+        leg2 = mpatches.Patch(color=color_rgb_zesty_neg, label='Posterior mean')
+
         # Equivalent LSQ
         if m_equiv_lsq is not None:
             ens_cilm_lsq = np.array(pyshtools.shio.SHVectorToCilm(np.hstack((np.zeros(1,), seqsim_obj.g_lsq_equiv))))
@@ -633,15 +723,32 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, truth_obj 
             p_spec_lsq = p_spec_lsq[:nmax]
             ax.plot(ns, p_spec_lsq, color = "C3", label = "Equivalent LSQ", linewidth = spec_lwidth, linestyle = "dashed")
 
-        # Prior
-        ens_cilm_prior = np.array(pyshtools.shio.SHVectorToCilm(np.hstack((np.zeros(1,), seqsim_obj.g_prior))))
-        #p_spec_prior = pyshtools.gravmag.mag_spectrum(ens_cilm_prior, spec_r_ref, spec_r_at, degrees = np.arange(1,np.shape(ens_cilm_prior)[1])) # degrees to skip zeroth degree
-        if spec_mag == True:
-            p_spec_prior = pyshtools.gravmag.mag_spectrum(ens_cilm_prior, spec_r_ref, spec_r_at, degrees = np.arange(1,np.shape(ens_cilm_prior)[1]))
+        # Prior/Training
+        if spec_ti_ens == True:
+            # g ensemble and parameters
+            g_core_ens = np.genfromtxt("lithosphere_prior/grids/shcoeff_Dynamo/gnm_midpath.dat").T*10**9
+            g_core_ens = g_core_ens[:shc_vec_len(seqsim_obj.N_SH),:]
+
+            n_max = seqsim_obj.N_SH
+            g_cut = g_core_ens[:n_max*(2+n_max),200:] # Truncate g
+            R = lowe_shspec(n_max,spec_r_at,seqsim_obj.a,g_cut)
+
+            for i in np.arange(R.shape[1]):
+                if i == 0:
+                    ax.plot(ns,R[:,i], color = "k", label = "Training ensemble", linewidth = 0.2, zorder=0) #, linestyle = "dashed"
+                else:
+                    ax.plot(ns,R[:,i], color = "k", linewidth = 0.2, zorder=0) #, linestyle = "dashed"
+            leg3 = mpatches.Patch(color="k", label='Training ensemble')
         else:
-            p_spec_prior = pyshtools.spectralanalysis.spectrum(ens_cilm_prior, degrees = np.arange(1,np.shape(ens_cilm_prior)[1]))
-        p_spec_prior = p_spec_prior[:nmax]
-        ax.plot(ns, p_spec_prior, color = "C4", label = "Training image", linewidth = int(2*spec_lwidth), linestyle = "dashed")
+            ens_cilm_prior = np.array(pyshtools.shio.SHVectorToCilm(np.hstack((np.zeros(1,), seqsim_obj.g_prior))))
+            #p_spec_prior = pyshtools.gravmag.mag_spectrum(ens_cilm_prior, spec_r_ref, spec_r_at, degrees = np.arange(1,np.shape(ens_cilm_prior)[1])) # degrees to skip zeroth degree
+            if spec_mag == True:
+                p_spec_prior = pyshtools.gravmag.mag_spectrum(ens_cilm_prior, spec_r_ref, spec_r_at, degrees = np.arange(1,np.shape(ens_cilm_prior)[1]))
+            else:
+                p_spec_prior = pyshtools.spectralanalysis.spectrum(ens_cilm_prior, degrees = np.arange(1,np.shape(ens_cilm_prior)[1]))
+            p_spec_prior = p_spec_prior[:nmax]
+            ax.plot(ns, p_spec_prior, color = "k", label = "Training image", linewidth = spec_lwidth, linestyle = "dashed", zorder=0)
+            leg3 = mpatches.Patch(color="k", label='Training image')
 
         # Observed truth
         if truth_obj is not None:
@@ -652,7 +759,8 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, truth_obj 
             else:
                 p_spec_compare = pyshtools.spectralanalysis.spectrum(ens_cilm_compare, degrees = np.arange(1,np.shape(ens_cilm_compare)[1]))
             p_spec_compare = p_spec_compare[:nmax]
-            ax.plot(ns, p_spec_compare, color = "k", label = "Synthetic truth", linewidth = spec_lwidth, linestyle = "dashed")
+            ax.plot(ns, p_spec_compare, color = "C1", label = "Synthetic truth", linewidth = spec_lwidth, linestyle = "dashed")
+            leg4 = mpatches.Patch(color="k", label='Synthetic truth')
 
         if spec_show_differences == True:
             # Differences
@@ -730,16 +838,22 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, truth_obj 
         ax.set_yscale('log')
         ax.set_xlabel("degree n")
         if spec_mag == True:
-            ax.set_title('(d) Power spectra comparison [r: {}{}]'.format(spec_r_at,unit_lag[1:-1]))
+            ax.set_title('({}) Power spectra comparison [r: {}{}]'.format(plot_letter,spec_r_at,unit_lag[1:-1]))
             ax.set_ylabel("Power {}".format(unit_var))
         else:
-            ax.set_title('(d) Power spectra comparison')
+            ax.set_title('({}) Power spectra comparison'.format(plot_letter))
             ax.set_ylabel("Power")    
         ax.set_xticks(n_ticks) #fontsize="small"
         ax.grid(alpha=0.3)
-        ax.legend(loc='best', fontsize = label_fontsize)
 
-    #fig.subplots_adjust(left=left, bottom=bottom, right=right, top=top, wspace=wspace, hspace=hspace)
+        if patch_legend == True:
+            ax.legend(handles=[leg1,leg2,leg3], numpoints=1, labelspacing=1, loc='best', fontsize=label_fontsize, frameon=False)
+            if truth_obj is not None:
+                ax.legend(handles=[leg1,leg2,leg3,leg4], numpoints=1, labelspacing=1, loc='best', fontsize=label_fontsize, frameon=False)
+        else:
+            ax.legend(loc='best', fontsize = label_fontsize)
+
+    fig.subplots_adjust(left=left, bottom=bottom, right=right, top=top, wspace=wspace, hspace=hspace)
 
     if savefig == True:
         fig.savefig('sdssim_reproduce_{}.pdf'.format(save_string), bbox_inches='tight', dpi = save_dpi) 
@@ -748,7 +862,7 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, truth_obj 
     
 
 def plot_ensemble_map_tiles(lon, lat, ensemble_fields, field_compare = None, field_lsq = None, field_mean = None, tile_size_row = 3, tile_size_column = 3, figsize=(8,8), limit_for_SF = 10**6, point_size = 0.01,
-                            left=0.02, bottom=0.05, right=0.98, top=0.98, wspace = 0.05, hspace=-0.72, coast_width = 0.1, coast_color = "grey", cbar_mm_factor = 1, unit_transform_n_to_m = False,
+                            left=0.03, bottom=0.12, right=0.97, top=0.95, wspace = 0.05, hspace=0.25, coast_width = 0.1, coast_color = "grey", cbar_mm_factor = 1, unit_transform_n_to_m = False,
                             savefig = False, save_string = "", save_dpi = 300,  projection = ccrs.Mollweide(), cbar_limit = None, cbar_h = 0.07, cbar_text = "nT", cbar_text_color = "grey", use_gridlines = False, gridlines_width = 0.2, gridlines_alpha = 0.1):
     import numpy as np
     import matplotlib.pyplot as plt
