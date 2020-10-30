@@ -735,7 +735,7 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, truth_obj 
         # Prior/Training
         if spec_ti_ens == True:
             # g ensemble and parameters
-            g_core_ens = np.genfromtxt("lithosphere_prior/grids/shcoeff_Dynamo/gnm_midpath.dat").T*10**9
+            g_core_ens = np.genfromtxt("mikkel_tools/models_shc/gnm_midpath.dat").T*10**9
             g_core_ens = g_core_ens[:shc_vec_len(seqsim_obj.N_SH),:]
 
             n_max = seqsim_obj.N_SH
@@ -788,10 +788,10 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, truth_obj 
 
         # Models
         if model_dict is not None: # Load models
-            WDMAM2 = spio.loadmat('lithosphere_prior/grids/models/WDMAM2.mat')
-            LCS1 = load_shc("lithosphere_prior/grids/models/LCS-1.shc")
-            MF7 = load_shc("lithosphere_prior/grids/models/MF7.shc")
-            EMM2017 = np.loadtxt('lithosphere_prior/grids/models/EMM2017.COF',comments="%",skiprows=1)
+            WDMAM2 = spio.loadmat('mikkel_tools/models_shc/WDMAM2.mat')
+            LCS1 = load_shc("mikkel_tools/models_shc/LCS-1.shc")
+            MF7 = load_shc("mikkel_tools/models_shc/MF7.shc")
+            EMM2017 = np.loadtxt('mikkel_tools/models_shc/EMM2017.COF',comments="%",skiprows=1)
 
             # Add zero coefficient to comply with SHTOOLS methods
             g_LCS1 = np.hstack((np.zeros(1,),LCS1[:,2]))
@@ -808,13 +808,13 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, truth_obj 
             cilm_EMM2017 = pyshtools.shio.SHVectorToCilm(g_EMM2017)
 
             # Pomme
-            Gauss_in_pomme = np.loadtxt('lithosphere_prior/grids/models/POMME_6_main_field.txt')
+            Gauss_in_pomme = np.loadtxt('mikkel_tools/models_shc/POMME_6_main_field.txt')
             g_pomme = np.hstack((np.zeros(1,), gauss_vector(Gauss_in_pomme, 60, i_n = 2, i_m = 3)))
             cilm_pomme = pyshtools.shio.SHVectorToCilm(g_pomme)
 
             # CHAOS 7
             N_chaos = 20
-            CHAOS7 = load_CHAOS_matfile('lithosphere_prior/grids/models/CHAOS-7.mat')
+            CHAOS7 = load_CHAOS_matfile('mikkel_tools/models_shc/CHAOS-7.mat')
             chaos_time = mjd2000(spec_chaos_time[0], spec_chaos_time[1], spec_chaos_time[2])
             g_CHAOS7 = np.hstack((np.zeros(1,),CHAOS7.synth_coeffs_tdep(chaos_time, nmax=20, deriv=0)))
             cilm_CHAOS7 = pyshtools.shio.SHVectorToCilm(g_CHAOS7)
@@ -1280,10 +1280,10 @@ def plot_p_spec(g_spec, p_spec_height, nmax, model_dict = None, figsize = (14,8)
                 plt.plot(ns, p_spec[:nmax], color=color, linewidth = lwidth)
 
     if model_dict is not None: # Load models
-        WDMAM2 = spio.loadmat('lithosphere_prior/grids/models/WDMAM2.mat')
-        LCS1 = load_shc("lithosphere_prior/grids/models/LCS-1.shc")
-        MF7 = load_shc("lithosphere_prior/grids/models/MF7.shc")
-        EMM2017 = np.loadtxt('lithosphere_prior/grids/models/EMM2017.COF',comments="%",skiprows=1)
+        WDMAM2 = spio.loadmat('mikkel_tools/models_shc/WDMAM2.mat')
+        LCS1 = load_shc("mikkel_tools/models_shc/LCS-1.shc")
+        MF7 = load_shc("mikkel_tools/models_shc/MF7.shc")
+        EMM2017 = np.loadtxt('mikkel_tools/models_shc/EMM2017.COF',comments="%",skiprows=1)
 
         # Add zero coefficient to comply with SHTOOLS methods
         g_LCS1 = np.hstack((np.zeros(1,),LCS1[:,2]))
@@ -1300,13 +1300,13 @@ def plot_p_spec(g_spec, p_spec_height, nmax, model_dict = None, figsize = (14,8)
         cilm_EMM2017 = pyshtools.shio.SHVectorToCilm(g_EMM2017)
 
         # Pomme
-        Gauss_in_pomme = np.loadtxt('lithosphere_prior/grids/models/POMME_6_main_field.txt')
+        Gauss_in_pomme = np.loadtxt('mikkel_tools/models_shc/POMME_6_main_field.txt')
         g_pomme = np.hstack((np.zeros(1,), gauss_vector(Gauss_in_pomme, 60, i_n = 2, i_m = 3)))
         cilm_pomme = pyshtools.shio.SHVectorToCilm(g_pomme)
 
         # CHAOS 7
         N_chaos = 20
-        CHAOS7 = load_CHAOS_matfile('lithosphere_prior/grids/models/CHAOS-7.mat')
+        CHAOS7 = load_CHAOS_matfile('mikkel_tools/models_shc/CHAOS-7.mat')
         chaos_time = mjd2000(2020, 1, 1)
         g_CHAOS7 = np.hstack((np.zeros(1,),CHAOS7.synth_coeffs_tdep(chaos_time, nmax=20, deriv=0)))
         cilm_CHAOS7 = pyshtools.shio.SHVectorToCilm(g_CHAOS7)
