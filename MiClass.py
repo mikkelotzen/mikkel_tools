@@ -5,7 +5,7 @@ import numpy as np
 import scipy as sp
 #from utility import printProgressBar
 import scipy.interpolate as itp
-import GMT_tools as gt
+import mikkel_tools.GMT_tools as gt
 import time
 import pyshtools
 import mikkel_tools.utility as mt_util
