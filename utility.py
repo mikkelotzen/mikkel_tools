@@ -8,6 +8,7 @@ import matplotlib.patches as mpatches
 import os
 import cartopy.crs as ccrs
 import time
+import numpy as np
 
 utility_abs_path = os.path.dirname(__file__)
 
@@ -60,6 +61,17 @@ def load_shc(filepath, comments = "#"):
 
     file = np.loadtxt(filepath, comments=comments, skiprows=n_comments+2)
     return file
+
+# Function for testing positive definiteness
+def is_pos_def(A):
+    if np.allclose(A, A.conj().T):
+        try:
+            np.linalg.cholesky(A)
+            return True
+        except np.linalg.LinAlgError:
+            return False
+    else:
+        return False
 
 def printProgressBar (iteration, total, *args, subject='', prefix = '', suffix = '', decimals = 1, length = 10, fill = 'O', notebook_style = True, sleep_time = 0.0001):
     """
