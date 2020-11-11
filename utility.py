@@ -837,6 +837,7 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, truth_obj 
                 model_dict = model_dict_def
 
             i = 0
+            model_leg = []
             for key in model_dict:
                 ens_cilm = model_dict_def[key]
                 p_spec = pyshtools.gravmag.mag_spectrum(ens_cilm, spec_r_ref, spec_r_at, degrees = np.arange(1,np.shape(ens_cilm)[1]))
@@ -854,7 +855,8 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, truth_obj 
                     use_ns = ns
                     use_p_spec = p_spec[:nmax]
 
-                ax.plot(use_ns, use_p_spec, color="C{}".format(i+5), label = key, linewidth = spec_lwidth)
+                ax.plot(use_ns, use_p_spec, color="C{}".format(i+2), label = key, linewidth = spec_lwidth)
+                model_leg.append(mpatches.Patch(color="C{}".format(i+2), label=key))
                 i += 1
         
         ax.set_yscale('log')
@@ -869,9 +871,15 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, truth_obj 
         ax.grid(alpha=0.3)
 
         if patch_legend == True:
-            ax.legend(handles=[leg1,leg2,leg3], numpoints=1, labelspacing=1, loc='best', fontsize=label_fontsize, frameon=False)
+            leg_handle_model = [leg1,leg2,leg3]
             if truth_obj is not None:
-                ax.legend(handles=[leg1,leg2,leg3,leg4], numpoints=1, labelspacing=1, loc='best', fontsize=label_fontsize, frameon=False)
+                leg_handle_model.append(leg4)
+                #ax.legend(handles=leg_handle_model, numpoints=1, labelspacing=1, loc='best', fontsize=label_fontsize, frameon=False)
+            if type(model_dict) is set or model_dict=="default":
+                for leg in model_leg:
+                    leg_handle_model.append(leg)
+
+            ax.legend(handles=leg_handle_model, numpoints=1, labelspacing=1, loc='best', fontsize=label_fontsize, frameon=False)
         else:
             ax.legend(loc='best', fontsize = label_fontsize)
 
