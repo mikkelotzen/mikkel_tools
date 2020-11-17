@@ -455,9 +455,9 @@ def plot_cartopy_animation(lat = None, lon = None, data=None, limits_data = None
 
 def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, truth_obj = None, lags_use = 300, hist_bins = 100, hist_pos_mean = True, hist_ti_ens = False, hist_density = False, hist_local_posterior = False,
                           res_bins = 200, spec_use = True, spec_step = 5, spec_lwidth = 1, spec_r_at = None, spec_r_ref = 6371.2, spec_show_differences = True, spec_mag = True, sv_pos_mean = True,
-                          sv_use = True, spec_ti_ens = False, res_use = True, unit_transform_n_to_m = False, patch_legend = False,
+                          sv_use = True, spec_ti_ens = False, res_use = True, unit_transform_n_to_m = False, patch_legend = False, ens_prior = False,
                           model_dict = None, spec_chaos_time = [2020,1,1], unit_var = "[nT²]", unit_lag = "[km]", unit_field = "[nT]", unit_res = "[nT]",
-                          left=0.08, bottom=0.12, right=0.92, top=0.95, wspace = 0.2, hspace=0.25, label_fontsize = "small",
+                          left=0.08, bottom=0.12, right=0.92, top=0.95, wspace = 0.2, hspace=0.25, label_fontsize = "small", res_power_format = False, res_print_f = 2, power_limit = 6,
                           tile_size_row = 3, tile_size_column = 2, figsize=(9,14), savefig = False, save_string = "", save_dpi = 300, save_path = ""):
     import numpy as np
     import matplotlib.pyplot as plt
@@ -474,7 +474,8 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, truth_obj 
     # Scale from nano to mili
     if unit_transform_n_to_m == True:
             posterior_fields = seqsim_obj.m_DSS*10**(-6)
-            prior_ens = seqsim_obj.m_core_ens*10**(-6)
+            if ens_prior == True:
+                prior_ens = seqsim_obj.m_core_ens*10**(-6)
             #seqsim_res = seqsim_res*10**(-6)
             seqsim_data = seqsim_obj.data*10**(-6)
             if m_equiv_lsq is not None:
@@ -484,7 +485,8 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, truth_obj 
                 truth_data = truth_obj.data*10**(-6)
     else:
         posterior_fields = seqsim_obj.m_DSS
-        prior_ens = seqsim_obj.m_core_ens
+        if ens_prior == True:
+            prior_ens = seqsim_obj.m_core_ens
         seqsim_data = seqsim_obj.data
         if m_equiv_lsq is not None:
             m_equiv_lsq = m_equiv_lsq
@@ -493,7 +495,7 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, truth_obj 
             truth_data = truth_obj.data
 
     SF = tick.ScalarFormatter() # Formatter for colorbar
-    SF.set_powerlimits((6, 6)) # Set sci exponent used
+    SF.set_powerlimits((power_limit, power_limit)) # Set sci exponent used
 
     N_sim = seqsim_res.shape[1]
 
@@ -524,7 +526,7 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, truth_obj 
     if res_use == True:
         ax = fig.add_subplot(gs[0, 0])
 
-        if unit_transform_n_to_m == False:
+        if res_power_format == True:
             ax.xaxis.set_major_formatter(SF)
 
 
@@ -543,7 +545,7 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, truth_obj 
             ax.plot(bincenters, y, '-', color = "C3", label='Equivalent LSQ',linestyle = "dashed", linewidth = spec_lwidth)
 
         ax.set_title('(a) Observation estimate residuals')
-        ax.annotate("Mean RMSE: {:.2f}".format(np.mean(rmse_leg)), (0.05, 0.5), xycoords='axes fraction', va='center', fontsize = label_fontsize)
+        ax.annotate("Mean RMSE: {:.{}f}".format(np.mean(rmse_leg), res_print_f), (0.05, 0.5), xycoords='axes fraction', va='center', fontsize = label_fontsize)
         ax.set_xlabel("Field residuals {}".format(unit_res))
         ax.set_ylabel("Count")
 
@@ -643,25 +645,29 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, truth_obj 
         for i in np.arange(0,N_sim):
             seqsim_obj.sv_m_DSS(len(seqsim_data), 1, posterior_fields[:,[i]], seqsim_obj.sort_d, seqsim_obj.n_lags, seqsim_obj.max_cloud)
             if i == 0:
-                ax.plot(seqsim_obj.lags[:lags_use], seqsim_obj.pics_m_DSS[:lags_use,0], color = color_rgb, label='Posterior', linewidth = spec_lwidth)
+                ax.plot(seqsim_obj.lags[:lags_use], seqsim_obj.pics_m_DSS[:lags_use,0], color = color_rgb_zesty_pos, label='Posterior', linewidth = spec_lwidth)
             else:
-                ax.plot(seqsim_obj.lags[:lags_use], seqsim_obj.pics_m_DSS[:lags_use,0], color = color_rgb, linewidth = spec_lwidth) 
+                ax.plot(seqsim_obj.lags[:lags_use], seqsim_obj.pics_m_DSS[:lags_use,0], color = color_rgb_zesty_pos, linewidth = spec_lwidth) 
+        leg1 = mpatches.Patch(color=color_rgb_zesty_pos, label='Posterior')
 
         # Model SV
         lags_use_max = np.max(seqsim_obj.lags[:lags_use])
         lags_use_idx_model = seqsim_obj.lags_sv_curve<=lags_use_max
         plot_model_lag = seqsim_obj.lags_sv_curve[lags_use_idx_model]
         plot_model_sv = seqsim_obj.sv_curve[lags_use_idx_model]
-        ax.plot(plot_model_lag, plot_model_sv, color='C2', label='Model')
+        ax.plot(plot_model_lag, plot_model_sv, color='C4', label='Semi-variogram model')
+        leg2 = mpatches.Patch(color='C4', label='Semi-variogram model')
 
         # Training image
         seqsim_obj.sv_m_DSS(len(seqsim_data), 1, seqsim_data.reshape(-1,1), seqsim_obj.sort_d, seqsim_obj.n_lags, seqsim_obj.max_cloud)
-        ax.plot(seqsim_obj.lags[:lags_use], seqsim_obj.pics_m_DSS[:lags_use,0],'o', markersize=5, color = 'k', label='Training image') #linewidth = 1.0, linestyle = "dashed"
+        ax.plot(seqsim_obj.lags[:lags_use], seqsim_obj.pics_m_DSS[:lags_use,0],'o', markersize=2, color = 'k', label='Training image') #linewidth = 1.0, linestyle = "dashed"
+        leg3 = mpatches.Patch(color="k", label='Training image')
 
         if sv_pos_mean == True:
             # Realization mean
             seqsim_obj.sv_m_DSS(len(seqsim_data), 1, np.mean(posterior_fields,axis=1).reshape(-1,1), seqsim_obj.sort_d, seqsim_obj.n_lags, seqsim_obj.max_cloud)
-            ax.plot(seqsim_obj.lags[:lags_use], seqsim_obj.pics_m_DSS[:lags_use,0], color = "C0", label='Posterior mean', linewidth = spec_lwidth)
+            ax.plot(seqsim_obj.lags[:lags_use], seqsim_obj.pics_m_DSS[:lags_use,0], color = color_rgb_zesty_neg, label='Posterior mean', linewidth = spec_lwidth)
+            leg4 = mpatches.Patch(color=color_rgb_zesty_neg, label='Posterior mean')
 
         # Equivalent LSQ
         if m_equiv_lsq is not None:
@@ -671,12 +677,23 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, truth_obj 
         # Observed truth
         if truth_obj is not None:
             seqsim_obj.sv_m_DSS(len(truth_data), 1, truth_data.reshape(-1,1), seqsim_obj.sort_d, seqsim_obj.n_lags, seqsim_obj.max_cloud)
-            ax.plot(seqsim_obj.lags[:lags_use], seqsim_obj.pics_m_DSS[:lags_use,0], 'C1', label='Synthetic truth', linewidth = spec_lwidth, linestyle = "dashed") 
+            ax.plot(seqsim_obj.lags[:lags_use], seqsim_obj.pics_m_DSS[:lags_use,0], 'C2', label='Synthetic truth', linewidth = spec_lwidth, linestyle = "dashed") 
+            leg5 = mpatches.Patch(color="C2", label='Synthetic truth')
 
         ax.set_title('({}) Semi-variogram reproduction'.format(plot_letter))
         ax.set_ylabel('Semi-variance {}'.format(unit_var))
         ax.set_xlabel('Lag {}'.format(unit_lag))
-        ax.legend(loc='best', fontsize = label_fontsize)
+
+        if patch_legend == True:
+            leg_handle = [leg1,leg3]
+            if sv_pos_mean == True:
+                leg_handle.insert(1,leg4)
+            if truth_obj is not None:
+                leg_handle.append(leg5)
+            leg_handle.append(leg2)
+            ax.legend(handles=leg_handle, numpoints=1, labelspacing=1, loc='best', fontsize=label_fontsize, frameon=False)
+        else:
+            ax.legend(loc='best', fontsize = label_fontsize)
 
     if spec_use == True:
         #% P-SPEC
