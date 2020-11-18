@@ -571,7 +571,7 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, truth_obj 
 
     # Unconditional posterior
     if uncon_obj is not None:
-        for i in np.arange(0,N_sim):
+        for i in np.arange(0,uncon_obj.N_sim):
             y,binEdges=np.histogram(uncon_posterior[:,[i]], bins=hist_bins, density = hist_density)
             bincenters = 0.5*(binEdges[1:]+binEdges[:-1])
             if i == 0:
@@ -606,7 +606,8 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, truth_obj 
         y,binEdges=np.histogram(np.mean(posterior_fields,axis=1), bins=hist_bins, density = hist_density)
         bincenters = 0.5*(binEdges[1:]+binEdges[:-1])
         ax.plot(bincenters, y, '-', color = color_rgb_zesty_neg, label='Posterior mean', linewidth = lwidth_mult*lwidth)  
-    
+        leg2 = mpatches.Patch(color=color_rgb_zesty_neg, label='Posterior mean')
+
     # Equivalent lsq
     if m_equiv_lsq is not None:
         y,binEdges=np.histogram(np.array(m_equiv_lsq), bins=hist_bins, density = hist_density)
@@ -638,7 +639,7 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, truth_obj 
 
     if patch_legend == True:
         leg_handle = [leg1,leg3]
-        if hist_local_posterior == True:
+        if np.logical_or(hist_local_posterior == True, hist_pos_mean == True):
             leg_handle.insert(1,leg2)
         if truth_obj is not None:
             leg_handle.append(leg4)
@@ -665,7 +666,7 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, truth_obj 
 
         # Unconditional posterior
         if uncon_obj is not None:
-            for i in np.arange(0,N_sim):
+            for i in np.arange(0,uncon_obj.N_sim):
                 uncon_obj.sv_m_DSS(len(uncon_data), 1, uncon_posterior[:,[i]], uncon_obj.sort_d, uncon_obj.n_lags, uncon_obj.max_cloud)
                 if i == 0:
                     ax.plot(uncon_obj.lags[:lags_use], uncon_obj.pics_m_DSS[:lags_use,0], color = color_rgb, label='Unconditional posterior', linewidth = lwidth/lwidth_div, zorder=0)
@@ -752,7 +753,7 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, truth_obj 
         ns = np.arange(1, nmax+1)
         n_ticks = np.append(np.array([1, 5, 10,]), np.arange(15,np.max(ns)+spec_step, step=spec_step))
 
-        N_ensembles = np.shape(seqsim_obj.g_spec)[-1]
+        #N_ensembles = np.shape(seqsim_obj.g_spec)[-1]
 
         if  spec_r_at == None:
             spec_r_at = seqsim_obj.r_sat
@@ -760,7 +761,7 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, truth_obj 
         # Unconditional posterior
         if uncon_obj is not None:
             p_spec_pos_all = []
-            for i in np.arange(0,N_ensembles):
+            for i in np.arange(0,uncon_obj.N_sim):
                 ens_cilm = np.array(pyshtools.shio.SHVectorToCilm(np.hstack((np.zeros(1,), uncon_obj.g_spec[:,i]))))
                 if spec_mag == True:
                     p_spec_pos = pyshtools.gravmag.mag_spectrum(ens_cilm, spec_r_ref, spec_r_at, degrees = np.arange(1,np.shape(ens_cilm)[1]))
@@ -777,7 +778,7 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, truth_obj 
 
         # Realizations
         p_spec_pos_all = []
-        for i in np.arange(0,N_ensembles):
+        for i in np.arange(0,N_sim):
             ens_cilm = np.array(pyshtools.shio.SHVectorToCilm(np.hstack((np.zeros(1,), seqsim_obj.g_spec[:,i]))))
             if spec_mag == True:
                 p_spec_pos = pyshtools.gravmag.mag_spectrum(ens_cilm, spec_r_ref, spec_r_at, degrees = np.arange(1,np.shape(ens_cilm)[1]))
@@ -962,7 +963,7 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, truth_obj 
     fig.show()
     
 
-def plot_ensemble_map_tiles(lon, lat, ensemble_fields, field_compare = None, field_lsq = None, field_mean = None, tile_size_row = 3, tile_size_column = 3, figsize=(8,8), limit_for_SF = 10**6, point_size = 0.01,
+def plot_ensemble_map_tiles(lon, lat, ensemble_fields, field_uncon = None, field_compare = None, field_lsq = None, field_mean = None, tile_size_row = 3, tile_size_column = 3, figsize=(8,8), limit_for_SF = 10**6, point_size = 0.01,
                             left=0.03, bottom=0.12, right=0.97, top=0.95, wspace = 0.05, hspace=0.25, coast_width = 0.1, coast_color = "grey", cbar_mm_factor = 1, unit_transform_n_to_m = False,
                             savefig = False, save_string = "", save_dpi = 300,  save_path = "", projection = ccrs.Mollweide(), cbar_limit = None, cbar_h = 0.07, cbar_text = "nT", cbar_text_color = "grey", use_gridlines = False, gridlines_width = 0.2, gridlines_alpha = 0.1):
     import numpy as np
@@ -1049,6 +1050,16 @@ def plot_ensemble_map_tiles(lon, lat, ensemble_fields, field_compare = None, fie
                 ax.set_global()
                 plot_field = np.std(ensemble_fields,axis=1)
                 ax.set_title("Posterior std. deviation")
+            elif np.logical_and.reduce((field_uncon is not None, i == 0, j == 0)):
+                field_var = np.var(field_uncon,axis = 0) # Unconditional fields based on min/max variance
+                idx_min_var = np.argmin(field_var)
+                idx_max_var = np.argmax(field_var)
+                plot_field = field_uncon[:,idx_min_var]
+            elif np.logical_and.reduce((field_uncon is not None, i == 0, j == 1)):
+                plot_field = field_uncon[:,idx_max_var]
+                plt.figtext(0.5,0.95,"______ Unconditional ______", va="center", ha="center")
+                plt.figtext(0.5,0.8,"______ Conditional ______", va="center", ha="center")
+
             else:
                 plot_field = ensemble_fields[:,ens_n]
 
