@@ -1180,11 +1180,12 @@ def plot_ensemble_map_tiles(lon, lat, ensemble_fields, field_uncon = None, field
 def plot_global(lat = None, lon = None, data=None, limits_data = None, 
                 cbar_h = 0.075, cbar_even = True, cbar_mm_factor = 1, cbar_text = "", cbar_text_color = "grey",
                 unit_transform_n_to_m = False, projection_transformation = "Mollweide", figsize=(6,6),
-                coast_width = 0.4, coast_color = "grey", limit_for_SF = 10**6,
+                coast_width = 0.4, coast_color = "grey", limit_for_SF = 10**6, extent = None,
                 left=0.03, bottom=0.35, right=0.97, top=0.95, wspace = 0.05, hspace=0.01,
                 title='Cartopy Earth plot', lat_0 = 0.0, lon_0 = 0.0, point_size=1,
                 savefig = False, save_dpi = 100, save_string ="", save_path = "", rasterize = True,
-                use_gridlines = False, gridlines_width = 0.4, gridlines_alpha = 0.4):
+                use_gridlines = False, gridlines_width = 0.4, gridlines_alpha = 0.4,
+                data_on_top = False, color_bg = None):
 
     import numpy as np
     import matplotlib.pyplot as plt
@@ -1251,25 +1252,42 @@ def plot_global(lat = None, lon = None, data=None, limits_data = None,
     ax.set_global()
     #ax.set_title("{}".format(title))
 
-    im = ax.scatter(lon, lat, s=point_size, c=data, transform=ccrs.PlateCarree(), rasterized=True, vmin = field_min, vmax = field_max, cmap=cm_zesty_cbf, norm = MidpointNormalize(midpoint=0.))
+    if data_on_top == True:
+        im = ax.scatter(lon, lat, s=point_size, c=data, transform=ccrs.PlateCarree(), rasterized=True, vmin = field_min, vmax = field_max, cmap=cm_zesty_cbf, norm = MidpointNormalize(midpoint=0.), zorder = 10)
+    else:
+        im = ax.scatter(lon, lat, s=point_size, c=data, transform=ccrs.PlateCarree(), rasterized=True, vmin = field_min, vmax = field_max, cmap=cm_zesty_cbf, norm = MidpointNormalize(midpoint=0.))
+    
     #im = ax.imshow(data, transform=ccrs.PlateCarree(), cmap=cm_zesty_cbf, vmin = field_min, vmax = field_max, norm = MidpointNormalize(midpoint=0.))
     
     ax.coastlines(linewidth = coast_width, color = coast_color)
-    
+    #ax.stock_img()
+    if color_bg is not None:
+        ax.background_patch.set_facecolor(color_bg)
+    if extent is not None:
+        ax.set_extent(extent, crs=ccrs.PlateCarree())
+
     if use_gridlines == True:
         from cartopy.mpl.gridliner import LONGITUDE_FORMATTER, LATITUDE_FORMATTER
         gl_lines = ax.gridlines(draw_labels=False,
             linewidth=gridlines_width, color='black', alpha=gridlines_alpha, linestyle='-')
         gl_lines.xlines = True
-        gl_lines.xlocator = tick.FixedLocator([-180, -135, -90, -45, 0, 45, 90, 135, 180])
-        gl_lines.ylocator = tick.FixedLocator([-90, -60, -30, 0, 30, 60, 90])
+        if extent is not None:
+            gl_lines.ylocator = tick.FixedLocator(np.arange(-90,90+10,10))
+            gl_lines.xlocator = tick.FixedLocator(np.arange(-180,180+10,10))
+        else:
+            gl_lines.ylocator = tick.FixedLocator([-90, -60, -30, 0, 30, 60, 90])
+            gl_lines.xlocator = tick.FixedLocator([-180, -135, -90, -45, 0, 45, 90, 135, 180])
         gl = ax.gridlines(alpha=0.0)
 
         gl.xlines = True
         gl.xformatter = LONGITUDE_FORMATTER
         gl.yformatter = LATITUDE_FORMATTER
-        gl.ylocator = tick.FixedLocator([-90, -60, -30, 0, 30, 60, 90])
-        gl.xlocator = tick.FixedLocator([-180, -135, -90, -45, 0, 45, 90, 135, 180])
+        if extent is not None:
+            gl.ylocator = tick.FixedLocator(np.arange(-90,90+10,10))
+            gl.xlocator = tick.FixedLocator(np.arange(-180,180+10,10))
+        else:
+            gl.ylocator = tick.FixedLocator([-90, -60, -30, 0, 30, 60, 90])
+            gl.xlocator = tick.FixedLocator([-180, -135, -90, -45, 0, 45, 90, 135, 180])
         gl.top_labels = True
         gl.xlabel_style = {'size': 7, 'color': 'gray'}
         gl.left_labels = True
