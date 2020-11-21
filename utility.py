@@ -454,7 +454,7 @@ def plot_cartopy_animation(lat = None, lon = None, data=None, limits_data = None
     #return anim
 
 def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, truth_obj = None, uncon_obj = None, lwidth = 1, lwidth_mult = 2, lwidth_div = 5,
-                          lags_use = 300, hist_bins = 100, hist_pos_mean = True, hist_ti_ens = False, hist_density = False, hist_local_posterior = False,
+                          lags_use = 300, hist_bins = 100, hist_pos_mean = True, hist_ti_ens = False, hist_density = False, hist_local_posterior = False, hist_ti_ens_limit = None,
                           res_bins = 200, spec_use = True, spec_step = 5, spec_r_at = None, spec_r_ref = 6371.2, spec_show_differences = True, spec_mag = True, sv_pos_mean = True,
                           sv_use = True, spec_ti_ens = False, res_use = True, unit_transform_n_to_m = False, patch_legend = False, ens_prior = False,
                           model_dict = None, spec_chaos_time = [2020,1,1], unit_var = "[nT²]", unit_lag = "[km]", unit_field = "[nT]", unit_res = "[nT]",
@@ -614,19 +614,32 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, truth_obj 
         bincenters = 0.5*(binEdges[1:]+binEdges[:-1])
         ax.plot(bincenters, y, '--', color = 'C3', label='Equivalent LSQ', linestyle = "dashed", linewidth = lwidth_mult*lwidth) 
 
+    ti_label = "Training ensemble"
     if hist_ti_ens == True:
         ti_hist_data = np.ravel(prior_ens)
         ti_hist_data = ti_hist_data[0.5*np.max(np.abs(ti_hist_data))>np.abs(ti_hist_data)]
-        ti_label = "Training ensemble"
+    elif hist_ti_ens == "all":
+        ti_hist_data = prior_ens
     else:
         ti_hist_data = seqsim_data
         ti_label = "Training image"
 
     # Training image
-    y,binEdges=np.histogram(ti_hist_data,bins=hist_bins, density = hist_density)
-    bincenters = 0.5*(binEdges[1:]+binEdges[:-1])
-    ax.plot(bincenters,y, color = 'k', label=ti_label, linewidth = lwidth_mult*lwidth)
-    leg3 = mpatches.Patch(color="k", label=ti_label)
+    if hist_ti_ens == "all":        
+        for i in np.arange(0,np.shape(ti_hist_data)[1]):
+            hist_ens_plot = ti_hist_data[:,[i]]
+            y,binEdges=np.histogram(hist_ens_plot,bins=hist_bins, density = hist_density)
+            bincenters = 0.5*(binEdges[1:]+binEdges[:-1])
+            if i == 0:
+                ax.plot(bincenters,y, color = color_rgb, label=ti_label, linewidth = lwidth/lwidth_div,zorder=0.0)  
+            else:
+                ax.plot(bincenters,y, color = color_rgb, linewidth = lwidth/lwidth_div,zorder=0.0)
+        leg3 = mpatches.Patch(color=color_rgb, label=ti_label)
+    else:
+        y,binEdges=np.histogram(ti_hist_data,bins=hist_bins, density = hist_density)
+        bincenters = 0.5*(binEdges[1:]+binEdges[:-1])
+        ax.plot(bincenters,y, color = 'k', label=ti_label, linewidth = lwidth_mult*lwidth)
+        leg3 = mpatches.Patch(color="k", label=ti_label)
 
     # Synthetic truth
     if truth_obj is not None:
@@ -636,6 +649,8 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, truth_obj 
         leg4 = mpatches.Patch(color="C2", label="Synthetic truth")
 
     ax.set_title('({}) Histogram reproduction'.format(plot_letter))
+    if hist_ti_ens_limit is not None:
+        ax.set_xlim(left=hist_ti_ens_limit[0], right=hist_ti_ens_limit[1])
 
     if patch_legend == True:
         leg_handle = [leg1,leg3]
