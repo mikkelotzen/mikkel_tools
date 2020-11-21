@@ -933,7 +933,7 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, truth_obj 
         ax.set_yscale('log')
         ax.set_xlabel("degree, n")
         if spec_mag == True:
-            ax.set_title('({}) Power spectra comparison, $r={}{}$'.format(plot_letter,spec_r_at,unit_lag[1:-1]))
+            ax.set_title('({}) Power spectra comparison, $r\'={}{}$'.format(plot_letter,spec_r_at,unit_lag[1:-1]))
             ax.set_ylabel("Power {}".format(unit_var))
         else:
             ax.set_title('({}) Power spectra comparison'.format(plot_letter))
