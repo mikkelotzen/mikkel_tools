@@ -476,7 +476,7 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, truth_obj 
     if unit_transform_n_to_m == True:
             posterior_fields = seqsim_obj.m_DSS*10**(-6)
             if ens_prior == True:
-                prior_ens = seqsim_obj.m_core_ens*10**(-6)
+                prior_ens = seqsim_obj.m_ens*10**(-6)
             #seqsim_res = seqsim_res*10**(-6)
             seqsim_data = seqsim_obj.data*10**(-6)
             if m_equiv_lsq is not None:
@@ -490,7 +490,7 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, truth_obj 
     else:
         posterior_fields = seqsim_obj.m_DSS
         if ens_prior == True:
-            prior_ens = seqsim_obj.m_core_ens
+            prior_ens = seqsim_obj.m_ens
         seqsim_data = seqsim_obj.data
         if m_equiv_lsq is not None:
             m_equiv_lsq = m_equiv_lsq
@@ -832,12 +832,17 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, truth_obj 
 
         # Prior/Training
         if spec_ti_ens == True:
-            # g ensemble and parameters
-            g_core_ens = np.genfromtxt("mikkel_tools/models_shc/gnm_midpath.dat").T*10**9
-            g_core_ens = g_core_ens[:shc_vec_len(seqsim_obj.N_SH),:]
-
             n_max = seqsim_obj.N_SH
-            g_cut = g_core_ens[:n_max*(2+n_max),200:] # Truncate g
+
+            # g ensemble and parameters
+            if seqsim_obj.sim_type == "core_ens":
+                g_ens = np.genfromtxt("mikkel_tools/models_shc/gnm_midpath.dat").T*10**9
+                g_ens = g_ens[:shc_vec_len(seqsim_obj.N_SH),:]
+                g_cut = g_ens[:n_max*(2+n_max),200:] # Truncate g
+            elif seqsim_obj.sim_type == "lith_ens":
+                g_ens = np.load("mikkel_tools/models_shc/lithosphere_g_in_rotated.npy")
+                g_cut = g_ens[:shc_vec_len(n_max),::20]
+
             R = lowe_shspec(n_max,spec_r_at,seqsim_obj.a,g_cut)
 
             for i in np.arange(R.shape[1]):
