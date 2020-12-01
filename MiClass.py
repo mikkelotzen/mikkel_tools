@@ -436,29 +436,11 @@ class MiClass(object):
         if r_at is None:
             r_at = self.a
 
+        g_use = g_use[:mt_util.shc_vec_len(nmax)]
 
         grid_radial = self.grid_radial
         grid_theta = self.grid_theta
         grid_phi = self.grid_phi
-
-        """
-        if grid_type == "glq":
-            grid_radial = self.grid_glq_radial
-            grid_theta = self.grid_glq_theta
-            grid_phi = self.grid_glq_phi
-        elif grid_type == "even":
-            grid_radial = self.grid_even_radial
-            grid_theta = self.grid_even_theta
-            grid_phi = self.grid_even_phi
-        elif grid_type == "eqa":        
-            grid_radial = self.grid_eqa_radial
-            grid_theta = self.grid_eqa_theta
-            grid_phi = self.grid_eqa_phi
-        elif grid_type == "swarm":
-            grid_radial = self.swarm_radius
-            grid_theta = self.swarm_theta
-            grid_phi = self.swarm_phi
-        """
 
         # Generate design matrix for grid
         A_r, A_theta, A_phi = gt.design_SHA(r_at/self.a, grid_theta*self.rad, grid_phi*self.rad, nmax)
@@ -468,17 +450,6 @@ class MiClass(object):
             B_theta = np.matmul(A_theta,g_use)
             B_phi = np.matmul(A_phi,g_use)            
             self.B_ensemble = np.stack((B_r, B_theta, B_phi), axis = 1)
-
-            """
-            if grid_type == "glq":
-                self.B_ensemble_glq = B_ensemble.copy()
-            elif grid_type == "even":
-                self.B_ensemble_even = B_ensemble.copy()
-            elif grid_type == "eqa":
-                self.B_ensemble_eqa = B_ensemble.copy()
-            elif grid_type == "swarm":
-                self.B_ensemble_swarm = B_ensemble.copy()
-            """
 
         if nmf == True:
             g_use_nmf = g_use.copy()
@@ -490,16 +461,6 @@ class MiClass(object):
             
             self.B_ensemble_nmf = np.stack((B_r_nmf, B_theta_nmf, B_phi_nmf), axis = 1)
 
-            """
-            if grid_type == "glq":
-                self.B_ensemble_nmf_glq = B_ensemble_nmf.copy()
-            elif grid_type == "even":
-                self.B_ensemble_nmf_even = B_ensemble_nmf.copy()
-            elif grid_type == "eqa":
-                self.B_ensemble_nmf_eqa = B_ensemble_nmf.copy()
-            elif grid_type == "swarm":
-                self.B_ensemble_nmf_swarm = B_ensemble_nmf.copy()
-            """
 
     def interpolate_grid(self, grid_in_theta, grid_out_theta, grid_in_phi, grid_out_phi, grid_in, method_int = "nearest", output = "return", save_path = ""):
         # Define interpolation grids
