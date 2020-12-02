@@ -510,7 +510,7 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, truth_obj 
 
     color_rgb = (0.6,0.6,0.6)
 
-    fig = plt.figure(figsize=figsize, constrained_layout=False) # Initiate figure with constrained layout
+    fig = plt.figure(figsize=figsize, constrained_layout=False, dpi = save_dpi) # Initiate figure with constrained layout
 
     if spec_use == True:
         # Generate ratio lists
@@ -1327,6 +1327,130 @@ def plot_global(lat = None, lon = None, data=None, limits_data = None,
 
     if savefig == True:
         fig.savefig('{}map_{}.pdf'.format(save_path, save_string), bbox_inches='tight', dpi = save_dpi) 
+
+    fig.show()
+
+
+def plot_local_dist_KL(zs_DSS, skip = 1, N_bins = 21, idx_high_start = -401, idx_high_interval = 100, idx_low_start = 0, idx_low_end = 1250, idx_low_interval = 250, 
+                       xlim = [-2,2], hist_density = False, save_dpi = 100, savefig = False, save_path = "", save_string = "", figsize = (11,8), random_seed = None):
+    from scipy import stats
+    from mpl_toolkits import mplot3d
+
+    if random_seed is not None:
+        np.random.seed(random_seed)
+
+    zs_sort = zs_DSS[np.argsort(np.mean(zs_DSS,axis=1)),:]
+
+    skip = 1
+    m_skip = zs_sort[:,:][0::skip]
+    m_skip_mean = np.mean(m_skip,axis=1)
+    m_skip_std = np.std(m_skip,axis=1)
+    m_normal = np.random.normal(size=m_skip.shape) * m_skip_std[:,None] + m_skip_mean[:,None] # Generate equivalent normal distributions for each local posterior
+
+    # Histograms
+    m_centers = []
+    m_y = []
+    for i in np.arange(0,m_skip.shape[0]):
+        y,binEdges=np.histogram(m_skip[i,:],bins=N_bins,density=hist_density)
+        bincenters = 0.5*(binEdges[1:]+binEdges[:-1])
+        m_centers.append(bincenters)
+        m_y.append(y)
+    m_centers = np.array(m_centers)
+    m_y = np.array(m_y)
+
+    m_centers_n = []
+    m_y_n = []
+    for i in np.arange(0,m_skip.shape[0]):
+        y,binEdges=np.histogram(m_normal[i,:],bins=N_bins,density=hist_density)
+        bincenters = 0.5*(binEdges[1:]+binEdges[:-1])
+        m_centers_n.append(bincenters)
+        m_y_n.append(y)
+    m_centers_n = np.array(m_centers_n)
+    m_y_n = np.array(m_y_n)
+
+    # Compute Kullback-Leibler divergence between local posterior and equivalent normal distributions
+    kld = stats.entropy(m_y_n.T+10**(-30), m_y.T+10**(-30))
+    idx_kld_all = np.argsort(kld)
+
+    # PLOTTING
+    fig = plt.figure(figsize=figsize, constrained_layout=False, dpi = save_dpi) # Initiate figure with constrained layout
+    gs = fig.add_gridspec(2, 2, height_ratios=[2,1], width_ratios=[1,1]) # Add x-by-y grid
+
+    # HIGH SAMPLES
+    idx_bc_high = np.arange(0,len(kld))[idx_high_start::idx_high_interval]
+    idx_kld_high = idx_kld_all[idx_bc_high]
+    ax = fig.add_subplot(gs[0, 1], projection="3d")
+
+    x_c = m_centers[idx_kld_high,:].T*10**(-6)
+    z_y = m_y[idx_kld_high,:].T
+    y_kld = np.repeat(kld[None,idx_kld_high],x_c.shape[0],axis=0)
+    x_c_n = m_centers_n[idx_kld_high,:].T*10**(-6)
+    z_y_n = m_y_n[idx_kld_high,:].T
+
+    x_c[x_c>xlim[1]]= np.nan
+    x_c[x_c<xlim[0]]= np.nan
+
+    for i in np.arange(0,len(idx_bc_high)):
+        ax.plot3D(x_c[:,i], y_kld[:,i], z_y[:,i], color=color_rgb_zesty_pos, zorder = 1/(idx_bc_high[i]+10**(-3)))
+        ax.plot3D(x_c_n[:,i], y_kld[:,i], z_y_n[:,i], linestyle="dashed", color="k", zorder = 1/(idx_bc_high[i]+10**(-3)))
+
+    ax.set_zlabel("Count")
+    ax.set_ylabel("KL-divergence")
+    ax.set_xlabel("Field value [mT]")
+    ax.set_xlim(xlim)
+    ax.set_xticks([-2,-1,0,1,1,2])
+    ax.grid(b=None)
+    ax.view_init(30, -40)
+    leg1 = mpatches.Patch(color=color_rgb_zesty_pos, label="Sampled local posterior")
+    leg2 = mpatches.Patch(color="k", label="Equivalent Gaussian")
+    ax.legend(handles=[leg1,leg2], numpoints=1, 
+            labelspacing=1, loc='best', fontsize="x-small", frameon=False)
+
+    # LOW SAMPLES
+    idx_bc_low = np.arange(0,len(kld))[idx_low_start:idx_low_end:idx_low_interval]
+    idx_kld_low = idx_kld_all[idx_bc_low]
+    ax = fig.add_subplot(gs[0, 0], projection="3d")
+
+    x_c = m_centers[idx_kld_low,:].T*10**(-6)
+    z_y = m_y[idx_kld_low,:].T
+    y_kld = np.repeat(kld[None,idx_kld_low],x_c.shape[0],axis=0)
+    x_c_n = m_centers_n[idx_kld_low,:].T*10**(-6)
+    z_y_n = m_y_n[idx_kld_low,:].T
+
+    x_c[x_c>xlim[1]]= np.nan
+    x_c[x_c<xlim[0]]= np.nan
+
+    for i in np.arange(0,len(idx_bc_low)):
+        ax.plot3D(x_c[:,i], y_kld[:,i], z_y[:,i], color=color_rgb_zesty_neg, zorder = 1/(idx_bc_low[i]+10**(-3)))
+        ax.plot3D(x_c_n[:,i], y_kld[:,i], z_y_n[:,i], linestyle="dashed", color="k", zorder = 1/(idx_bc_low[i]+10**(-3)))
+
+    ax.set_zlabel("Count")
+    ax.set_ylabel("KL-divergence")
+    ax.set_xlabel("Field value [mT]")
+    ax.set_xlim(xlim)
+    ax.set_xticks([-2,-1,0,1,1,2])
+    ax.grid(b=None)
+    ax.view_init(30, -40)
+    leg1 = mpatches.Patch(color=color_rgb_zesty_neg, label="Sampled local posterior")
+    leg2 = mpatches.Patch(color="k", label="Equivalent Gaussian")
+    ax.legend(handles=[leg1,leg2], numpoints=1, 
+            labelspacing=1, loc='best', fontsize="x-small", frameon=False)
+
+    # KL LINE PLOT
+    ax = fig.add_subplot(gs[1, :])
+    ax.semilogy(kld[idx_kld_all],color=(0.6,0.6,0.6))
+    ax.vlines(idx_bc_low, -2, kld[idx_kld_low], colors=color_rgb_zesty_neg, zorder = 10)
+    ax.vlines(idx_bc_high, -2, kld[idx_kld_high], colors=color_rgb_zesty_pos, zorder = 10)
+    ax.set_ylabel("Kullback-Leibler divergence")
+    ax.set_xlabel("Sorted model parameter index")
+    leg1 = mpatches.Patch(color=color_rgb_zesty_neg, label="Samples from low KL-divergence")
+    leg2 = mpatches.Patch(color=color_rgb_zesty_pos, label="Samples from high KL-divergence")
+    leg3 = mpatches.Patch(color=(0.6,0.6,0.6), label="KL-divergence")
+    ax.legend(handles=[leg1,leg2,leg3], numpoints=1, 
+            labelspacing=1, loc='best', fontsize="x-small", frameon=False)
+
+    if savefig == True:
+        fig.savefig('{}local_dist_KL_{}.pdf'.format(save_path,save_string), bbox_inches='tight', dpi = save_dpi) 
 
     fig.show()
 
