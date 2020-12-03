@@ -481,7 +481,7 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, truth_obj 
             seqsim_data = seqsim_obj.data*10**(-6)
             if m_equiv_lsq is not None:
                 m_equiv_lsq = m_equiv_lsq*10**(-6)
-                lsq_equiv_res = seqsim_obj.lsq_equiv_res*10**(-6)
+                lsq_equiv_res = seqsim_obj.lsq_equiv_res
             if truth_obj is not None:
                 truth_data = truth_obj.data*10**(-6)
             if uncon_obj is not None:
@@ -545,11 +545,14 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, truth_obj 
             else:
                 ax.plot(bincenters, y, '-', color = color_rgb_zesty_pos, linewidth = lwidth) 
         leg1 = mpatches.Patch(color=color_rgb_zesty_pos, label='Posterior')
+        leg_handle = [leg1]
 
         if m_equiv_lsq is not None:
             y,binEdges=np.histogram(lsq_equiv_res,bins=res_bins)
             bincenters = 0.5*(binEdges[1:]+binEdges[:-1])
             ax.plot(bincenters, y, '-', color = "C3", label='Equivalent LSQ',linestyle = "dashed", linewidth = lwidth)
+            leg2 = mpatches.Patch(color="C3", label='Equivalent LSQ')
+            leg_handle.append(leg2)
 
         ax.set_title('(a) Observation estimate residuals')
         ax.annotate("Mean RMSE: {:.{}f}".format(np.mean(rmse_leg), res_print_f), (0.05, 0.5), xycoords='axes fraction', va='center', fontsize = label_fontsize)
@@ -557,7 +560,7 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, truth_obj 
         ax.set_ylabel("Count")
 
         if patch_legend == True:
-            ax.legend(handles=[leg1], numpoints=1, labelspacing=1, loc='best', fontsize=label_fontsize, frameon=False)
+            ax.legend(handles=leg_handle, numpoints=1, labelspacing=1, loc='best', fontsize=label_fontsize, frameon=False)
         else:
             ax.legend(loc='best', fontsize = label_fontsize)
 
@@ -613,6 +616,7 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, truth_obj 
         y,binEdges=np.histogram(np.array(m_equiv_lsq), bins=hist_bins, density = hist_density)
         bincenters = 0.5*(binEdges[1:]+binEdges[:-1])
         ax.plot(bincenters, y, '--', color = 'C3', label='Equivalent LSQ', linestyle = "dashed", linewidth = lwidth_mult*lwidth) 
+        leglsq = mpatches.Patch(color="C3", label='Equivalent LSQ')
 
     ti_label = "Training ensemble"
     if hist_ti_ens == True:
@@ -660,6 +664,8 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, truth_obj 
             leg_handle.append(leg4)
         if uncon_obj is not None:
             leg_handle.insert(0,leg0)
+        if m_equiv_lsq is not None:
+            leg_handle.append(leglsq)
         ax.legend(handles=leg_handle, numpoints=1, labelspacing=1, loc='best', fontsize=label_fontsize, frameon=False)
     else:
         ax.legend(loc='best', fontsize = label_fontsize)
@@ -821,7 +827,7 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, truth_obj 
 
         # Equivalent LSQ
         if m_equiv_lsq is not None:
-            ens_cilm_lsq = np.array(pyshtools.shio.SHVectorToCilm(np.hstack((np.zeros(1,), seqsim_obj.g_lsq_equiv))))
+            ens_cilm_lsq = np.array(pyshtools.shio.SHVectorToCilm(np.hstack((np.zeros(1,), seqsim_obj.g_equiv_lsq))))
             #p_spec_lsq = pyshtools.gravmag.mag_spectrum(ens_cilm_lsq, spec_r_ref, spec_r_at, degrees = np.arange(1,np.shape(ens_cilm_lsq)[1])) # degrees to skip zeroth degree
             if spec_mag == True:
                 p_spec_lsq = pyshtools.gravmag.mag_spectrum(ens_cilm_lsq, spec_r_ref, spec_r_at, degrees = np.arange(1,np.shape(ens_cilm_lsq)[1]))
@@ -829,6 +835,7 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, truth_obj 
                 p_spec_lsq = pyshtools.spectralanalysis.spectrum(ens_cilm_lsq, degrees = np.arange(1,np.shape(ens_cilm_lsq)[1]))
             p_spec_lsq = p_spec_lsq[:nmax]
             ax.plot(ns, p_spec_lsq, color = "C3", label = "Equivalent LSQ", linewidth = lwidth_mult*lwidth)
+            leglsq = mpatches.Patch(color="C3", label='Equivalent LSQ')
 
         # Prior/Training
         if spec_ti_ens == True:
@@ -971,6 +978,8 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, truth_obj 
                     leg_handle_model.append(leg)
             if uncon_obj is not None:
                 leg_handle_model.insert(0,leg0)
+            if m_equiv_lsq is not None:
+                leg_handle_model.append(leglsq)
             ax.legend(handles=leg_handle_model, numpoints=1, labelspacing=1, loc='best', fontsize=label_fontsize, frameon=False)
         else:
             ax.legend(loc='best', fontsize = label_fontsize)
