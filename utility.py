@@ -453,7 +453,7 @@ def plot_cartopy_animation(lat = None, lon = None, data=None, limits_data = None
     #return HTML(anim.to_html5_video())
     #return anim
 
-def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, truth_obj = None, uncon_obj = None, lwidth = 1, lwidth_mult = 2, lwidth_div = 5,
+def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, m_mode = None, pos_mean_res = None, truth_obj = None, uncon_obj = None, lwidth = 1, lwidth_mult = 2, lwidth_div = 5,
                           lags_use = 300, hist_bins = 100, hist_pos_mean = True, hist_ti_ens = False, hist_density = False, hist_local_posterior = False, hist_ti_ens_limit = None,
                           res_bins = 200, spec_use = True, spec_step = 5, spec_r_at = None, spec_r_ref = 6371.2, spec_show_differences = True, spec_mag = True, sv_pos_mean = True,
                           sv_use = True, spec_ti_ens = False, res_use = True, unit_transform_n_to_m = False, patch_legend = False, ens_prior = False,
@@ -482,6 +482,9 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, truth_obj 
             if m_equiv_lsq is not None:
                 m_equiv_lsq = m_equiv_lsq*10**(-6)
                 lsq_equiv_res = seqsim_obj.lsq_equiv_res
+            if m_mode is not None:
+                m_mode = m_mode*10**(-6)
+                mode_res = seqsim_obj.mode_res
             if truth_obj is not None:
                 truth_data = truth_obj.data*10**(-6)
             if uncon_obj is not None:
@@ -495,6 +498,9 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, truth_obj 
         if m_equiv_lsq is not None:
             m_equiv_lsq = m_equiv_lsq
             lsq_equiv_res = seqsim_obj.lsq_equiv_res
+        if m_mode is not None:
+            m_mode = m_mode
+            mode_res = seqsim_obj.mode_res
         if truth_obj is not None:
             truth_data = truth_obj.data
         if uncon_obj is not None:
@@ -547,12 +553,26 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, truth_obj 
         leg1 = mpatches.Patch(color=color_rgb_zesty_pos, label='Posterior')
         leg_handle = [leg1]
 
+        if pos_mean_res is not None:
+            y,binEdges=np.histogram(pos_mean_res,bins=res_bins)
+            bincenters = 0.5*(binEdges[1:]+binEdges[:-1])
+            ax.plot(bincenters, y, '-', color = color_rgb_zesty_neg, label='Posterior mean',linestyle = "dashed", linewidth = lwidth_mult*lwidth)
+            legpm = mpatches.Patch(color=color_rgb_zesty_neg, label='Posterior mean')
+            leg_handle.append(legpm)
+
         if m_equiv_lsq is not None:
             y,binEdges=np.histogram(lsq_equiv_res,bins=res_bins)
             bincenters = 0.5*(binEdges[1:]+binEdges[:-1])
-            ax.plot(bincenters, y, '-', color = "C3", label='Equivalent LSQ',linestyle = "dashed", linewidth = lwidth)
+            ax.plot(bincenters, y, '-', color = "C3", label='Equivalent LSQ',linestyle = "dashed", linewidth = lwidth_mult*lwidth)
             leg2 = mpatches.Patch(color="C3", label='Equivalent LSQ')
             leg_handle.append(leg2)
+
+        if m_mode is not None:
+            y,binEdges=np.histogram(mode_res,bins=res_bins)
+            bincenters = 0.5*(binEdges[1:]+binEdges[:-1])
+            ax.plot(bincenters, y, '-', color = "C4", label='Posterior mode',linestyle = "dashed", linewidth = lwidth_mult*lwidth)
+            legmode = mpatches.Patch(color="C4", label='Posterior mode')
+            leg_handle.append(legmode)
 
         ax.set_title('(a) Observation estimate residuals')
         ax.annotate("Mean RMSE: {:.{}f}".format(np.mean(rmse_leg), res_print_f), (0.05, 0.5), xycoords='axes fraction', va='center', fontsize = label_fontsize)
@@ -618,6 +638,13 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, truth_obj 
         ax.plot(bincenters, y, '--', color = 'C3', label='Equivalent LSQ', linestyle = "dashed", linewidth = lwidth_mult*lwidth) 
         leglsq = mpatches.Patch(color="C3", label='Equivalent LSQ')
 
+    # Posterior mode
+    if m_mode is not None:
+        y,binEdges=np.histogram(m_mode, bins=hist_bins, density = hist_density)
+        bincenters = 0.5*(binEdges[1:]+binEdges[:-1])
+        ax.plot(bincenters, y, '--', color = 'C4', label='Posterior mode', linestyle = "dashed", linewidth = lwidth_mult*lwidth) 
+        legmode = mpatches.Patch(color="C4", label='Posterior mode')
+
     ti_label = "Training ensemble"
     if hist_ti_ens == True:
         ti_hist_data = np.ravel(prior_ens)
@@ -666,6 +693,8 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, truth_obj 
             leg_handle.insert(0,leg0)
         if m_equiv_lsq is not None:
             leg_handle.append(leglsq)
+        if m_mode is not None:
+            leg_handle.append(legmode)
         ax.legend(handles=leg_handle, numpoints=1, labelspacing=1, loc='best', fontsize=label_fontsize, frameon=False)
     else:
         ax.legend(loc='best', fontsize = label_fontsize)
@@ -837,6 +866,18 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, truth_obj 
             ax.plot(ns, p_spec_lsq, color = "C3", label = "Equivalent LSQ", linewidth = lwidth_mult*lwidth)
             leglsq = mpatches.Patch(color="C3", label='Equivalent LSQ')
 
+        # Posterior Mode
+        if m_mode is not None:
+            ens_cilm = np.array(pyshtools.shio.SHVectorToCilm(np.hstack((np.zeros(1,), seqsim_obj.g_spec_mode))))
+            #p_spec_lsq = pyshtools.gravmag.mag_spectrum(ens_cilm_lsq, spec_r_ref, spec_r_at, degrees = np.arange(1,np.shape(ens_cilm_lsq)[1])) # degrees to skip zeroth degree
+            if spec_mag == True:
+                p_spec_mode = pyshtools.gravmag.mag_spectrum(ens_cilm, spec_r_ref, spec_r_at, degrees = np.arange(1,np.shape(ens_cilm)[1]))
+            else:
+                p_spec_mode = pyshtools.spectralanalysis.spectrum(ens_cilm, degrees = np.arange(1,np.shape(ens_cilm)[1]))
+            p_spec_mode = p_spec_mode[:nmax]
+            ax.plot(ns, p_spec_mode, color = "C4", label = "Posterior mode", linewidth = lwidth_mult*lwidth)
+            legmode = mpatches.Patch(color="C4", label='Posterior mode')
+
         # Prior/Training
         if spec_ti_ens == True:
             n_max = seqsim_obj.N_SH
@@ -980,6 +1021,8 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, truth_obj 
                 leg_handle_model.insert(0,leg0)
             if m_equiv_lsq is not None:
                 leg_handle_model.append(leglsq)
+            if m_mode is not None:
+                leg_handle_model.append(legmode)
             ax.legend(handles=leg_handle_model, numpoints=1, labelspacing=1, loc='best', fontsize=label_fontsize, frameon=False)
         else:
             ax.legend(loc='best', fontsize = label_fontsize)
