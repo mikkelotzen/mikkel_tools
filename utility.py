@@ -5,6 +5,7 @@ Utility functions by Mikkel Otzen
 import matplotlib.pyplot as plt
 from matplotlib.colors import LinearSegmentedColormap
 import matplotlib.patches as mpatches
+import matplotlib.lines as mlines
 import os
 import cartopy.crs as ccrs
 import time
@@ -556,21 +557,21 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, m_mode = N
         if pos_mean_res is not None:
             y,binEdges=np.histogram(pos_mean_res,bins=res_bins)
             bincenters = 0.5*(binEdges[1:]+binEdges[:-1])
-            ax.plot(bincenters, y, '-', color = color_rgb_zesty_neg, label='Posterior mean',linestyle = "dashed", linewidth = lwidth_mult*lwidth)
+            ax.plot(bincenters, y, '-', color = color_rgb_zesty_neg, label='Posterior mean', linewidth = lwidth_mult*lwidth)
             legpm = mpatches.Patch(color=color_rgb_zesty_neg, label='Posterior mean')
             leg_handle.append(legpm)
 
         if m_equiv_lsq is not None:
             y,binEdges=np.histogram(lsq_equiv_res,bins=res_bins)
             bincenters = 0.5*(binEdges[1:]+binEdges[:-1])
-            ax.plot(bincenters, y, '-', color = "C3", label='Equivalent LSQ',linestyle = "dashed", linewidth = lwidth_mult*lwidth)
+            ax.plot(bincenters, y, '-', color = "C3", label='Equivalent LSQ', linewidth = lwidth_mult*lwidth)
             leg2 = mpatches.Patch(color="C3", label='Equivalent LSQ')
             leg_handle.append(leg2)
 
         if m_mode is not None:
             y,binEdges=np.histogram(mode_res,bins=res_bins)
             bincenters = 0.5*(binEdges[1:]+binEdges[:-1])
-            ax.plot(bincenters, y, '-', color = "C4", label='Posterior mode',linestyle = "dashed", linewidth = lwidth_mult*lwidth)
+            ax.plot(bincenters, y, '-', color = "C4", label='Posterior mode', linewidth = lwidth_mult*lwidth) #,linestyle = "dashed"
             legmode = mpatches.Patch(color="C4", label='Posterior mode')
             leg_handle.append(legmode)
 
@@ -592,16 +593,16 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, m_mode = N
         plot_letter = "b"
         ax = fig.add_subplot(gs[0, 1])
 
-    # Unconditional posterior
+    # Unconditional posterior / Prior
     if uncon_obj is not None:
         for i in np.arange(0,uncon_obj.N_sim):
             y,binEdges=np.histogram(uncon_posterior[:,[i]], bins=hist_bins, density = hist_density)
             bincenters = 0.5*(binEdges[1:]+binEdges[:-1])
             if i == 0:
-                ax.plot(bincenters,y,'-', color = color_rgb, label='Unconditional posterior', linewidth = lwidth/lwidth_div, zorder=0)  
+                ax.plot(bincenters,y,'-', color = color_rgb, label='Prior', linewidth = lwidth/lwidth_div, zorder=0)  
             else:
                 ax.plot(bincenters,y,'-', color = color_rgb, linewidth = lwidth/lwidth_div, zorder=0)     
-        leg0 = mpatches.Patch(color=color_rgb, label='Unconditional posterior')
+        leg0 = mpatches.Patch(color=color_rgb, label='Prior')
 
     # Posterior
     for i in np.arange(0,N_sim):
@@ -642,7 +643,7 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, m_mode = N
     if m_mode is not None:
         y,binEdges=np.histogram(m_mode, bins=hist_bins, density = hist_density)
         bincenters = 0.5*(binEdges[1:]+binEdges[:-1])
-        ax.plot(bincenters, y, '--', color = 'C4', label='Posterior mode', linestyle = "dashed", linewidth = lwidth_mult*lwidth) 
+        ax.plot(bincenters, y, '-', color = 'C4', label='Posterior mode', linewidth = lwidth_mult*lwidth) 
         legmode = mpatches.Patch(color="C4", label='Posterior mode')
 
     ti_label = "Training ensemble"
@@ -685,16 +686,17 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, m_mode = N
 
     if patch_legend == True:
         leg_handle = [leg1,leg3]
+        if m_mode is not None:
+            leg_handle.insert(1,legmode)
         if np.logical_or(hist_local_posterior == True, hist_pos_mean == True):
             leg_handle.insert(1,leg2)
         if truth_obj is not None:
-            leg_handle.append(leg4)
+            leg_handle.insert(2,leg4)
         if uncon_obj is not None:
             leg_handle.insert(0,leg0)
         if m_equiv_lsq is not None:
             leg_handle.append(leglsq)
-        if m_mode is not None:
-            leg_handle.append(legmode)
+        
         ax.legend(handles=leg_handle, numpoints=1, labelspacing=1, loc='best', fontsize=label_fontsize, frameon=False)
     else:
         ax.legend(loc='best', fontsize = label_fontsize)
@@ -714,15 +716,15 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, m_mode = N
 
         ax = fig.add_subplot(gs[1, :])
 
-        # Unconditional posterior
+        # Unconditional posterior / Prior
         if uncon_obj is not None:
             for i in np.arange(0,uncon_obj.N_sim):
                 uncon_obj.sv_m_DSS(len(uncon_data), 1, uncon_posterior[:,[i]], uncon_obj.sort_d, uncon_obj.n_lags, uncon_obj.max_cloud)
                 if i == 0:
-                    ax.plot(uncon_obj.lags[:lags_use], uncon_obj.pics_m_DSS[:lags_use,0], color = color_rgb, label='Unconditional posterior', linewidth = lwidth/lwidth_div, zorder=0)
+                    ax.plot(uncon_obj.lags[:lags_use], uncon_obj.pics_m_DSS[:lags_use,0], color = color_rgb, label='Prior', linewidth = lwidth/lwidth_div, zorder=0)
                 else:
                     ax.plot(uncon_obj.lags[:lags_use], uncon_obj.pics_m_DSS[:lags_use,0], color = color_rgb, linewidth = lwidth/lwidth_div, zorder=0) 
-            leg0 = mpatches.Patch(color=color_rgb, label='Unconditional posterior')
+            leg0 = mpatches.Patch(color=color_rgb, label='Prior')
 
         # Posterior
         for i in np.arange(0,N_sim):
@@ -738,13 +740,15 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, m_mode = N
         lags_use_idx_model = seqsim_obj.lags_sv_curve<=lags_use_max
         plot_model_lag = seqsim_obj.lags_sv_curve[lags_use_idx_model]
         plot_model_sv = seqsim_obj.sv_curve[lags_use_idx_model]
-        ax.plot(plot_model_lag, plot_model_sv, color='C4', label='Semi-variogram model', linewidth = lwidth_mult*lwidth)
-        leg2 = mpatches.Patch(color='C4', label='Semi-variogram model')
+        ax.plot(plot_model_lag, plot_model_sv, color='k', label='Semi-variogram model', linewidth = lwidth_mult*lwidth) #linestyle = "dashed"
+        leg2 = mpatches.Patch(color='k', linestyle = "-", label='Semi-variogram model')
 
         # Training image
         seqsim_obj.sv_m_DSS(len(seqsim_data), 1, seqsim_data.reshape(-1,1), seqsim_obj.sort_d, seqsim_obj.n_lags, seqsim_obj.max_cloud)
-        ax.plot(seqsim_obj.lags[:lags_use], seqsim_obj.pics_m_DSS[:lags_use,0], color = 'k', label='Training image', linewidth = lwidth_mult*lwidth)
-        leg3 = mpatches.Patch(color="k", label='Training image')
+        ax.plot(seqsim_obj.lags[:lags_use], seqsim_obj.pics_m_DSS[:lags_use,0], "x", color = 'k', label='Training image', linewidth = lwidth_mult*lwidth) # marker = "x"
+        #leg3 = mpatches.Patch(color="k", hatch = "x", label='Training image')
+        #leg3 = mpatches.Circle((0,0), color="k", label='Training image')
+        leg3 = mlines.Line2D([], [], color='k', linestyle = '', marker='x', markersize=8, label='Training image')
 
         if sv_pos_mean == True:
             # Realization mean
@@ -768,12 +772,11 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, m_mode = N
         ax.set_xlabel('Lag {}'.format(unit_lag))
 
         if patch_legend == True:
-            leg_handle = [leg1,leg3]
+            leg_handle = [leg1,leg3,leg2]
             if sv_pos_mean == True:
                 leg_handle.insert(1,leg4)
             if truth_obj is not None:
-                leg_handle.append(leg5)
-            leg_handle.append(leg2)
+                leg_handle.insert(2,leg5)
             if uncon_obj is not None:
                 leg_handle.insert(0,leg0)
             ax.legend(handles=leg_handle, numpoints=1, labelspacing=1, loc='best', fontsize=label_fontsize, frameon=False)
@@ -808,7 +811,7 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, m_mode = N
         if  spec_r_at == None:
             spec_r_at = seqsim_obj.r_sat
         
-        # Unconditional posterior
+        # Unconditional posterior / Prior
         if uncon_obj is not None:
             p_spec_pos_all = []
             for i in np.arange(0,uncon_obj.N_sim):
@@ -820,11 +823,11 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, m_mode = N
                 p_spec_pos = p_spec_pos[:nmax]
                 p_spec_pos_all.append(p_spec_pos)
                 if i == 0:
-                    ax.plot(ns, p_spec_pos, color=color_rgb, label = "Unconditional posterior", linewidth = lwidth/lwidth_div, zorder = 0.05)
+                    ax.plot(ns, p_spec_pos, color=color_rgb, label = "Prior", linewidth = lwidth/lwidth_div, zorder = 0.05)
                 else:
                     ax.plot(ns, p_spec_pos, color=color_rgb, linewidth = lwidth/lwidth_div, zorder = 0.05) #color=color_rgb
             p_spec_pos_all = np.array(p_spec_pos_all)
-            leg0 = mpatches.Patch(color=color_rgb, label='Unconditional posterior')
+            leg0 = mpatches.Patch(color=color_rgb, label='Prior')
 
         # Realizations
         p_spec_pos_all = []
@@ -1011,9 +1014,10 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, m_mode = N
 
         if patch_legend == True:
             leg_handle_model = [leg1,leg2,leg3]
+            if m_mode is not None:
+                leg_handle_model.insert(2,legmode)
             if truth_obj is not None:
                 leg_handle_model.append(leg4)
-                #ax.legend(handles=leg_handle_model, numpoints=1, labelspacing=1, loc='best', fontsize=label_fontsize, frameon=False)
             if type(model_dict) is set or model_dict=="default":
                 for leg in model_leg:
                     leg_handle_model.append(leg)
@@ -1021,8 +1025,6 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, m_mode = N
                 leg_handle_model.insert(0,leg0)
             if m_equiv_lsq is not None:
                 leg_handle_model.append(leglsq)
-            if m_mode is not None:
-                leg_handle_model.append(legmode)
             ax.legend(handles=leg_handle_model, numpoints=1, labelspacing=1, loc='best', fontsize=label_fontsize, frameon=False)
         else:
             ax.legend(loc='best', fontsize = label_fontsize)
@@ -1035,9 +1037,9 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, m_mode = N
     fig.show()
     
 
-def plot_ensemble_map_tiles(lon, lat, ensemble_fields, field_uncon = None, field_compare = None, field_lsq = None, field_mean = None, tile_size_row = 3, tile_size_column = 3, figsize=(8,8), limit_for_SF = 10**6, point_size = 0.01,
-                            left=0.03, bottom=0.12, right=0.97, top=0.95, wspace = 0.05, hspace=0.25, coast_width = 0.1, coast_color = "grey", cbar_mm_factor = 1, unit_transform_n_to_m = False,
-                            savefig = False, save_string = "", save_dpi = 300,  save_path = "", projection = ccrs.Mollweide(), cbar_limit = None, cbar_h = 0.07, cbar_text = "nT", cbar_text_color = "grey", use_gridlines = False, gridlines_width = 0.2, gridlines_alpha = 0.1):
+def plot_ensemble_map_tiles(lon, lat, ensemble_fields, field_uncon = None, field_compare = None, field_lsq = None, field_mean = None, tile_size_row = 3, tile_size_column = 3, figsize=(8,8), limit_for_SF = 10**6, point_size = 0.1,
+                            left=0.03, bottom=0.12, right=0.97, top=0.95, wspace = 0.05, hspace=0.25, coast_width = 0.4, coast_color = "grey", cbar_mm_factor = 1, unit_transform_n_to_m = False,
+                            savefig = False, save_string = "", save_dpi = 100,  save_path = "", projection = ccrs.Mollweide(), cbar_limit = None, cbar_h = 0.1, cbar_text = "nT", cbar_text_color = "grey", use_gridlines = False, gridlines_width = 0.4, gridlines_alpha = 0.4):
     import numpy as np
     import matplotlib.pyplot as plt
     import matplotlib.ticker as tick
@@ -1067,7 +1069,8 @@ def plot_ensemble_map_tiles(lon, lat, ensemble_fields, field_uncon = None, field
     SF.set_powerlimits((6, 6)) # Set sci exponent used    
 
     fig = plt.figure(figsize=figsize, constrained_layout=False, dpi = save_dpi) # Initiate figure with constrained layout
-    fig.suptitle("Posterior realizations")
+    if field_uncon is None:
+        fig.suptitle("Posterior realizations")
 
     # Generate ratio lists
     h_ratio = [1]*tile_size_row
@@ -1129,8 +1132,10 @@ def plot_ensemble_map_tiles(lon, lat, ensemble_fields, field_uncon = None, field
                 plot_field = field_uncon[:,idx_min_var]
             elif np.logical_and.reduce((field_uncon is not None, i == 0, j == 1)):
                 plot_field = field_uncon[:,idx_max_var]
-                plt.figtext(0.5,0.95,"______ Unconditional ______", va="center", ha="center")
-                plt.figtext(0.5,0.8,"______ Conditional ______", va="center", ha="center")
+                #plt.figtext(0.5,0.95,"________ Prior realizations ________", va="center", ha="center")
+                #plt.figtext(0.5,0.8, "______ Posterior realizations ______", va="center", ha="center")
+                plt.figtext(0.5,0.95,"Prior realizations", va="center", ha="center", fontsize = 12)
+                plt.figtext(0.5,0.8, "Posterior realizations", va="center", ha="center", fontsize = 12)
 
             else:
                 plot_field = ensemble_fields[:,ens_n]
@@ -1245,6 +1250,102 @@ def plot_ensemble_map_tiles(lon, lat, ensemble_fields, field_uncon = None, field
 
     if savefig == True:
         fig.savefig('{}map_tiles_{}.pdf'.format(save_path, save_string), bbox_inches='tight', dpi = save_dpi) 
+
+    fig.show()
+
+
+def plot_map_compare_tiles(lon, lat, ul, ur, ll, lr, tile_size_row = 2, tile_size_column = 2, figsize=(8,8), limit_for_SF = 10**6, point_size = 0.1,
+                            left=0.03, bottom=0.12, right=0.97, top=0.95, wspace = 0.05, hspace=0.25, coast_width = 0.4, coast_color = "grey", unit_transform_n_to_m = False,
+                            savefig = False, save_string = "", save_dpi = 100,  save_path = "", projection = ccrs.Mollweide(), cbar_limit = None, cbar_h = 0.1, cbar_text = "nT", 
+                            cbar_text_color = "grey", use_gridlines = False, gridlines_width = 0.4, gridlines_alpha = 0.4):
+    import numpy as np
+    import matplotlib.pyplot as plt
+    import matplotlib.ticker as tick
+    import cartopy.crs as ccrs
+    import matplotlib.colors as colors
+    from matplotlib.colorbar import Colorbar
+
+    if unit_transform_n_to_m == True:
+        ul[1] = ul[1]*10**(-6)
+        ur[1] = ur[1]*10**(-6)
+        ll[1] = ll[1]*10**(-6)
+        lr[1] = lr[1]*10**(-6)
+
+    tile = [ul,ur,ll,lr]
+    tile_letter = ["(a) ", "(b) ", "(c) ", "(d) "]
+
+    class MidpointNormalize(colors.Normalize):
+        def __init__(self, vmin=None, vmax=None, midpoint=None, clip=False):
+            self.midpoint = midpoint
+            colors.Normalize.__init__(self, vmin, vmax, clip)
+    
+        def __call__(self, value, clip=None):
+            x, y = [self.vmin, self.midpoint, self.vmax], [0.0, 0.5, 1.0]
+            return np.ma.masked_array(np.interp(value, x, y))
+
+    SF = tick.ScalarFormatter() # Formatter for colorbar
+    SF.set_powerlimits((6, 6)) # Set sci exponent used    
+
+    fig = plt.figure(figsize=figsize, constrained_layout=False, dpi = save_dpi) # Initiate figure with constrained layout
+    #fig.suptitle("Posterior realizations")
+
+    # Generate ratio lists
+    h_ratio = [1]*tile_size_row
+    h_ratio.append(cbar_h)
+    w_ratio = [1]*tile_size_column
+    
+    gs = fig.add_gridspec(tile_size_row+1, tile_size_column, height_ratios=h_ratio, width_ratios=w_ratio) # Add x-by-y grid
+    
+    if cbar_limit is not None:
+        field_max = np.max(cbar_limit)
+        field_min = np.min(cbar_limit)
+    else:
+        field_max = np.max((abs(ul[1]),abs(ul[1])))
+        field_min = -field_max
+
+    for i in np.arange(0,len(tile)):
+        ax = fig.add_subplot(gs[i], projection=projection)
+        ax.set_global()    
+
+        ax.set_title(tile_letter[i]+tile[i][0])
+
+        im = ax.scatter(lon, lat, s=point_size, c=tile[i][1], transform=ccrs.PlateCarree(), rasterized=True, vmin = field_min, vmax = field_max, cmap=cm_zesty_cbf, norm = MidpointNormalize(midpoint=0.))
+        ax.coastlines(linewidth = coast_width, color = coast_color)
+
+        if use_gridlines == True:
+            from cartopy.mpl.gridliner import LONGITUDE_FORMATTER, LATITUDE_FORMATTER
+            gl_lines = ax.gridlines(draw_labels=False,
+                linewidth=gridlines_width, color='black', alpha=gridlines_alpha, linestyle='-')
+            gl_lines.xlines = True
+            gl_lines.xlocator = tick.FixedLocator([-180, -135, -90, -45, 0, 45, 90, 135, 180])
+            gl_lines.ylocator = tick.FixedLocator([-90, -60, -30, 0, 30, 60, 90])
+            gl = ax.gridlines(alpha=0.0)
+
+            gl.xlines = True
+            gl.xformatter = LONGITUDE_FORMATTER
+            gl.yformatter = LATITUDE_FORMATTER
+            gl.xlocator = tick.FixedLocator([-180, -135, -90, -45, 0, 45, 90, 135])
+            #gl.xlocator = tick.FixedLocator([-135, -90, -45, 0, 45, 90, 135, 180])
+            gl.ylocator = tick.FixedLocator([-90, -60, -30, 0, 30, 60, 90])
+            gl.top_labels = True
+            gl.xlabel_style = {'size': 7, 'color': 'gray'}
+            if np.logical_or(i == 0, i == 2):
+                gl.left_labels = True
+                gl.ylabel_style = {'size': 7, 'color': 'gray'}
+
+    cbax = plt.subplot(gs[tile_size_row,:]) # Set colorbar position
+
+    if field_max>limit_for_SF:
+        cb = Colorbar(mappable = im, ax = cbax, orientation = "horizontal", format = SF) # im, ax=ax, 
+    else:
+        cb = Colorbar(mappable = im, ax = cbax, orientation = "horizontal")
+    cb.set_label(cbar_text)
+
+
+    fig.subplots_adjust(left=left, bottom=bottom, right=right, top=top, wspace=wspace, hspace=hspace)
+
+    if savefig == True:
+        fig.savefig('{}map_compare_tiles_{}.pdf'.format(save_path, save_string), bbox_inches='tight', dpi = save_dpi) 
 
     fig.show()
 
