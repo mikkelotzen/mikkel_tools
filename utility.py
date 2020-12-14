@@ -1608,6 +1608,143 @@ def plot_local_dist_KL(zs_DSS, skip = 1, N_bins = 21, idx_high_start = -401, idx
     fig.show()
 
 
+def plot_spec_compare(nmax, spec_r_at, spec_r_ref, g1, g2, g3, g4, truth = None, model_dict = None,
+                      figsize=(8,8), title = "Power spectra comparison", sim_type = "core_ens", spec_step = 5, lwidth = 1, lwidth_mult = 2, lwidth_div = 5,
+                      left=0.03, bottom=0.12, right=0.97, top=0.95, wspace = 0.05, hspace=0.25, label_fontsize = "small",
+                      savefig = False, save_string = "", save_dpi = 100,  save_path = ""):
+    import numpy as np
+    import matplotlib.pyplot as plt
+    color_rgb = (0.6,0.6,0.6)
+    tile = [g1, g2, g3, g4]
+
+    fig = plt.figure(figsize=figsize, constrained_layout=False, dpi = save_dpi) # Initiate figure with constrained layout
+
+    # Generate ratio lists
+    h_ratio = [1,1]
+    w_ratio = [1]
+    gs = fig.add_gridspec(2, 1, height_ratios=h_ratio, width_ratios=w_ratio) # Add x-by-y grid
+    ax = fig.add_subplot(gs[0])    
+    ax2 = fig.add_subplot(gs[1])
+
+    #### P-SPEC ####
+    ns = np.arange(1, nmax+1)
+    n_ticks = np.append(np.array([1, 5, 10,]), np.arange(15,np.max(ns)+spec_step, step=spec_step))
+    leg_handle = []
+    R_truth = lowe_shspec(nmax,spec_r_at,spec_r_ref,truth)
+
+    # Realizations
+    p_spec_pos_all = []
+    for i in np.arange(0,len(tile)):
+        R = lowe_shspec(nmax,spec_r_at,spec_r_ref,tile[i][1])
+        ax.plot(ns, R, color="C{}".format(i), linewidth = lwidth, zorder = tile[i][2]) #color=color_rgb
+        ax2.plot(ns, np.mean(abs(R_truth-R),axis=1), color="C{}".format(i), linewidth = lwidth_mult*lwidth, zorder = tile[i][2]) #color=color_rgb
+        leg_handle.append(mpatches.Patch(color="C{}".format(i), label=tile[i][0]))
+
+    # Observed truth
+    if truth is not None:
+        ax.plot(ns, R_truth, color = "k", label = "Synthetic truth", linewidth = lwidth_mult*lwidth,zorder=10)
+        leg_handle.append(mpatches.Patch(color="k", label='Synthetic truth'))
+
+    # Prior/Training
+    # g ensemble and parameters
+    if sim_type == "core_ens":
+        g_ens = np.genfromtxt("mikkel_tools/models_shc/gnm_midpath.dat").T*10**9
+        g_ens = g_ens[:shc_vec_len(nmax),:]
+        g_cut = g_ens[:,200:] # Truncate g
+    elif sim_type == "lith_ens":
+        g_ens = np.load("mikkel_tools/models_shc/lithosphere_g_in_rotated.npy")
+        g_cut = g_ens[:shc_vec_len(n_max),::20]
+
+    R_prior = lowe_shspec(nmax,spec_r_at,spec_r_ref,g_cut)
+    ax.plot(ns,R_prior, color = color_rgb, linewidth = lwidth/lwidth_div, zorder=0)
+    leg_handle.append(mpatches.Patch(color=color_rgb, label='Training ensemble'))
+
+    # Models
+    if model_dict is not None: # Load models
+        WDMAM2 = spio.loadmat('mikkel_tools/models_shc/WDMAM2.mat')
+        LCS1 = load_shc("mikkel_tools/models_shc/LCS-1.shc")
+        MF7 = load_shc("mikkel_tools/models_shc/MF7.shc")
+        EMM2017 = np.loadtxt('mikkel_tools/models_shc/EMM2017.COF',comments="%",skiprows=1)
+
+        # Add zero coefficient to comply with SHTOOLS methods
+        g_LCS1 = np.hstack((np.zeros(1,),LCS1[:,2]))
+        g_WDMAM2 = np.hstack((np.zeros(1,),WDMAM2["gh_wdmam"][:,0]))
+        g_EMM2017 = np.hstack((np.zeros(1,),gauss_vector(EMM2017, 790, i_n = 2, i_m = 3)))
+
+        # Also add "missing" coefficients for degree 0-15
+        g_MF7 = np.hstack((np.zeros(shc_vec_len(15,include_n_zero = True),),MF7[:,2])) 
+
+        # cilm
+        cilm_LCS1 = pyshtools.shio.SHVectorToCilm(g_LCS1)
+        cilm_MF7 = pyshtools.shio.SHVectorToCilm(g_MF7)
+        cilm_WDMAM2 = pyshtools.shio.SHVectorToCilm(g_WDMAM2)
+        cilm_EMM2017 = pyshtools.shio.SHVectorToCilm(g_EMM2017)
+
+        # Pomme
+        Gauss_in_pomme = np.loadtxt('mikkel_tools/models_shc/POMME_6_main_field.txt')
+        g_pomme = np.hstack((np.zeros(1,), gauss_vector(Gauss_in_pomme, 60, i_n = 2, i_m = 3)))
+        cilm_pomme = pyshtools.shio.SHVectorToCilm(g_pomme)
+
+        # CHAOS 7
+        N_chaos = 20
+        CHAOS7 = load_CHAOS_matfile('mikkel_tools/models_shc/CHAOS-7.mat')
+        chaos_time = mjd2000(spec_chaos_time[0], spec_chaos_time[1], spec_chaos_time[2])
+        g_CHAOS7 = np.hstack((np.zeros(1,),CHAOS7.synth_coeffs_tdep(chaos_time, nmax=20, deriv=0)))
+        cilm_CHAOS7 = pyshtools.shio.SHVectorToCilm(g_CHAOS7)
+        model_dict_def = {"LCS-1":cilm_LCS1, "MF7":cilm_MF7, "WDMAM2":cilm_WDMAM2, "EMM2017":cilm_EMM2017, "POMME-6":cilm_pomme, "CHAOS-7":cilm_CHAOS7}
+
+    if type(model_dict) is set or model_dict=="default":
+        if model_dict=="default":
+            model_dict = model_dict_def
+
+        i = 0
+        model_leg = []
+        for key in model_dict:
+            ens_cilm = model_dict_def[key]
+            p_spec = pyshtools.gravmag.mag_spectrum(ens_cilm, spec_r_ref, spec_r_at, degrees = np.arange(1,np.shape(ens_cilm)[1]))
+
+            if key == "EMM2017" or key == "CHAOS-7":
+                use_ns = ns[:20]
+                use_p_spec = p_spec[:len(use_ns)]
+            elif key == "MF7" or key == "LCS-1" or key == "WDMAM2":
+                use_ns = ns[16-1:]
+                use_p_spec = p_spec[16-1:nmax]
+            elif key == "POMME-6":
+                use_ns = ns[:60]
+                use_p_spec = p_spec[:len(use_ns)]
+            else:
+                use_ns = ns
+                use_p_spec = p_spec[:nmax]
+
+            ax.plot(use_ns, use_p_spec, color="C{}".format(i+4), label = key, linewidth = lwidth)
+            leg_handle.append(mpatches.Patch(color="C{}".format(i+4), label=key))
+            i += 1
+
+    ax.set_yscale('log')
+    ax.set_xlabel("degree, n")
+    ax.set_title('{}, $r\'={}km$'.format(title, spec_r_at))
+    ax.set_ylabel("Power [nT²]")   
+    ax.set_xticks(n_ticks) #fontsize="small"
+    ax.grid(alpha=0.3)
+    ax.legend(handles=leg_handle, numpoints=1, labelspacing=1, loc='best', fontsize=label_fontsize, frameon=False)
+
+    ax2.set_yscale('log')
+    ax2.set_xlabel("degree, n")
+    ax2.set_title('Mean absolute difference to synthetic truth')
+    ax2.set_ylabel("Power [nT²]")   
+    ax2.set_xticks(n_ticks) #fontsize="small"
+    ax2.grid(alpha=0.3)
+    ax2.legend(handles=leg_handle[:-2], numpoints=1, labelspacing=1, loc='best', fontsize=label_fontsize, frameon=False)
+
+
+    fig.subplots_adjust(left=left, bottom=bottom, right=right, top=top, wspace=wspace, hspace=hspace)
+
+    if savefig == True:
+        fig.savefig('{}spec_compare_{}.pdf'.format(save_path, save_string), bbox_inches='tight', dpi = save_dpi) 
+
+    fig.show()
+
+
 def plot_power_spectrum(p_spec, figsize=(14,8)):
     import matplotlib.pyplot as plt
     import numpy as np
@@ -1617,7 +1754,7 @@ def plot_power_spectrum(p_spec, figsize=(14,8)):
     plt.plot(ns, p_spec[1:])
     plt.yscale('log')
     plt.xlabel("Spherical harmonic degree")
-    plt.ylabel("Power [nt²]")
+    plt.ylabel("Power [nT²]")
     plt.xticks(n_ticks, fontsize="small")
     plt.grid(alpha=0.3)
     plt.show()
