@@ -1364,7 +1364,7 @@ def plot_global(lat = None, lon = None, data=None, limits_data = None,
     import matplotlib.pyplot as plt
     import matplotlib.ticker as tick
     import cartopy.crs as ccrs
-    import matplotlib.colors as colors
+    import matplotlib.colors as colors 
     from matplotlib.colorbar import Colorbar
 
     # Plotting init
@@ -1426,9 +1426,9 @@ def plot_global(lat = None, lon = None, data=None, limits_data = None,
     #ax.set_title("{}".format(title))
 
     if data_on_top == True:
-        im = ax.scatter(lon, lat, s=point_size, c=data, transform=ccrs.PlateCarree(), rasterized=True, vmin = field_min, vmax = field_max, cmap=cm_zesty_cbf, norm = MidpointNormalize(midpoint=0.), zorder = 10)
+        im = ax.scatter(lon, lat, s=point_size, c=data, marker = "o", transform=ccrs.PlateCarree(), rasterized=True, vmin = field_min, vmax = field_max, cmap=cm_zesty_cbf, norm = MidpointNormalize(midpoint=0.), zorder = 10)
     else:
-        im = ax.scatter(lon, lat, s=point_size, c=data, transform=ccrs.PlateCarree(), rasterized=True, vmin = field_min, vmax = field_max, cmap=cm_zesty_cbf, norm = MidpointNormalize(midpoint=0.))
+        im = ax.scatter(lon, lat, s=point_size, c=data, marker = "o", transform=ccrs.PlateCarree(), rasterized=True, vmin = field_min, vmax = field_max, cmap=cm_zesty_cbf, norm = MidpointNormalize(midpoint=0.))
     
     #im = ax.imshow(data, transform=ccrs.PlateCarree(), cmap=cm_zesty_cbf, vmin = field_min, vmax = field_max, norm = MidpointNormalize(midpoint=0.))
     
