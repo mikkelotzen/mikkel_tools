@@ -1350,12 +1350,12 @@ def plot_map_compare_tiles(lon, lat, ul, ur, ll, lr, tile_size_row = 2, tile_siz
     fig.show()
 
 
-def plot_global(lat = None, lon = None, data=None, limits_data = None, 
+def plot_global(lat = None, lon = None, data=None, limits_data = None, cbar_use = True,
                 cbar_h = 0.075, cbar_even = True, cbar_mm_factor = 1, cbar_text = "", cbar_text_color = "grey",
                 unit_transform_n_to_m = False, projection_transformation = "Mollweide", figsize=(6,6),
                 coast_width = 0.4, coast_color = "grey", limit_for_SF = 10**6, extent = None,
                 left=0.03, bottom=0.35, right=0.97, top=0.95, wspace = 0.05, hspace=0.01,
-                title='Cartopy Earth plot', lat_0 = 0.0, lon_0 = 0.0, point_size=1,
+                title='Cartopy Earth plot', lat_0 = 0.0, lon_0 = 0.0, point_size=1, save_bg_color = "w",
                 savefig = False, save_dpi = 100, save_string ="", save_path = "", rasterize = True,
                 use_gridlines = False, gridlines_width = 0.4, gridlines_alpha = 0.4,
                 data_on_top = False, color_bg = None):
@@ -1375,7 +1375,7 @@ def plot_global(lat = None, lon = None, data=None, limits_data = None,
     elif projection_transformation == "PlateCarree":
         projection = ccrs.PlateCarree()
     else:
-        projection = ccrs.Mollweide()
+        projection = ccrs.Mollweide(central_longitude=0)
 
     if unit_transform_n_to_m == True:
         data = data*10**(-6)
@@ -1466,20 +1466,20 @@ def plot_global(lat = None, lon = None, data=None, limits_data = None,
         gl.left_labels = True
         gl.ylabel_style = {'size': 7, 'color': 'gray'}
 
+    if cbar_use == True:
+        cbax = plt.subplot(gs[1,:]) # Set colorbar position
 
-    cbax = plt.subplot(gs[1,:]) # Set colorbar position
+        if field_max>limit_for_SF:
+            cb = Colorbar(mappable = im, ax = cbax, orientation = "horizontal", format = SF) # im, ax=ax, 
+        else:
+            cb = Colorbar(mappable = im, ax = cbax, orientation = "horizontal")
 
-    if field_max>limit_for_SF:
-        cb = Colorbar(mappable = im, ax = cbax, orientation = "horizontal", format = SF) # im, ax=ax, 
-    else:
-        cb = Colorbar(mappable = im, ax = cbax, orientation = "horizontal")
-
-    cb.set_label(cbar_text)
+        cb.set_label(cbar_text)
         
     fig.subplots_adjust(left=left, bottom=bottom, right=right, top=top, wspace=wspace, hspace=hspace)
 
     if savefig == True:
-        fig.savefig('{}map_{}.pdf'.format(save_path, save_string), bbox_inches='tight', dpi = save_dpi) 
+        fig.savefig('{}map_{}.pdf'.format(save_path, save_string), bbox_inches='tight', dpi = save_dpi, facecolor=save_bg_color, edgecolor=save_bg_color,) 
 
     fig.show()
 
