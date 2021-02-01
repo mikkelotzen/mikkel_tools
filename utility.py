@@ -1485,7 +1485,7 @@ def plot_global(lat = None, lon = None, data=None, limits_data = None, cbar_use 
 
 
 def plot_local_dist_KL(zs_DSS, skip = 1, N_bins = 21, idx_high_start = -401, idx_high_interval = 100, idx_low_start = 0, idx_low_end = 1250, idx_low_interval = 250, 
-                       xlim = [-2,2], hist_density = False, save_dpi = 100, savefig = False, save_path = "", save_string = "", figsize = (11,8), random_seed = None):
+                       xlim = [-2,2], hist_density = False, save_dpi = 100, savefig = False, save_path = "", save_string = "", figsize = (11,8), random_seed = None, leg_size = "small"):
     from scipy import stats
     from mpl_toolkits import mplot3d
 
@@ -1557,7 +1557,7 @@ def plot_local_dist_KL(zs_DSS, skip = 1, N_bins = 21, idx_high_start = -401, idx
     leg1 = mpatches.Patch(color=color_rgb_zesty_pos, label="Sampled local posterior")
     leg2 = mpatches.Patch(color="k", label="Equivalent Gaussian")
     ax.legend(handles=[leg1,leg2], numpoints=1, 
-            labelspacing=1, loc='best', fontsize="x-small", frameon=False)
+            labelspacing=1, loc='best', fontsize=leg_size, frameon=False)
 
     # LOW SAMPLES
     idx_bc_low = np.arange(0,len(kld))[idx_low_start:idx_low_end:idx_low_interval]
@@ -1587,7 +1587,7 @@ def plot_local_dist_KL(zs_DSS, skip = 1, N_bins = 21, idx_high_start = -401, idx
     leg1 = mpatches.Patch(color=color_rgb_zesty_neg, label="Sampled local posterior")
     leg2 = mpatches.Patch(color="k", label="Equivalent Gaussian")
     ax.legend(handles=[leg1,leg2], numpoints=1, 
-            labelspacing=1, loc='best', fontsize="x-small", frameon=False)
+            labelspacing=1, loc='best', fontsize=leg_size, frameon=False)
 
     # KL LINE PLOT
     ax = fig.add_subplot(gs[1, :])
@@ -1600,7 +1600,7 @@ def plot_local_dist_KL(zs_DSS, skip = 1, N_bins = 21, idx_high_start = -401, idx
     leg2 = mpatches.Patch(color=color_rgb_zesty_pos, label="Samples from high KL-divergence")
     leg3 = mpatches.Patch(color=(0.6,0.6,0.6), label="KL-divergence")
     ax.legend(handles=[leg1,leg2,leg3], numpoints=1, 
-            labelspacing=1, loc='best', fontsize="x-small", frameon=False)
+            labelspacing=1, loc='best', fontsize=leg_size, frameon=False)
 
     if savefig == True:
         fig.savefig('{}local_dist_KL_{}.pdf'.format(save_path,save_string), bbox_inches='tight', dpi = save_dpi) 
