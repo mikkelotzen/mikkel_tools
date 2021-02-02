@@ -654,9 +654,9 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, m_mode = N
         ti_hist_data = prior_ens
     else:
         ti_hist_data = seqsim_data
-        ti_label = "Training image"
+        ti_label = "Training model"
 
-    # Training image
+    # Training model
     if hist_ti_ens == "all":        
         for i in np.arange(0,np.shape(ti_hist_data)[1]):
             hist_ens_plot = ti_hist_data[:,[i]]
@@ -743,12 +743,12 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, m_mode = N
         ax.plot(plot_model_lag, plot_model_sv, color='k', label='Semi-variogram model', linewidth = lwidth_mult*lwidth) #linestyle = "dashed"
         leg2 = mpatches.Patch(color='k', linestyle = "-", label='Semi-variogram model')
 
-        # Training image
+        # Training model
         seqsim_obj.sv_m_DSS(len(seqsim_data), 1, seqsim_data.reshape(-1,1), seqsim_obj.sort_d, seqsim_obj.n_lags, seqsim_obj.max_cloud)
-        ax.plot(seqsim_obj.lags[:lags_use], seqsim_obj.pics_m_DSS[:lags_use,0], "x", color = 'k', label='Training image', linewidth = lwidth_mult*lwidth) # marker = "x"
-        #leg3 = mpatches.Patch(color="k", hatch = "x", label='Training image')
-        #leg3 = mpatches.Circle((0,0), color="k", label='Training image')
-        leg3 = mlines.Line2D([], [], color='k', linestyle = '', marker='x', markersize=8, label='Training image')
+        ax.plot(seqsim_obj.lags[:lags_use], seqsim_obj.pics_m_DSS[:lags_use,0], "x", color = 'k', label='Training model', linewidth = lwidth_mult*lwidth) # marker = "x"
+        #leg3 = mpatches.Patch(color="k", hatch = "x", label='Training model')
+        #leg3 = mpatches.Circle((0,0), color="k", label='Training model')
+        leg3 = mlines.Line2D([], [], color='k', linestyle = '', marker='x', markersize=8, label='Training model')
 
         if sv_pos_mean == True:
             # Realization mean
@@ -911,8 +911,8 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, m_mode = N
             else:
                 p_spec_prior = pyshtools.spectralanalysis.spectrum(ens_cilm_prior, degrees = np.arange(1,np.shape(ens_cilm_prior)[1]))
             p_spec_prior = p_spec_prior[:nmax]
-            ax.plot(ns, p_spec_prior, color = "k", label = "Training image", linewidth = lwidth, zorder=0)
-            leg3 = mpatches.Patch(color="k", label='Training image')
+            ax.plot(ns, p_spec_prior, color = "k", label = "Training model", linewidth = lwidth, zorder=0)
+            leg3 = mpatches.Patch(color="k", label='Training model')
 
         # Observed truth
         if truth_obj is not None:
@@ -1190,9 +1190,9 @@ def plot_ensemble_map_tiles(lon, lat, ensemble_fields, field_uncon = None, field
 
                 if i == tile_size_column-1:
                     im = ax.scatter(lon, lat, s=point_size, c=field_compare, transform=ccrs.PlateCarree(), rasterized=True, vmin = field_min, vmax = field_max, cmap=cm_zesty_cbf, norm = MidpointNormalize(midpoint=0.))
-                    #ax.annotate('Training image', (0.4, -0.1), xycoords='axes fraction', va='center')
+                    #ax.annotate('Training model', (0.4, -0.1), xycoords='axes fraction', va='center')
                     ax.set_title("Synthetic truth")
-                    #ax.set_xlabel("Training image")
+                    #ax.set_xlabel("Training model")
                 elif i == 0:
                     im = ax.scatter(lon, lat, s=point_size, c=field_lsq, transform=ccrs.PlateCarree(), rasterized=True, vmin = field_min, vmax = field_max, cmap=cm_zesty_cbf, norm = MidpointNormalize(midpoint=0.))
                     #ax.annotate('Equivalent LSQ', (0.4, -0.1), xycoords='axes fraction', va='center')
