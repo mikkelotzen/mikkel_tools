@@ -1355,10 +1355,10 @@ def plot_global(lat = None, lon = None, data=None, limits_data = None, cbar_use 
                 unit_transform_n_to_m = False, projection_transformation = "Mollweide", figsize=(6,6),
                 coast_width = 0.4, coast_color = "grey", limit_for_SF = 10**6, extent = None,
                 left=0.03, bottom=0.35, right=0.97, top=0.95, wspace = 0.05, hspace=0.01,
-                title='Cartopy Earth plot', lat_0 = 0.0, lon_0 = 0.0, point_size=1, save_bg_color = "w",
+                title="", lat_0 = 0.0, lon_0 = 0.0, point_size=1, save_bg_color = "w",
                 savefig = False, save_dpi = 100, save_string ="", save_path = "", rasterize = True,
                 use_gridlines = False, gridlines_width = 0.4, gridlines_alpha = 0.4,
-                data_on_top = False, color_bg = None):
+                data_on_top = False, color_bg = None, cmap = None, midnorm = 0.0):
 
     import numpy as np
     import matplotlib.pyplot as plt
@@ -1366,6 +1366,10 @@ def plot_global(lat = None, lon = None, data=None, limits_data = None, cbar_use 
     import cartopy.crs as ccrs
     import matplotlib.colors as colors 
     from matplotlib.colorbar import Colorbar
+
+    # Colormap
+    if cmap is None:
+        cmap = cm_zesty_cbf
 
     # Plotting init
     if projection_transformation == "ortho":
@@ -1426,9 +1430,9 @@ def plot_global(lat = None, lon = None, data=None, limits_data = None, cbar_use 
     #ax.set_title("{}".format(title))
 
     if data_on_top == True:
-        im = ax.scatter(lon, lat, s=point_size, c=data, marker = "o", transform=ccrs.PlateCarree(), rasterized=True, vmin = field_min, vmax = field_max, cmap=cm_zesty_cbf, norm = MidpointNormalize(midpoint=0.), zorder = 10)
+        im = ax.scatter(lon, lat, s=point_size, c=data, marker = "o", transform=ccrs.PlateCarree(), rasterized=True, vmin = field_min, vmax = field_max, cmap=cmap, norm = MidpointNormalize(midpoint=midnorm), zorder = 10)
     else:
-        im = ax.scatter(lon, lat, s=point_size, c=data, marker = "o", transform=ccrs.PlateCarree(), rasterized=True, vmin = field_min, vmax = field_max, cmap=cm_zesty_cbf, norm = MidpointNormalize(midpoint=0.))
+        im = ax.scatter(lon, lat, s=point_size, c=data, marker = "o", transform=ccrs.PlateCarree(), rasterized=True, vmin = field_min, vmax = field_max, cmap=cmap, norm = MidpointNormalize(midpoint=midnorm))
     
     #im = ax.imshow(data, transform=ccrs.PlateCarree(), cmap=cm_zesty_cbf, vmin = field_min, vmax = field_max, norm = MidpointNormalize(midpoint=0.))
     
