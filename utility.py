@@ -1256,7 +1256,7 @@ def plot_ensemble_map_tiles(lon, lat, ensemble_fields, field_uncon = None, field
 
 def plot_map_compare_tiles(lon, lat, ul, ur, ll, lr, tile_size_row = 2, tile_size_column = 2, figsize=(8,8), limit_for_SF = 10**6, point_size = 0.1,
                             left=0.03, bottom=0.12, right=0.97, top=0.95, wspace = 0.05, hspace=0.25, coast_width = 0.4, coast_color = "grey", unit_transform_n_to_m = False,
-                            savefig = False, save_string = "", save_dpi = 100,  save_path = "", projection = ccrs.Mollweide(), cbar_limit = None, cbar_h = 0.1, cbar_text = "nT", 
+                            savefig = False, save_string = "", save_dpi = 100,  save_path = "", projection = ccrs.Mollweide(), project_ortho = False, cbar_limit = None, cbar_h = 0.1, cbar_text = "nT", 
                             cbar_text_color = "grey", use_gridlines = False, gridlines_width = 0.4, gridlines_alpha = 0.4):
     import numpy as np
     import matplotlib.pyplot as plt
@@ -1264,6 +1264,7 @@ def plot_map_compare_tiles(lon, lat, ul, ur, ll, lr, tile_size_row = 2, tile_siz
     import cartopy.crs as ccrs
     import matplotlib.colors as colors
     from matplotlib.colorbar import Colorbar
+    import matplotlib.path as mpath
 
     if unit_transform_n_to_m == True:
         ul[1] = ul[1]*10**(-6)
@@ -1303,14 +1304,28 @@ def plot_map_compare_tiles(lon, lat, ul, ur, ll, lr, tile_size_row = 2, tile_siz
         field_max = np.max((abs(ul[1]),abs(ul[1])))
         field_min = -field_max
 
+    lon_old = lon.copy()
+    lat_old = lat.copy()
     for i in np.arange(0,len(tile)):
-        ax = fig.add_subplot(gs[i], projection=projection)
-        ax.set_global()    
+        if project_ortho == True:
+            lon = lon_old[tile[i][4]]
+            lat = lat_old[tile[i][4]]
+            projection = ccrs.Orthographic(central_longitude=tile[i][2], central_latitude=tile[i][3])
+            ax = fig.add_subplot(gs[i], projection=projection)
+            theta_c = np.linspace(0, 2*np.pi, 100)
+            center, radius = [0.5, 0.5], 0.5
+            verts = np.vstack([np.sin(theta_c), np.cos(theta_c)]).T
+            circle = mpath.Path(verts * radius + center)
+            ax.set_boundary(circle, transform=ax.transAxes)
+        else:
+            ax = fig.add_subplot(gs[i], projection=projection)
+            ax.set_global()    
 
         ax.set_title(tile_letter[i]+tile[i][0])
 
         im = ax.scatter(lon, lat, s=point_size, c=tile[i][1], transform=ccrs.PlateCarree(), rasterized=True, vmin = field_min, vmax = field_max, cmap=cm_zesty_cbf, norm = MidpointNormalize(midpoint=0.))
         ax.coastlines(linewidth = coast_width, color = coast_color)
+        
 
         if use_gridlines == True:
             from cartopy.mpl.gridliner import LONGITUDE_FORMATTER, LATITUDE_FORMATTER
