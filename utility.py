@@ -2377,16 +2377,16 @@ def plot_clip_grid_comparison(epoch_i, Li_out, C_out, sat_in, batch_labels, clip
         im6 = ax6.imshow(batch_sat_plot.reshape((size_lat_in_s,size_lon_in_s))-sat_plot.reshape((size_lat_in_s,size_lon_in_s)), norm = MidpointNormalize(midpoint=0.), cmap = plt.cm.RdBu_r, transform=ccrs.PlateCarree(), extent=[-180, 180, 90, -90])
         im7 = ax7.imshow(Li_in_plot-Li_out_plot, norm = MidpointNormalize(midpoint=0.), cmap = cm_zesty_cbf, transform=ccrs.PlateCarree(), extent=[-180, 180, 90, -90])
         im8 = ax8.imshow(C_in_plot-C_out_plot, norm = MidpointNormalize(midpoint=0.), cmap = cm_zesty_cbf, transform=ccrs.PlateCarree(), extent=[-180, 180, 90, -90])
-        ax6.coastlines()
-        ax7.coastlines()
-        ax8.coastlines()
+        #ax6.coastlines()
+        #ax7.coastlines()
+        #ax8.coastlines()
 
-    ax01.coastlines()
-    ax02.coastlines()
-    ax2.coastlines()
-    ax3.coastlines()
-    ax4.coastlines()
-    ax5.coastlines()
+    #ax01.coastlines()
+    #ax02.coastlines()
+    #ax2.coastlines()
+    #ax3.coastlines()
+    #ax4.coastlines()
+    #ax5.coastlines()
 
     
     #limit_for_SF = 10**3
