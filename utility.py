@@ -1573,7 +1573,7 @@ def plot_local_dist_KL(zs_DSS, skip = 1, N_bins = 21, idx_high_start = -401, idx
     ax.set_xticks([-2,-1,0,1,1,2])
     ax.grid(b=None)
     ax.view_init(30, -40)
-    leg1 = mpatches.Patch(color=color_rgb_zesty_pos, label="Sampled local posterior")
+    leg1 = mpatches.Patch(color=color_rgb_zesty_pos, label="Sampled marginal posterior")
     leg2 = mpatches.Patch(color="k", label="Equivalent Gaussian")
     ax.legend(handles=[leg1,leg2], numpoints=1, 
             labelspacing=1, loc='best', fontsize=leg_size, frameon=False)
@@ -1603,7 +1603,7 @@ def plot_local_dist_KL(zs_DSS, skip = 1, N_bins = 21, idx_high_start = -401, idx
     ax.set_xticks([-2,-1,0,1,1,2])
     ax.grid(b=None)
     ax.view_init(30, -40)
-    leg1 = mpatches.Patch(color=color_rgb_zesty_neg, label="Sampled local posterior")
+    leg1 = mpatches.Patch(color=color_rgb_zesty_neg, label="Sampled marginal posterior")
     leg2 = mpatches.Patch(color="k", label="Equivalent Gaussian")
     ax.legend(handles=[leg1,leg2], numpoints=1, 
             labelspacing=1, loc='best', fontsize=leg_size, frameon=False)
