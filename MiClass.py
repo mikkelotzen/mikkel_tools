@@ -462,6 +462,26 @@ class MiClass(object):
             self.B_ensemble_nmf = np.stack((B_r_nmf, B_theta_nmf, B_phi_nmf), axis = 1)
 
 
+    def ensemble_B_all(self, g_use, nmax = 30, N_mf = 15, nmf = False, r_at = None):
+
+        if r_at is None:
+            r_at = self.a
+
+        g_use = g_use[:mt_util.shc_vec_len(nmax)]
+
+        # Generate design matrix for grid
+        A_r, A_theta, A_phi = gt.design_SHA(r_at/self.a, self.grid_theta*self.rad, self.grid_phi*self.rad, 
+                                            nmax)
+
+        if nmf == True:
+            g_use[:int(2*np.sum(np.arange(1,N_mf+1)+1)-N_mf)] = 0
+        
+        B_r = A_r@g_use
+        B_theta = A_theta@g_use
+        B_phi = A_phi@g_use            
+        self.B_ensemble = np.stack((B_r, B_theta, B_phi), axis = 1)
+
+
     def interpolate_grid(self, grid_in_theta, grid_out_theta, grid_in_phi, grid_out_phi, grid_in, method_int = "nearest", output = "return", save_path = ""):
         # Define interpolation grids
         grid_in_tuple = (90-np.ravel(grid_in_theta), np.ravel(grid_in_phi))
