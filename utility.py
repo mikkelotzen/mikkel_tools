@@ -1806,17 +1806,19 @@ def plot_p_spec(g_spec, p_spec_height, nmax, model_dict = None, figsize = (14,8)
 
             p_spec = pyshtools.gravmag.mag_spectrum(ens_cilm, r_ref, p_spec_height, degrees = np.arange(1,np.shape(ens_cilm)[1])) # degrees to skip zeroth degree
             p_spec_compare = pyshtools.gravmag.mag_spectrum(ens_cilm_compare, r_ref, p_spec_height, degrees = np.arange(1,np.shape(ens_cilm_compare)[1])) # degrees to skip zeroth degree
-
+            
             p_spec = p_spec[:nmax_use]
             p_spec_compare = p_spec_compare[:nmax_compare]
 
             labels_use = labels + " estimate"
             labels_compare = labels + " label"
 
-            plt.plot(np.arange(1,nmax_use+1), p_spec, color=(rgb_gradient, rgb_gradient, rgb_gradient), label = labels_use, linewidth = lwidth)
-            plt.plot(np.arange(1,nmax_compare+1), p_spec_compare, color=(rgb_gradient, rgb_gradient, rgb_gradient), label = labels_compare, linewidth = lwidth, linestyle = "dashed")
+            #plt.plot(np.arange(1,nmax_use+1), p_spec, color=(rgb_gradient, rgb_gradient, rgb_gradient), label = labels_use, linewidth = lwidth)
+            #plt.plot(np.arange(1,nmax_compare+1), p_spec_compare, color=(rgb_gradient, rgb_gradient, rgb_gradient), label = labels_compare, linewidth = lwidth, linestyle = "dashed")
+            plt.plot(np.arange(1,nmax_use+1), p_spec, color=(0.6,0.6,0.6), label = labels_use, linewidth = lwidth)
+            plt.plot(np.arange(1,nmax_compare+1), p_spec_compare, color=(0.2,0.2,0.2), label = labels_compare, linewidth = lwidth, linestyle = "dashed")
 
-            rgb_gradient -= 0.4
+            #rgb_gradient -= 0.4
 
     elif spec_style == "ensemble":
         N_ensembles = np.shape(g_spec)[-1]
