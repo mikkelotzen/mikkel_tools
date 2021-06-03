@@ -1373,7 +1373,7 @@ def plot_global(lat = None, lon = None, data=None, limits_data = None, cbar_use 
                 title="", lat_0 = 0.0, lon_0 = 0.0, point_size=1, save_bg_color = "w",
                 savefig = False, save_dpi = 100, save_string ="", save_path = "", rasterize = True,
                 use_gridlines = False, gridlines_width = 0.4, gridlines_alpha = 0.4,
-                data_on_top = False, color_bg = None, cmap = None, midnorm = 0.0):
+                data_on_top = False, color_bg = None, color_points = "C0", cmap = None, midnorm = 0.0):
 
     import numpy as np
     import matplotlib.pyplot as plt
@@ -1425,30 +1425,39 @@ def plot_global(lat = None, lon = None, data=None, limits_data = None, cbar_use 
     # Gridspec
     gs = fig.add_gridspec(2, 1, height_ratios=h_ratio, width_ratios=w_ratio) # Add x-by-y grid
 
-    # Plotting ranges and norms
-    if limits_data is None:
-        field_max_true = np.max(data)
-        field_min_true = np.min(data)
-    else:
-        field_max_true = np.max(limits_data)
-        field_min_true = np.min(limits_data)
-
-    if cbar_even == True:
-        field_max = cbar_mm_factor*np.max((abs(field_max_true),abs(field_min_true)))
-        field_min = -field_max
-    else:
-        field_max = cbar_mm_factor*field_max_true
-        field_min = cbar_mm_factor*field_min_true
-
     ax = fig.add_subplot(gs[0, 0], projection=projection)
     ax.set_global()
     #ax.set_title("{}".format(title))
 
-    if data_on_top == True:
-        im = ax.scatter(lon, lat, s=point_size, c=data, marker = "o", transform=ccrs.PlateCarree(), rasterized=True, vmin = field_min, vmax = field_max, cmap=cmap, norm = MidpointNormalize(midpoint=midnorm), zorder = 10)
+    if data is None:
+        im = ax.scatter(lon, lat, s=point_size, color=color_points, marker = "o", transform=ccrs.PlateCarree(), rasterized=True, zorder = 10)
     else:
-        im = ax.scatter(lon, lat, s=point_size, c=data, marker = "o", transform=ccrs.PlateCarree(), rasterized=True, vmin = field_min, vmax = field_max, cmap=cmap, norm = MidpointNormalize(midpoint=midnorm))
-    
+        # Plotting ranges and norms
+        if not all(np.logical_or(type(element) == str, type(element) == np.str_)  for element in data):
+            if limits_data is None:
+                field_max_true = np.max(data)
+                field_min_true = np.min(data)
+            else:
+                field_max_true = np.max(limits_data)
+                field_min_true = np.min(limits_data)
+
+            if cbar_even == True:
+                field_max = cbar_mm_factor*np.max((abs(field_max_true),abs(field_min_true)))
+                field_min = -field_max
+            else:
+                field_max = cbar_mm_factor*field_max_true
+                field_min = cbar_mm_factor*field_min_true
+        else:
+            field_min = None
+            field_max = None
+
+        # Plotting
+        if data_on_top == True:
+            im = ax.scatter(lon, lat, s=point_size, c=data, marker = "o", transform=ccrs.PlateCarree(), rasterized=True, vmin = field_min, vmax = field_max, cmap=cmap, norm = MidpointNormalize(midpoint=midnorm), zorder = 10)
+        else:
+            im = ax.scatter(lon, lat, s=point_size, c=data, marker = "o", transform=ccrs.PlateCarree(), rasterized=True, vmin = field_min, vmax = field_max, cmap=cmap, norm = MidpointNormalize(midpoint=midnorm))
+
+        
     #im = ax.imshow(data, transform=ccrs.PlateCarree(), cmap=cm_zesty_cbf, vmin = field_min, vmax = field_max, norm = MidpointNormalize(midpoint=0.))
     
     ax.coastlines(linewidth = coast_width, color = coast_color)
