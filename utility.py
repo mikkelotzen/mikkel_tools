@@ -1371,7 +1371,7 @@ def plot_global(lat = None, lon = None, data=None, limits_data = None, cbar_use 
                 coast_width = 0.4, coast_color = "grey", limit_for_SF = 10**6, extent = None,
                 left=0.03, bottom=0.35, right=0.97, top=0.95, wspace = 0.05, hspace=0.01,
                 title="", lat_0 = 0.0, lon_0 = 0.0, point_size=1, save_bg_color = "w",
-                savefig = False, save_dpi = 100, save_string ="", save_path = "", rasterize = True,
+                savefig = False, save_dpi = 100, save_string ="", save_path = "", save_ftype = "pdf", rasterize = True,
                 use_gridlines = False, gridlines_width = 0.4, gridlines_alpha = 0.4,
                 data_on_top = False, color_bg = None, color_points = "C0", cmap = None, midnorm = 0.0):
 
@@ -1429,6 +1429,8 @@ def plot_global(lat = None, lon = None, data=None, limits_data = None, cbar_use 
     ax.set_global()
     #ax.set_title("{}".format(title))
 
+    ax.coastlines(linewidth = coast_width, color = coast_color)
+
     if data is None:
         im = ax.scatter(lon, lat, s=point_size, color=color_points, marker = "o", transform=ccrs.PlateCarree(), rasterized=True, zorder = 10)
     else:
@@ -1460,7 +1462,7 @@ def plot_global(lat = None, lon = None, data=None, limits_data = None, cbar_use 
         
     #im = ax.imshow(data, transform=ccrs.PlateCarree(), cmap=cm_zesty_cbf, vmin = field_min, vmax = field_max, norm = MidpointNormalize(midpoint=0.))
     
-    ax.coastlines(linewidth = coast_width, color = coast_color)
+    
     #ax.stock_img()
     if color_bg is not None:
         ax.background_patch.set_facecolor(color_bg)
@@ -1507,7 +1509,7 @@ def plot_global(lat = None, lon = None, data=None, limits_data = None, cbar_use 
     fig.subplots_adjust(left=left, bottom=bottom, right=right, top=top, wspace=wspace, hspace=hspace)
 
     if savefig == True:
-        fig.savefig('{}map_{}.pdf'.format(save_path, save_string), bbox_inches='tight', dpi = save_dpi, facecolor=save_bg_color, edgecolor=save_bg_color,) 
+        fig.savefig('{}map_{}.{}'.format(save_path, save_string, save_ftype), bbox_inches='tight', dpi = save_dpi, facecolor=save_bg_color, edgecolor=save_bg_color,) 
 
     fig.show()
 
