@@ -460,7 +460,7 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, m_mode = N
                           sv_use = True, spec_ti_ens = False, res_use = True, unit_transform_n_to_m = False, patch_legend = False, ens_prior = False,
                           model_dict = None, spec_chaos_time = [2020,1,1], unit_var = "[nT²]", unit_lag = "[km]", unit_field = "[nT]", unit_res = "[nT]",
                           left=0.08, bottom=0.12, right=0.92, top=0.95, wspace = 0.2, hspace=0.25, label_fontsize = "small", res_power_format = False, res_print_f = 2, power_limit = 6,
-                          tile_size_row = 3, tile_size_column = 2, figsize=(9,14), savefig = False, save_string = "", save_dpi = 300, save_path = ""):
+                          tile_size_row = 3, tile_size_column = 2, figsize=(9,14), savefig = False, save_string = "", save_ftype = "pdf", save_dpi = 300, save_path = ""):
     import numpy as np
     import matplotlib.pyplot as plt
     import scipy as sp
@@ -1032,14 +1032,14 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, m_mode = N
     fig.subplots_adjust(left=left, bottom=bottom, right=right, top=top, wspace=wspace, hspace=hspace)
 
     if savefig == True:
-        fig.savefig('{}sdssim_reproduce_{}.pdf'.format(save_path,save_string), bbox_inches='tight', dpi = save_dpi) 
+        fig.savefig('{}sdssim_reproduce_{}.{}'.format(save_path,save_string,save_ftype), bbox_inches='tight', dpi = save_dpi) 
 
     fig.show()
     
 
 def plot_ensemble_map_tiles(lon, lat, ensemble_fields, field_uncon = None, field_compare = None, field_lsq = None, field_mean = None, tile_size_row = 3, tile_size_column = 3, figsize=(8,8), limit_for_SF = 10**6, point_size = 0.1,
                             left=0.03, bottom=0.12, right=0.97, top=0.95, wspace = 0.05, hspace=0.25, coast_width = 0.4, coast_color = "grey", cbar_mm_factor = 1, unit_transform_n_to_m = False,
-                            savefig = False, save_string = "", save_dpi = 100,  save_path = "", projection = ccrs.Mollweide(), cbar_limit = None, cbar_h = 0.1, cbar_text = "nT", cbar_text_color = "grey", use_gridlines = False, gridlines_width = 0.4, gridlines_alpha = 0.4):
+                            savefig = False, save_string = "", save_dpi = 100,  save_path = "", save_ftype = "pdf", projection = ccrs.Mollweide(), cbar_limit = None, cbar_h = 0.1, cbar_text = "nT", cbar_text_color = "grey", use_gridlines = False, gridlines_width = 0.4, gridlines_alpha = 0.4):
     import numpy as np
     import matplotlib.pyplot as plt
     import matplotlib.ticker as tick
@@ -1049,7 +1049,8 @@ def plot_ensemble_map_tiles(lon, lat, ensemble_fields, field_uncon = None, field
 
     if unit_transform_n_to_m == True:
         ensemble_fields = ensemble_fields*10**(-6)
-        field_mean = field_mean*10**(-6)
+        if field_mean is not None:
+            field_mean = field_mean*10**(-6)
         if field_compare is not None:
             field_compare = field_compare*10**(-6)
             if field_lsq is not None:
@@ -1077,7 +1078,16 @@ def plot_ensemble_map_tiles(lon, lat, ensemble_fields, field_uncon = None, field
     #h_ratio.append(cbar_h)
     w_ratio = [1]*tile_size_column
 
-    if field_compare is None:
+    if field_mean is None:
+        h_ratio[-1] = cbar_h
+        gs = fig.add_gridspec(tile_size_row, tile_size_column, height_ratios=h_ratio, width_ratios=w_ratio) # Add x-by-y grid
+        #field_max = np.max(ensemble_fields)
+        #field_min = np.min(ensemble_fields)
+        field_max_true = np.max(ensemble_fields)
+        field_min_true = np.min(ensemble_fields)
+        field_max = cbar_mm_factor*np.max((abs(field_max_true),abs(field_min_true)))
+        field_min = -field_max
+    elif field_compare is None:
         h_ratio.append(1.5)
         h_ratio[-2] = cbar_h
         gs = fig.add_gridspec(tile_size_row+1, tile_size_column, height_ratios=h_ratio, width_ratios=w_ratio) # Add x-by-y grid
@@ -1109,18 +1119,18 @@ def plot_ensemble_map_tiles(lon, lat, ensemble_fields, field_uncon = None, field
             ax = fig.add_subplot(gs[i, j], projection=projection)
             ax.set_global()
 
-            if np.logical_and.reduce((i == tile_size_row-1, j == 0, field_compare is not None)):
+            if np.logical_and.reduce((i == tile_size_row-1, j == 0, field_compare is not None, field_mean is not None)):
                 plot_field = field_mean
                 ax.set_title("Posterior mean")
-            elif np.logical_and.reduce((i == tile_size_row-1, j == 0, field_compare is None)):
+            elif np.logical_and.reduce((i == tile_size_row-1, j == 0, field_compare is None, field_mean is not None)):
                 ax = fig.add_subplot(gs[i+1, j], projection=projection)
                 ax.set_global()
                 plot_field = field_mean
                 ax.set_title("Posterior mean")
-            elif np.logical_and.reduce((i == tile_size_row-1, j == tile_size_column-1, field_compare is not None)):
+            elif np.logical_and.reduce((i == tile_size_row-1, j == tile_size_column-1, field_compare is not None, field_mean is not None)):
                 plot_field = np.std(ensemble_fields,axis=1)
                 ax.set_title("Posterior std. deviation")
-            elif np.logical_and.reduce((i == tile_size_row-1, j == tile_size_column-1, field_compare is None)):
+            elif np.logical_and.reduce((i == tile_size_row-1, j == tile_size_column-1, field_compare is None, field_mean is not None)):
                 ax = fig.add_subplot(gs[i+1, j], projection=projection)
                 ax.set_global()
                 plot_field = np.std(ensemble_fields,axis=1)
@@ -1249,14 +1259,14 @@ def plot_ensemble_map_tiles(lon, lat, ensemble_fields, field_uncon = None, field
     fig.subplots_adjust(left=left, bottom=bottom, right=right, top=top, wspace=wspace, hspace=hspace)
 
     if savefig == True:
-        fig.savefig('{}map_tiles_{}.pdf'.format(save_path, save_string), bbox_inches='tight', dpi = save_dpi) 
+        fig.savefig('{}map_tiles_{}.{}'.format(save_path, save_string, save_ftype), bbox_inches='tight', dpi = save_dpi) 
 
     fig.show()
 
 
 def plot_map_compare_tiles(lon, lat, ul, ur, ll, lr, tile_size_row = 2, tile_size_column = 2, figsize=(8,8), limit_for_SF = 10**6, point_size = 0.1,
                             left=0.03, bottom=0.12, right=0.97, top=0.95, wspace = 0.05, hspace=0.25, coast_width = 0.4, coast_color = "grey", unit_transform_n_to_m = False,
-                            savefig = False, save_string = "", save_dpi = 100,  save_path = "", projection = ccrs.Mollweide(), project_ortho = False, cbar_limit = None, cbar_h = 0.1, cbar_text = "nT", 
+                            savefig = False, save_string = "", save_ftype = "pdf", save_dpi = 100,  save_path = "", projection = ccrs.Mollweide(), project_ortho = False, cbar_limit = None, cbar_h = 0.1, cbar_text = "nT", 
                             cbar_text_color = "grey", use_gridlines = False, gridlines_width = 0.4, gridlines_alpha = 0.4):
     import numpy as np
     import matplotlib.pyplot as plt
@@ -1360,7 +1370,7 @@ def plot_map_compare_tiles(lon, lat, ul, ur, ll, lr, tile_size_row = 2, tile_siz
     fig.subplots_adjust(left=left, bottom=bottom, right=right, top=top, wspace=wspace, hspace=hspace)
 
     if savefig == True:
-        fig.savefig('{}map_compare_tiles_{}.pdf'.format(save_path, save_string), bbox_inches='tight', dpi = save_dpi) 
+        fig.savefig('{}map_compare_tiles_{}.{}'.format(save_path, save_string, save_ftype), bbox_inches='tight', dpi = save_dpi) 
 
     fig.show()
 
