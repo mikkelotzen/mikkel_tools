@@ -571,8 +571,8 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, m_mode = N
         if m_mode is not None:
             y,binEdges=np.histogram(mode_res,bins=res_bins)
             bincenters = 0.5*(binEdges[1:]+binEdges[:-1])
-            ax.plot(bincenters, y, '-', color = "C4", label='Posterior mode', linewidth = lwidth_mult*lwidth) #,linestyle = "dashed"
-            legmode = mpatches.Patch(color="C4", label='Posterior mode')
+            ax.plot(bincenters, y, '-', color = "C4", label='Maximum of marginal posterior', linewidth = lwidth_mult*lwidth) #,linestyle = "dashed"
+            legmode = mpatches.Patch(color="C4", label='Maximum of marginal posterior')
             leg_handle.append(legmode)
 
         ax.set_title('(a) Observation estimate residuals')
@@ -643,8 +643,8 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, m_mode = N
     if m_mode is not None:
         y,binEdges=np.histogram(m_mode, bins=hist_bins, density = hist_density)
         bincenters = 0.5*(binEdges[1:]+binEdges[:-1])
-        ax.plot(bincenters, y, '-', color = 'C4', label='Posterior mode', linewidth = lwidth_mult*lwidth) 
-        legmode = mpatches.Patch(color="C4", label='Posterior mode')
+        ax.plot(bincenters, y, '-', color = 'C4', label='Maximum of marginal posterior', linewidth = lwidth_mult*lwidth) 
+        legmode = mpatches.Patch(color="C4", label='Maximum of marginal posterior')
 
     ti_label = "Training ensemble"
     if hist_ti_ens == True:
@@ -878,8 +878,8 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, m_mode = N
             else:
                 p_spec_mode = pyshtools.spectralanalysis.spectrum(ens_cilm, degrees = np.arange(1,np.shape(ens_cilm)[1]))
             p_spec_mode = p_spec_mode[:nmax]
-            ax.plot(ns, p_spec_mode, color = "C4", label = "Posterior mode", linewidth = lwidth_mult*lwidth)
-            legmode = mpatches.Patch(color="C4", label='Posterior mode')
+            ax.plot(ns, p_spec_mode, color = "C4", label = "Maximum of marginal posterior", linewidth = lwidth_mult*lwidth)
+            legmode = mpatches.Patch(color="C4", label='Maximum of marginal posterior')
 
         # Prior/Training
         if spec_ti_ens == True:
