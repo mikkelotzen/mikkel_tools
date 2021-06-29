@@ -2015,6 +2015,22 @@ def plot_CLiP_data(key, ens_s_sat, ens_Li, ens_C, labels, transform_to_map = Fal
     plt.show()
 
 
+def interpolate_grid(grid_in_theta, grid_out_theta, grid_in_phi, grid_out_phi, grid_in, method_int = "nearest", output = "return", save_path = ""):
+    import scipy.interpolate as itp
+    # Define interpolation grids
+    grid_in_tuple = (90-np.ravel(grid_in_theta), np.ravel(grid_in_phi))
+    grid_out_tuple = (90-np.ravel(grid_out_theta), np.ravel(grid_out_phi))
+
+    # Interpolate grid
+    grid_out = itp.griddata(grid_in_tuple, np.ravel(grid_in), grid_out_tuple, method=method_int)
+    
+    # Save or return
+    if output == "return":
+        return grid_out
+    elif output == "save":
+        np.save(save_path, grid_out)
+
+
 def haversine(radius, lon1, lat1, lon2, lat2):
     """
     Calculate the great circle distance between two points
