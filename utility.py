@@ -1847,7 +1847,7 @@ def plot_power_spectrum(p_spec, figsize=(14,8)):
 
 def plot_p_spec(g_spec, p_spec_height, nmax, model_dict = None, figsize = (14,8), lwidth = 2, lwidth_m = 2, step = 5, spec_style = None, 
                 label = "ensemble", color = "lightgray", legend_loc = "best", r_ref = 6371.2, g_spec_compares = None, nmax_pairs = None, nmax_pairs_compare = None, label_compare = None, color_compare = (0,0,0),
-                savefig = False, save_string = ""):
+                savefig = False, save_string = "", save_folder=""):
 
     import matplotlib.pyplot as plt
     import numpy as np
@@ -1985,11 +1985,10 @@ def plot_p_spec(g_spec, p_spec_height, nmax, model_dict = None, figsize = (14,8)
     plt.xticks(n_ticks, fontsize="small")
     plt.grid(alpha=0.3)
     plt.legend(loc = legend_loc)
+    fig.canvas.draw()
 
     if savefig == True:
-        fig.savefig('p_spec_{}.pdf'.format(save_string), bbox_inches='tight') 
-
-    fig.show()
+        fig.savefig('{}p_spec_{}.png'.format(save_folder,save_string), bbox_inches='tight') 
 
 
 def plot_ensemble_histogram(ensemble, N_ensemble, target = None, figsize=(10,10), unit = "", savefig = False, savepath = "./", filename = "file", fontsize = 10, dpi = 100):
