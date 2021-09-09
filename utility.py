@@ -456,7 +456,7 @@ def plot_cartopy_animation(lat = None, lon = None, data=None, limits_data = None
 
 def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, m_mode = None, pos_mean_res = None, truth_obj = None, uncon_obj = None, lwidth = 1, lwidth_mult = 2, lwidth_div = 5,
                           lags_use = 300, hist_bins = 100, hist_pos_mean = True, hist_ti_ens = False, hist_density = False, hist_local_posterior = False, hist_ti_ens_limit = None,
-                          res_bins = 200, spec_use = True, spec_step = 5, spec_r_at = None, spec_r_ref = 6371.2, spec_show_differences = True, spec_mag = True, sv_pos_mean = True,
+                          res_bins = 200, res_limit = None, spec_use = True, spec_step = 5, spec_r_at = None, spec_r_ref = 6371.2, spec_show_differences = True, spec_mag = True, sv_pos_mean = True,
                           sv_use = True, spec_ti_ens = False, res_use = True, unit_transform_n_to_m = False, patch_legend = False, ens_prior = False,
                           model_dict = None, spec_chaos_time = [2020,1,1], unit_var = "[nT²]", unit_lag = "[km]", unit_field = "[nT]", unit_res = "[nT]",
                           left=0.08, bottom=0.12, right=0.92, top=0.95, wspace = 0.2, hspace=0.25, label_fontsize = "small", res_power_format = False, res_print_f = 2, power_limit = 6,
@@ -543,9 +543,14 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, m_mode = N
         if res_power_format == True:
             ax.xaxis.set_major_formatter(SF)
 
+        if res_limit is not None:
+            ax.set_xlim(left=res_limit[0], right=res_limit[1])
+            hist_range = (res_limit[0],res_limit[1])
+        else:
+            hist_range = (np.min(seqsim_res),np.max(seqsim_res))
 
         for i in np.arange(0,N_sim):
-            y,binEdges=np.histogram(seqsim_res[:,[i]],bins=res_bins)
+            y,binEdges=np.histogram(seqsim_res[:,[i]],bins=res_bins,range=hist_range)
             bincenters = 0.5*(binEdges[1:]+binEdges[:-1])
             if i == 0:
                 ax.plot(bincenters, y, '-', color = color_rgb_zesty_pos, label='Posterior', linewidth = lwidth) 
@@ -555,21 +560,21 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, m_mode = N
         leg_handle = [leg1]
 
         if pos_mean_res is not None:
-            y,binEdges=np.histogram(pos_mean_res,bins=res_bins)
+            y,binEdges=np.histogram(pos_mean_res,bins=res_bins,range=hist_range)
             bincenters = 0.5*(binEdges[1:]+binEdges[:-1])
             ax.plot(bincenters, y, '-', color = color_rgb_zesty_neg, label='Posterior mean', linewidth = lwidth_mult*lwidth)
             legpm = mpatches.Patch(color=color_rgb_zesty_neg, label='Posterior mean')
             leg_handle.append(legpm)
 
         if m_equiv_lsq is not None:
-            y,binEdges=np.histogram(lsq_equiv_res,bins=res_bins)
+            y,binEdges=np.histogram(lsq_equiv_res,bins=res_bins,range=hist_range)
             bincenters = 0.5*(binEdges[1:]+binEdges[:-1])
             ax.plot(bincenters, y, '-', color = "C3", label='Equivalent LSQ', linewidth = lwidth_mult*lwidth)
             leg2 = mpatches.Patch(color="C3", label='Equivalent LSQ')
             leg_handle.append(leg2)
 
         if m_mode is not None:
-            y,binEdges=np.histogram(mode_res,bins=res_bins)
+            y,binEdges=np.histogram(mode_res,bins=res_bins,range=hist_range)
             bincenters = 0.5*(binEdges[1:]+binEdges[:-1])
             ax.plot(bincenters, y, '-', color = "C4", label='Maximum of marginal posterior', linewidth = lwidth_mult*lwidth) #,linestyle = "dashed"
             legmode = mpatches.Patch(color="C4", label='Maximum of marginal posterior')
@@ -593,10 +598,16 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, m_mode = N
         plot_letter = "b"
         ax = fig.add_subplot(gs[0, 1])
 
+    if hist_ti_ens_limit is not None:
+        ax.set_xlim(left=hist_ti_ens_limit[0], right=hist_ti_ens_limit[1])
+        hist_range = (hist_ti_ens_limit[0],hist_ti_ens_limit[1])
+    else:
+        hist_range = (np.min(posterior_fields),np.max(posterior_fields))
+
     # Unconditional posterior / Prior
     if uncon_obj is not None:
         for i in np.arange(0,uncon_obj.N_sim):
-            y,binEdges=np.histogram(uncon_posterior[:,[i]], bins=hist_bins, density = hist_density)
+            y,binEdges=np.histogram(uncon_posterior[:,[i]], bins=hist_bins, density = hist_density, range = hist_range)
             bincenters = 0.5*(binEdges[1:]+binEdges[:-1])
             if i == 0:
                 ax.plot(bincenters,y,'-', color = color_rgb, label='Prior', linewidth = lwidth/lwidth_div, zorder=0)  
@@ -606,7 +617,7 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, m_mode = N
 
     # Posterior
     for i in np.arange(0,N_sim):
-        y,binEdges=np.histogram(posterior_fields[:,[i]], bins=hist_bins, density = hist_density)
+        y,binEdges=np.histogram(posterior_fields[:,[i]], bins=hist_bins, density = hist_density, range = hist_range)
         bincenters = 0.5*(binEdges[1:]+binEdges[:-1])
         if i == 0:
             ax.plot(bincenters,y,'-', color = color_rgb_zesty_pos, label='Posterior', linewidth = lwidth)  
@@ -617,7 +628,7 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, m_mode = N
     # Local posterior
     if hist_local_posterior == True:
         for i in np.arange(0,len(posterior_fields)):
-            y,binEdges=np.histogram(posterior_fields[[i],:], bins=hist_bins, density = hist_density)
+            y,binEdges=np.histogram(posterior_fields[[i],:], bins=hist_bins, density = hist_density, range = hist_range)
             bincenters = 0.5*(binEdges[1:]+binEdges[:-1])
             if i == 0:
                 ax.plot(bincenters,y,'-', color = color_rgb_zesty_neg, label='Local posterior', linewidth = lwidth)  
@@ -627,21 +638,21 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, m_mode = N
 
     # Posterior mean
     if hist_pos_mean == True:
-        y,binEdges=np.histogram(np.mean(posterior_fields,axis=1), bins=hist_bins, density = hist_density)
+        y,binEdges=np.histogram(np.mean(posterior_fields,axis=1), bins=hist_bins, density = hist_density, range = hist_range)
         bincenters = 0.5*(binEdges[1:]+binEdges[:-1])
         ax.plot(bincenters, y, '-', color = color_rgb_zesty_neg, label='Posterior mean', linewidth = lwidth_mult*lwidth)  
         leg2 = mpatches.Patch(color=color_rgb_zesty_neg, label='Posterior mean')
 
     # Equivalent lsq
     if m_equiv_lsq is not None:
-        y,binEdges=np.histogram(np.array(m_equiv_lsq), bins=hist_bins, density = hist_density)
+        y,binEdges=np.histogram(np.array(m_equiv_lsq), bins=hist_bins, density = hist_density, range = hist_range)
         bincenters = 0.5*(binEdges[1:]+binEdges[:-1])
         ax.plot(bincenters, y, '--', color = 'C3', label='Equivalent LSQ', linestyle = "dashed", linewidth = lwidth_mult*lwidth) 
         leglsq = mpatches.Patch(color="C3", label='Equivalent LSQ')
 
     # Posterior mode
     if m_mode is not None:
-        y,binEdges=np.histogram(m_mode, bins=hist_bins, density = hist_density)
+        y,binEdges=np.histogram(m_mode, bins=hist_bins, density = hist_density, range = hist_range)
         bincenters = 0.5*(binEdges[1:]+binEdges[:-1])
         ax.plot(bincenters, y, '-', color = 'C4', label='Maximum of marginal posterior', linewidth = lwidth_mult*lwidth) 
         legmode = mpatches.Patch(color="C4", label='Maximum of marginal posterior')
@@ -660,7 +671,7 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, m_mode = N
     if hist_ti_ens == "all":        
         for i in np.arange(0,np.shape(ti_hist_data)[1]):
             hist_ens_plot = ti_hist_data[:,[i]]
-            y,binEdges=np.histogram(hist_ens_plot,bins=hist_bins, density = hist_density)
+            y,binEdges=np.histogram(hist_ens_plot,bins=hist_bins, density = hist_density, range = hist_range)
             bincenters = 0.5*(binEdges[1:]+binEdges[:-1])
             if i == 0:
                 ax.plot(bincenters,y, color = color_rgb, label=ti_label, linewidth = lwidth/lwidth_div,zorder=0.0)  
@@ -668,21 +679,19 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, m_mode = N
                 ax.plot(bincenters,y, color = color_rgb, linewidth = lwidth/lwidth_div,zorder=0.0)
         leg3 = mpatches.Patch(color=color_rgb, label=ti_label)
     else:
-        y,binEdges=np.histogram(ti_hist_data,bins=hist_bins, density = hist_density)
+        y,binEdges=np.histogram(ti_hist_data,bins=hist_bins, density = hist_density, range = hist_range)
         bincenters = 0.5*(binEdges[1:]+binEdges[:-1])
         ax.plot(bincenters,y, color = 'k', label=ti_label, linewidth = lwidth_mult*lwidth)
         leg3 = mpatches.Patch(color="k", label=ti_label)
 
     # Synthetic truth
     if truth_obj is not None:
-        y,binEdges=np.histogram(truth_data, bins=hist_bins, density = hist_density)
+        y,binEdges=np.histogram(truth_data, bins=hist_bins, density = hist_density, range = hist_range)
         bincenters = 0.5*(binEdges[1:]+binEdges[:-1])
         ax.plot(bincenters,y,'C2', label='Synthetic truth', linewidth = lwidth_mult*lwidth)
         leg4 = mpatches.Patch(color="C2", label="Synthetic truth")
 
     ax.set_title('({}) Histogram reproduction'.format(plot_letter))
-    if hist_ti_ens_limit is not None:
-        ax.set_xlim(left=hist_ti_ens_limit[0], right=hist_ti_ens_limit[1])
 
     if patch_legend == True:
         leg_handle = [leg1,leg3]
@@ -1537,34 +1546,61 @@ def plot_local_dist_KL(zs_DSS, skip = 1, N_bins = 21, idx_high_start = -401, idx
     zs_sort = zs_DSS[np.argsort(np.mean(zs_DSS,axis=1)),:]
 
     skip = 1
-    m_skip = zs_sort[:,:][0::skip]
+    m_skip = zs_sort[:,:][0::skip]*10**(-6)
     m_skip_mean = np.mean(m_skip,axis=1)
     m_skip_std = np.std(m_skip,axis=1)
-    m_normal = np.random.normal(size=m_skip.shape) * m_skip_std[:,None] + m_skip_mean[:,None] # Generate equivalent normal distributions for each local posterior
+    m_normal = (np.random.normal(size=m_skip.shape) * m_skip_std[:,None] + m_skip_mean[:,None]) # Generate equivalent normal distributions for each local posterior
+
+    hist_range = (xlim[0],xlim[1])
+    x_dist = np.linspace(hist_range[0],hist_range[1], 1001)
 
     # Histograms
     m_centers = []
     m_y = []
+    m_pdf = []
     for i in np.arange(0,m_skip.shape[0]):
-        y,binEdges=np.histogram(m_skip[i,:],bins=N_bins,density=hist_density)
+        m_h=np.histogram(m_skip[i,:],bins=N_bins,density=hist_density,range=hist_range)
+        #y,binEdges=np.histogram(m_skip[i,:],bins=N_bins,density=hist_density,range=hist_range)
+        y=m_h[0]
+        binEdges=m_h[1]
         bincenters = 0.5*(binEdges[1:]+binEdges[:-1])
         m_centers.append(bincenters)
         m_y.append(y)
+        m_dist = stats.rv_histogram(m_h)
+        m_pdf.append(m_dist.pdf(x_dist))
+    
+    m_pdf = np.array(m_pdf)
     m_centers = np.array(m_centers)
     m_y = np.array(m_y)
 
     m_centers_n = []
     m_y_n = []
+    m_pdf_n =[]
     for i in np.arange(0,m_skip.shape[0]):
-        y,binEdges=np.histogram(m_normal[i,:],bins=N_bins,density=hist_density)
+        m_h=np.histogram(m_normal[i,:],bins=N_bins,density=hist_density,range=hist_range)
+        #y,binEdges=np.histogram(m_normal[i,:],bins=N_bins,density=hist_density,range=hist_range)
+        y=m_h[0]
+        binEdges=m_h[1]
         bincenters = 0.5*(binEdges[1:]+binEdges[:-1])
         m_centers_n.append(bincenters)
         m_y_n.append(y)
+        m_dist = stats.rv_histogram(m_h)
+        m_pdf_n.append(m_dist.pdf(x_dist))
+
+    m_pdf_n = np.array(m_pdf_n)
     m_centers_n = np.array(m_centers_n)
     m_y_n = np.array(m_y_n)
 
+    #hist_dist = scipy.stats.rv_histogram(hist)
+
     # Compute Kullback-Leibler divergence between local posterior and equivalent normal distributions
-    kld = stats.entropy(m_y_n.T+10**(-30), m_y.T+10**(-30))
+    #kld = stats.entropy(m_y_n.T+10**(-30), m_y.T+10**(-30))
+    kld = stats.entropy(m_pdf_n.T+10**(-30), m_pdf.T+10**(-30))
+    #kld = stats.entropy(m_pdf_n.T, m_pdf.T)
+
+    #print(m_pdf_n.T.shape)
+    #print(m_y_n.T.shape)
+    #print(kld.shape)
     idx_kld_all = np.argsort(kld)
 
     # PLOTTING
@@ -1576,24 +1612,32 @@ def plot_local_dist_KL(zs_DSS, skip = 1, N_bins = 21, idx_high_start = -401, idx
     idx_kld_high = idx_kld_all[idx_bc_high]
     ax = fig.add_subplot(gs[0, 1], projection="3d")
 
-    x_c = m_centers[idx_kld_high,:].T*10**(-6)
+    x_c = m_centers[idx_kld_high,:].T
     z_y = m_y[idx_kld_high,:].T
     y_kld = np.repeat(kld[None,idx_kld_high],x_c.shape[0],axis=0)
-    x_c_n = m_centers_n[idx_kld_high,:].T*10**(-6)
+    x_c_n = m_centers_n[idx_kld_high,:].T
     z_y_n = m_y_n[idx_kld_high,:].T
 
-    x_c[x_c>xlim[1]]= np.nan
-    x_c[x_c<xlim[0]]= np.nan
+    # x_c = x_dist
+    # z_y = m_pdf[idx_kld_high,:].T
+    # y_kld = np.repeat(kld[None,idx_kld_high],x_c.shape[0],axis=0)
+    # x_c_n = x_dist
+    # z_y_n = m_pdf_n[idx_kld_high,:].T
+
+    #x_c[x_c>xlim[1]]= np.nan
+    #x_c[x_c<xlim[0]]= np.nan
 
     for i in np.arange(0,len(idx_bc_high)):
         ax.plot3D(x_c[:,i], y_kld[:,i], z_y[:,i], color=color_rgb_zesty_pos, zorder = 1/(idx_bc_high[i]+10**(-3)))
         ax.plot3D(x_c_n[:,i], y_kld[:,i], z_y_n[:,i], linestyle="dashed", color="k", zorder = 1/(idx_bc_high[i]+10**(-3)))
+        #ax.plot3D(x_c, y_kld[:,i], z_y[:,i], color=color_rgb_zesty_pos, zorder = 1/(idx_bc_high[i]+10**(-3)))
+        #ax.plot3D(x_c_n, y_kld[:,i], z_y_n[:,i], linestyle="dashed", color="k", zorder = 1/(idx_bc_high[i]+10**(-3)))
 
     ax.set_zlabel("Count")
     ax.set_ylabel("KL-divergence")
     ax.set_xlabel("Field value [mT]")
     ax.set_xlim(xlim)
-    ax.set_xticks([-2,-1,0,1,1,2])
+    ax.set_xticks([-4,-3,-2,-1,0,1,1,2,3,4])
     ax.grid(b=None)
     ax.view_init(30, -40)
     leg1 = mpatches.Patch(color=color_rgb_zesty_pos, label="Sampled marginal posterior")
@@ -1606,14 +1650,14 @@ def plot_local_dist_KL(zs_DSS, skip = 1, N_bins = 21, idx_high_start = -401, idx
     idx_kld_low = idx_kld_all[idx_bc_low]
     ax = fig.add_subplot(gs[0, 0], projection="3d")
 
-    x_c = m_centers[idx_kld_low,:].T*10**(-6)
+    x_c = m_centers[idx_kld_low,:].T
     z_y = m_y[idx_kld_low,:].T
     y_kld = np.repeat(kld[None,idx_kld_low],x_c.shape[0],axis=0)
-    x_c_n = m_centers_n[idx_kld_low,:].T*10**(-6)
+    x_c_n = m_centers_n[idx_kld_low,:].T
     z_y_n = m_y_n[idx_kld_low,:].T
 
-    x_c[x_c>xlim[1]]= np.nan
-    x_c[x_c<xlim[0]]= np.nan
+    #x_c[x_c>xlim[1]]= np.nan
+    #x_c[x_c<xlim[0]]= np.nan
 
     for i in np.arange(0,len(idx_bc_low)):
         ax.plot3D(x_c[:,i], y_kld[:,i], z_y[:,i], color=color_rgb_zesty_neg, zorder = 1/(idx_bc_low[i]+10**(-3)))
@@ -1623,7 +1667,7 @@ def plot_local_dist_KL(zs_DSS, skip = 1, N_bins = 21, idx_high_start = -401, idx
     ax.set_ylabel("KL-divergence")
     ax.set_xlabel("Field value [mT]")
     ax.set_xlim(xlim)
-    ax.set_xticks([-2,-1,0,1,1,2])
+    ax.set_xticks([-4,-3,-2,-1,0,1,1,2,3,4])
     ax.grid(b=None)
     ax.view_init(30, -40)
     leg1 = mpatches.Patch(color=color_rgb_zesty_neg, label="Sampled marginal posterior")
