@@ -458,6 +458,7 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, m_mode = N
                           lags_use = 300, hist_bins = 100, hist_pos_mean = True, hist_ti_ens = False, hist_density = False, hist_local_posterior = False, hist_ti_ens_limit = None,
                           res_bins = 200, res_limit = None, spec_use = True, spec_step = 5, spec_r_at = None, spec_r_ref = 6371.2, spec_show_differences = True, spec_mag = True, sv_pos_mean = True,
                           sv_use = True, spec_ti_ens = False, res_use = True, unit_transform_n_to_m = False, patch_legend = False, ens_prior = False,
+                          res_title = "Observation estimate residuals",
                           model_dict = None, spec_chaos_time = [2020,1,1], unit_var = "[nT²]", unit_lag = "[km]", unit_field = "[nT]", unit_res = "[nT]",
                           left=0.08, bottom=0.12, right=0.92, top=0.95, wspace = 0.2, hspace=0.25, label_fontsize = "small", res_power_format = False, res_print_f = 2, power_limit = 6,
                           tile_size_row = 3, tile_size_column = 2, figsize=(9,14), savefig = False, save_string = "", save_ftype = "pdf", save_dpi = 300, save_path = ""):
@@ -580,7 +581,7 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, m_mode = N
             legmode = mpatches.Patch(color="C4", label='Maximum of marginal posterior')
             leg_handle.append(legmode)
 
-        ax.set_title('(a) Observation estimate residuals')
+        ax.set_title('(a) {}'.format(res_title))
         ax.annotate("Mean RMSE: {:.{}f}".format(np.mean(rmse_leg), res_print_f), (0.05, 0.5), xycoords='axes fraction', va='center', fontsize = label_fontsize)
         ax.set_xlabel("Field residuals {}".format(unit_res))
         ax.set_ylabel("Count")
@@ -658,7 +659,10 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, m_mode = N
         legmode = mpatches.Patch(color="C4", label='Maximum of marginal posterior')
 
     ti_label = "Training ensemble"
-    if hist_ti_ens == True:
+    if hist_ti_ens.shape[0]>0:
+        ti_hist_data = hist_ti_ens
+        ti_label = "Training model"
+    elif hist_ti_ens == True:
         ti_hist_data = np.ravel(prior_ens)
         ti_hist_data = ti_hist_data[0.5*np.max(np.abs(ti_hist_data))>np.abs(ti_hist_data)]
     elif hist_ti_ens == "all":
@@ -712,7 +716,7 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, m_mode = N
     
     ax.set_xlabel('Field value {}'.format(unit_field))
     if hist_density == True:
-        ax.set_ylabel('PDF')
+        ax.set_ylabel('Density')
     else:
         ax.set_ylabel('Count')
 
