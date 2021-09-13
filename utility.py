@@ -914,7 +914,7 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, m_mode = N
             n_max = seqsim_obj.N_SH
 
             # g ensemble and parameters
-            if seqsim_obj.sim_type == "core_ens":
+            if np.logical_or(seqsim_obj.sim_type == "core_ens", seqsim_obj.sim_type == "core_alt"):
                 g_ens = np.genfromtxt("mikkel_tools/models_shc/gnm_midpath.dat").T*10**9
                 g_ens = g_ens[:shc_vec_len(seqsim_obj.N_SH),:]
                 g_cut = g_ens[:n_max*(2+n_max),200:] # Truncate g
