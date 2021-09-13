@@ -924,7 +924,7 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, m_mode = N
             else:
                 p_spec_prior = pyshtools.spectralanalysis.spectrum(ens_cilm_prior, degrees = np.arange(1,np.shape(ens_cilm_prior)[1]))
             p_spec_prior = p_spec_prior[:nmax]
-            ax.plot(ns, p_spec_prior, color = "k", label = "Training model", linewidth = lwidth, zorder=0)
+            ax.plot(ns, p_spec_prior, color = "k", label = "Training model", linewidth = lwidth)
             leg3 = mpatches.Patch(color="k", label='Training model')
 
         # Observed truth
