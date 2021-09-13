@@ -456,6 +456,7 @@ def plot_cartopy_animation(lat = None, lon = None, data=None, limits_data = None
 
 def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, m_mode = None, pos_mean_res = None, truth_obj = None, uncon_obj = None, lwidth = 1, lwidth_mult = 2, lwidth_div = 5,
                           lags_use = 300, hist_bins = 100, hist_pos_mean = True, hist_ti_ens = False, hist_density = False, hist_local_posterior = False, hist_ti_ens_limit = None,
+                          hist_truth_res = False,
                           res_bins = 200, res_limit = None, spec_use = True, spec_step = 5, spec_r_at = None, spec_r_ref = 6371.2, spec_show_differences = True, spec_mag = True, sv_pos_mean = True,
                           sv_use = True, spec_ti_ens = False, res_use = True, unit_transform_n_to_m = False, patch_legend = False, ens_prior = False,
                           res_title = "Observation estimate residuals",
@@ -659,7 +660,7 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, m_mode = N
         legmode = mpatches.Patch(color="C4", label='Maximum of marginal posterior')
 
     ti_label = "Training ensemble"
-    if hist_ti_ens.shape[0]>0:
+    if isinstance(hist_ti_ens, str) is False:
         ti_hist_data = hist_ti_ens
         ti_label = "Training model"
     elif hist_ti_ens == True:
@@ -678,9 +679,9 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, m_mode = N
             y,binEdges=np.histogram(hist_ens_plot,bins=hist_bins, density = hist_density, range = hist_range)
             bincenters = 0.5*(binEdges[1:]+binEdges[:-1])
             if i == 0:
-                ax.plot(bincenters,y, color = color_rgb, label=ti_label, linewidth = lwidth/lwidth_div,zorder=0.0)  
+                ax.plot(bincenters,y, color = color_rgb, label=ti_label, linewidth = lwidth/lwidth_div,zorder=0.01)  
             else:
-                ax.plot(bincenters,y, color = color_rgb, linewidth = lwidth/lwidth_div,zorder=0.0)
+                ax.plot(bincenters,y, color = color_rgb, linewidth = lwidth/lwidth_div,zorder=0.01)
         leg3 = mpatches.Patch(color=color_rgb, label=ti_label)
     else:
         y,binEdges=np.histogram(ti_hist_data,bins=hist_bins, density = hist_density, range = hist_range)
@@ -694,6 +695,18 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, m_mode = N
         bincenters = 0.5*(binEdges[1:]+binEdges[:-1])
         ax.plot(bincenters,y,'C2', label='Synthetic truth', linewidth = lwidth_mult*lwidth)
         leg4 = mpatches.Patch(color="C2", label="Synthetic truth")
+
+    # Residuals between posterior and synthetic truth
+    if hist_truth_res == True:
+        for i in np.arange(0,N_sim):
+            hist_res_plot = truth_data.reshape(-1,)-posterior_fields[:,[i]].reshape(-1,)
+            y,binEdges=np.histogram(hist_res_plot, bins=hist_bins, density = hist_density, range = hist_range)
+            bincenters = 0.5*(binEdges[1:]+binEdges[:-1])
+            if i == 0:
+                ax.plot(bincenters,y, color = "k", label=ti_label, linewidth = lwidth/lwidth_div,zorder=0.0)  
+            else:
+                ax.plot(bincenters,y, color = "k", linewidth = lwidth/lwidth_div,zorder=0.0)
+        leghistres = mpatches.Patch(color="k", label="Truth-Posterior")
 
     ax.set_title('({}) Histogram reproduction'.format(plot_letter))
 
@@ -709,6 +722,8 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, m_mode = N
             leg_handle.insert(0,leg0)
         if m_equiv_lsq is not None:
             leg_handle.append(leglsq)
+        if hist_truth_res == True:
+            leg_handle.append(leghistres)
         
         ax.legend(handles=leg_handle, numpoints=1, labelspacing=1, loc='best', fontsize=label_fontsize, frameon=False)
     else:
@@ -916,6 +931,8 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, m_mode = N
                 else:
                     ax.plot(ns,R[:,i], color = color_rgb, linewidth = lwidth/lwidth_div, zorder=0)
             leg3 = mpatches.Patch(color=color_rgb, label='Training ensemble')
+        elif spec_ti_ens == None:
+            pass
         else:
             ens_cilm_prior = np.array(pyshtools.shio.SHVectorToCilm(np.hstack((np.zeros(1,), seqsim_obj.g_prior))))
             #p_spec_prior = pyshtools.gravmag.mag_spectrum(ens_cilm_prior, spec_r_ref, spec_r_at, degrees = np.arange(1,np.shape(ens_cilm_prior)[1])) # degrees to skip zeroth degree
@@ -1026,7 +1043,9 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, m_mode = N
         ax.grid(alpha=0.3)
 
         if patch_legend == True:
-            leg_handle_model = [leg1,leg2,leg3]
+            leg_handle_model = [leg1,leg2]
+            if spec_ti_ens is not None:
+                leg_handle_model.append(leg3)
             if m_mode is not None:
                 leg_handle_model.insert(2,legmode)
             if truth_obj is not None:
@@ -1540,7 +1559,7 @@ def plot_global(lat = None, lon = None, data=None, limits_data = None, cbar_use 
 
 
 def plot_local_dist_KL(zs_DSS, skip = 1, N_bins = 21, idx_high_start = -401, idx_high_interval = 100, idx_low_start = 0, idx_low_end = 1250, idx_low_interval = 250, 
-                       xlim = [-2,2], hist_density = False, save_dpi = 100, savefig = False, save_path = "", save_string = "", figsize = (11,8), random_seed = None, leg_size = "small"):
+                       xlim = [-2,2], hist_range = [-2,2], hist_density = False, save_dpi = 100, savefig = False, save_path = "", save_string = "", figsize = (11,8), random_seed = None, leg_size = "small"):
     from scipy import stats
     from mpl_toolkits import mplot3d
 
@@ -1555,8 +1574,9 @@ def plot_local_dist_KL(zs_DSS, skip = 1, N_bins = 21, idx_high_start = -401, idx
     m_skip_std = np.std(m_skip,axis=1)
     m_normal = (np.random.normal(size=m_skip.shape) * m_skip_std[:,None] + m_skip_mean[:,None]) # Generate equivalent normal distributions for each local posterior
 
-    hist_range = (xlim[0],xlim[1])
+    hist_range = (hist_range[0],hist_range[1])
     x_dist = np.linspace(hist_range[0],hist_range[1], 1001)
+    xlim_ticks = np.arange(np.min(xlim), np.max(xlim)+1)
 
     # Histograms
     m_centers = []
@@ -1612,9 +1632,206 @@ def plot_local_dist_KL(zs_DSS, skip = 1, N_bins = 21, idx_high_start = -401, idx
     gs = fig.add_gridspec(2, 2, height_ratios=[2,1], width_ratios=[1,1]) # Add x-by-y grid
 
     # HIGH SAMPLES
+    idx_bc_high = np.arange(0,len(kld))[-np.arange(1,-idx_high_start,idx_high_interval)]
+    #print(idx_bc_high)
+    #idx_bc_high = np.arange(0,len(kld))[idx_high_start::idx_high_interval]
+    #print(len(idx_bc_high))
+    idx_kld_high = idx_kld_all[idx_bc_high]
+    #print(len(idx_kld_high))
+    ax = fig.add_subplot(gs[0, 1], projection="3d")
+
+    x_c = m_centers[idx_kld_high,:].T
+    #print(x_c.shape)
+    z_y = m_y[idx_kld_high,:].T
+    y_kld = np.repeat(kld[None,idx_kld_high],x_c.shape[0],axis=0)
+    x_c_n = m_centers_n[idx_kld_high,:].T
+    z_y_n = m_y_n[idx_kld_high,:].T
+
+    # x_c = x_dist
+    # z_y = m_pdf[idx_kld_high,:].T
+    # y_kld = np.repeat(kld[None,idx_kld_high],x_c.shape[0],axis=0)
+    # x_c_n = x_dist
+    # z_y_n = m_pdf_n[idx_kld_high,:].T
+
+    #x_c[x_c>xlim[1]]= np.nan
+    #x_c[x_c<xlim[0]]= np.nan
+
+    for i in np.arange(0,len(idx_kld_high)):
+        #print(i)
+        idx_z_y = z_y[:,i] != 0
+        idx_z_y_n = z_y_n[:,i] != 0
+
+        z_y_p = z_y[:,i][idx_z_y]
+        y_kld_p = y_kld[:,i][idx_z_y]
+        x_c_p = x_c[:,i][idx_z_y]
+        z_y_n_p = z_y_n[:,i][idx_z_y_n]
+        y_kld_p_n = y_kld[:,i][idx_z_y_n]
+        x_c_n_p = x_c_n[:,i][idx_z_y_n]
+
+        ax.plot3D(x_c_p, y_kld_p, z_y_p, color=color_rgb_zesty_pos, zorder = 1/(idx_bc_high[i]+10**(-3)))
+        ax.plot3D(x_c_n_p, y_kld_p_n, z_y_n_p, linestyle="dashed", color="k", zorder = 1/(idx_bc_high[i]+10**(-3)))
+        #ax.plot3D(x_c[:,i], y_kld[:,i], z_y[:,i], color=color_rgb_zesty_pos, zorder = 1/(idx_bc_high[i]+10**(-3)))
+        #ax.plot3D(x_c_n[:,i], y_kld[:,i], z_y_n[:,i], linestyle="dashed", color="k", zorder = 1/(idx_bc_high[i]+10**(-3)))
+        
+        #ax.plot3D(x_c, y_kld[:,i], z_y[:,i], color=color_rgb_zesty_pos, zorder = 1/(idx_bc_high[i]+10**(-3)))
+        #ax.plot3D(x_c_n, y_kld[:,i], z_y_n[:,i], linestyle="dashed", color="k", zorder = 1/(idx_bc_high[i]+10**(-3)))
+
+    ax.set_zlabel("Count")
+    ax.set_ylabel("KL-divergence")
+    ax.set_xlabel("Field value [mT]")
+    ax.set_xlim(xlim)
+    #ax.set_xticks([-4,-3,-2,-1,0,1,1,2,3,4])
+    ax.set_xticks(xlim_ticks)
+    ax.grid(b=None)
+    ax.view_init(30, -40)
+    leg1 = mpatches.Patch(color=color_rgb_zesty_pos, label="Sampled marginal posterior")
+    leg2 = mpatches.Patch(color="k", label="Equivalent Gaussian")
+    ax.legend(handles=[leg1,leg2], numpoints=1, 
+            labelspacing=1, loc='upper center', fontsize=leg_size, frameon=False)
+
+    # LOW SAMPLES
+    idx_bc_low = np.arange(0,len(kld))[idx_low_start:idx_low_end:idx_low_interval]
+    #print(idx_bc_low.shape)
+    idx_kld_low = idx_kld_all[idx_bc_low]
+    #print(idx_kld_low.shape)
+    ax = fig.add_subplot(gs[0, 0], projection="3d")
+
+    x_c = m_centers[idx_kld_low,:].T
+    z_y = m_y[idx_kld_low,:].T
+    y_kld = np.repeat(kld[None,idx_kld_low],x_c.shape[0],axis=0)
+    x_c_n = m_centers_n[idx_kld_low,:].T
+    z_y_n = m_y_n[idx_kld_low,:].T
+
+    #x_c[x_c>xlim[1]]= np.nan
+    #x_c[x_c<xlim[0]]= np.nan
+
+    for i in np.arange(0,len(idx_kld_low)):
+        #print(i)
+        idx_z_y = z_y[:,i] != 0
+        idx_z_y_n = z_y_n[:,i] != 0
+
+        z_y_p = z_y[:,i][idx_z_y]
+        y_kld_p = y_kld[:,i][idx_z_y]
+        x_c_p = x_c[:,i][idx_z_y]
+        z_y_n_p = z_y_n[:,i][idx_z_y_n]
+        y_kld_p_n = y_kld[:,i][idx_z_y_n]
+        x_c_n_p = x_c_n[:,i][idx_z_y_n]
+
+        ax.plot3D(x_c_p, y_kld_p, z_y_p, color=color_rgb_zesty_neg, zorder = 1/(idx_bc_low[i]+10**(-3)))
+        ax.plot3D(x_c_n_p, y_kld_p_n, z_y_n_p, linestyle="dashed", color="k", zorder = 1/(idx_bc_low[i]+10**(-3)))
+
+        #ax.plot3D(x_c[:,i], y_kld[:,i], z_y[:,i], color=color_rgb_zesty_neg, zorder = 1/(idx_bc_low[i]+10**(-3)))
+        #ax.plot3D(x_c_n[:,i], y_kld[:,i], z_y_n[:,i], linestyle="dashed", color="k", zorder = 1/(idx_bc_low[i]+10**(-3)))
+
+    ax.set_zlabel("Count")
+    ax.set_ylabel("KL-divergence")
+    ax.set_xlabel("Field value [mT]")
+    ax.set_xlim(xlim)
+    #ax.set_xticks([-4,-3,-2,-1,0,1,1,2,3,4])
+    ax.set_xticks(xlim_ticks)
+    ax.grid(b=None)
+    ax.view_init(30, -40)
+    leg1 = mpatches.Patch(color=color_rgb_zesty_neg, label="Sampled marginal posterior")
+    leg2 = mpatches.Patch(color="k", label="Equivalent Gaussian")
+    ax.legend(handles=[leg1,leg2], numpoints=1, 
+            labelspacing=1, loc='upper center', fontsize=leg_size, frameon=False)
+
+    # KL LINE PLOT
+    ax = fig.add_subplot(gs[1, :])
+    ax.semilogy(kld[idx_kld_all],color=(0.6,0.6,0.6))
+    ax.vlines(idx_bc_low, -2, kld[idx_kld_low], colors=color_rgb_zesty_neg, zorder = 10)
+    ax.vlines(idx_bc_high, -2, kld[idx_kld_high], colors=color_rgb_zesty_pos, zorder = 10)
+    ax.set_ylabel("Kullback-Leibler divergence")
+    ax.set_xlabel("Sorted model parameter index")
+    leg1 = mpatches.Patch(color=color_rgb_zesty_neg, label="Samples from low KL-divergence")
+    leg2 = mpatches.Patch(color=color_rgb_zesty_pos, label="Samples from high KL-divergence")
+    leg3 = mpatches.Patch(color=(0.6,0.6,0.6), label="KL-divergence")
+    ax.legend(handles=[leg1,leg2,leg3], numpoints=1, 
+            labelspacing=1, loc='upper left', fontsize=leg_size, frameon=False)
+
+    if savefig == True:
+        fig.savefig('{}local_dist_KL_{}.pdf'.format(save_path,save_string), bbox_inches='tight', dpi = save_dpi) 
+
+    fig.show()
+
+
+def plot_local_dist_KL_alt(zs_DSS, skip = 1, N_bins = 21, idx_high_start = -401, idx_high_interval = 100, idx_low_start = 0, idx_low_end = 1250, idx_low_interval = 250, 
+                       xlim = [-2,2], hist_density = False, save_dpi = 100, savefig = False, save_path = "", save_string = "", figsize = (11,8), random_seed = None, leg_size = "small"):
+    from scipy import stats
+    #from mpl_toolkits import mplot3d
+
+    if random_seed is not None:
+        np.random.seed(random_seed)
+
+    zs_sort = zs_DSS[np.argsort(np.mean(zs_DSS,axis=1)),:]
+
+    skip = 1
+    m_skip = zs_sort[:,:][0::skip]*10**(-6)
+    m_skip_mean = np.mean(m_skip,axis=1)
+    m_skip_std = np.std(m_skip,axis=1)
+    m_normal = (np.random.normal(size=m_skip.shape) * m_skip_std[:,None] + m_skip_mean[:,None]) # Generate equivalent normal distributions for each local posterior
+
+    hist_range = (xlim[0],xlim[1])
+    x_dist = np.linspace(hist_range[0],hist_range[1], 1001)
+    xlim_ticks = np.arange(np.min(xlim), np.max(xlim)+1)
+
+    # Histograms
+    m_centers = []
+    m_y = []
+    m_pdf = []
+    for i in np.arange(0,m_skip.shape[0]):
+        m_h=np.histogram(m_skip[i,:],bins=N_bins,density=hist_density,range=hist_range)
+        #y,binEdges=np.histogram(m_skip[i,:],bins=N_bins,density=hist_density,range=hist_range)
+        y=m_h[0]
+        binEdges=m_h[1]
+        bincenters = 0.5*(binEdges[1:]+binEdges[:-1])
+        m_centers.append(bincenters)
+        m_y.append(y)
+        m_dist = stats.rv_histogram(m_h)
+        m_pdf.append(m_dist.pdf(x_dist))
+    
+    m_pdf = np.array(m_pdf)
+    m_centers = np.array(m_centers)
+    m_y = np.array(m_y)
+
+    m_centers_n = []
+    m_y_n = []
+    m_pdf_n =[]
+    for i in np.arange(0,m_skip.shape[0]):
+        m_h=np.histogram(m_normal[i,:],bins=N_bins,density=hist_density,range=hist_range)
+        #y,binEdges=np.histogram(m_normal[i,:],bins=N_bins,density=hist_density,range=hist_range)
+        y=m_h[0]
+        binEdges=m_h[1]
+        bincenters = 0.5*(binEdges[1:]+binEdges[:-1])
+        m_centers_n.append(bincenters)
+        m_y_n.append(y)
+        m_dist = stats.rv_histogram(m_h)
+        m_pdf_n.append(m_dist.pdf(x_dist))
+
+    m_pdf_n = np.array(m_pdf_n)
+    m_centers_n = np.array(m_centers_n)
+    m_y_n = np.array(m_y_n)
+
+    #hist_dist = scipy.stats.rv_histogram(hist)
+
+    # Compute Kullback-Leibler divergence between local posterior and equivalent normal distributions
+    #kld = stats.entropy(m_y_n.T+10**(-30), m_y.T+10**(-30))
+    kld = stats.entropy(m_pdf_n.T+10**(-30), m_pdf.T+10**(-30))
+    #kld = stats.entropy(m_pdf_n.T, m_pdf.T)
+
+    #print(m_pdf_n.T.shape)
+    #print(m_y_n.T.shape)
+    #print(kld.shape)
+    idx_kld_all = np.argsort(kld)
+
+    # PLOTTING
+    fig = plt.figure(figsize=figsize, constrained_layout=False, dpi = save_dpi) # Initiate figure with constrained layout
+    gs = fig.add_gridspec(2, 2, height_ratios=[1,1], width_ratios=[1,1]) # Add x-by-y grid
+
+    # HIGH SAMPLES
     idx_bc_high = np.arange(0,len(kld))[idx_high_start::idx_high_interval]
     idx_kld_high = idx_kld_all[idx_bc_high]
-    ax = fig.add_subplot(gs[0, 1], projection="3d")
+    ax = fig.add_subplot(gs[:, :])
 
     x_c = m_centers[idx_kld_high,:].T
     z_y = m_y[idx_kld_high,:].T
@@ -1632,68 +1849,67 @@ def plot_local_dist_KL(zs_DSS, skip = 1, N_bins = 21, idx_high_start = -401, idx
     #x_c[x_c<xlim[0]]= np.nan
 
     for i in np.arange(0,len(idx_bc_high)):
-        ax.plot3D(x_c[:,i], y_kld[:,i], z_y[:,i], color=color_rgb_zesty_pos, zorder = 1/(idx_bc_high[i]+10**(-3)))
-        ax.plot3D(x_c_n[:,i], y_kld[:,i], z_y_n[:,i], linestyle="dashed", color="k", zorder = 1/(idx_bc_high[i]+10**(-3)))
-        #ax.plot3D(x_c, y_kld[:,i], z_y[:,i], color=color_rgb_zesty_pos, zorder = 1/(idx_bc_high[i]+10**(-3)))
-        #ax.plot3D(x_c_n, y_kld[:,i], z_y_n[:,i], linestyle="dashed", color="k", zorder = 1/(idx_bc_high[i]+10**(-3)))
 
-    ax.set_zlabel("Count")
-    ax.set_ylabel("KL-divergence")
+        idx_z_y = z_y[:,i] != 0
+        idx_z_y_n = z_y_n[:,i] != 0
+
+        #print(idx_z_y)
+
+        z_y_p = z_y[:,i][idx_z_y]
+        x_c_p = x_c[:,i][idx_z_y]
+        z_y_n_p = z_y_n[:,i][idx_z_y_n]
+        x_c_n_p = x_c_n[:,i][idx_z_y_n]
+
+        #print(z_y_p)
+        #print(z_y_n_p)
+
+        ax.plot(x_c_p, z_y_p, color=color_rgb_zesty_pos, zorder = 1/(idx_bc_high[i]+10**(-3)))
+        ax.plot(x_c_n_p, z_y_n_p, linestyle="dashed", color="k", zorder = 1/(idx_bc_high[i]+10**(-3)))
+        #ax.plot3d(x_c[:,i], y_kld[:,i], z_y[:,i], color=color_rgb_zesty_pos, zorder = 1/(idx_bc_high[i]+10**(-3)))
+        #ax.plot3d(x_c_n[:,i], y_kld[:,i], z_y_n[:,i], linestyle="dashed", color="k", zorder = 1/(idx_bc_high[i]+10**(-3)))
+
+    ax.set_ylabel("Count")
     ax.set_xlabel("Field value [mT]")
     ax.set_xlim(xlim)
-    ax.set_xticks([-4,-3,-2,-1,0,1,1,2,3,4])
+    ax.set_xticks(xlim_ticks)
     ax.grid(b=None)
-    ax.view_init(30, -40)
     leg1 = mpatches.Patch(color=color_rgb_zesty_pos, label="Sampled marginal posterior")
     leg2 = mpatches.Patch(color="k", label="Equivalent Gaussian")
     ax.legend(handles=[leg1,leg2], numpoints=1, 
-            labelspacing=1, loc='best', fontsize=leg_size, frameon=False)
+            labelspacing=1, loc='upper left', fontsize=leg_size, frameon=False)
 
     # LOW SAMPLES
-    idx_bc_low = np.arange(0,len(kld))[idx_low_start:idx_low_end:idx_low_interval]
-    idx_kld_low = idx_kld_all[idx_bc_low]
-    ax = fig.add_subplot(gs[0, 0], projection="3d")
+    # idx_bc_low = np.arange(0,len(kld))[idx_low_start:idx_low_end:idx_low_interval]
+    # idx_kld_low = idx_kld_all[idx_bc_low]
+    # ax = fig.add_subplot(gs[0, :])
 
-    x_c = m_centers[idx_kld_low,:].T
-    z_y = m_y[idx_kld_low,:].T
-    y_kld = np.repeat(kld[None,idx_kld_low],x_c.shape[0],axis=0)
-    x_c_n = m_centers_n[idx_kld_low,:].T
-    z_y_n = m_y_n[idx_kld_low,:].T
+    # x_c = m_centers[idx_kld_low,:].T
+    # z_y = m_y[idx_kld_low,:].T
+    # y_kld = np.repeat(kld[None,idx_kld_low],x_c.shape[0],axis=0)
+    # x_c_n = m_centers_n[idx_kld_low,:].T
+    # z_y_n = m_y_n[idx_kld_low,:].T
 
-    #x_c[x_c>xlim[1]]= np.nan
-    #x_c[x_c<xlim[0]]= np.nan
+    # #x_c[x_c>xlim[1]]= np.nan
+    # #x_c[x_c<xlim[0]]= np.nan
 
-    for i in np.arange(0,len(idx_bc_low)):
-        ax.plot3D(x_c[:,i], y_kld[:,i], z_y[:,i], color=color_rgb_zesty_neg, zorder = 1/(idx_bc_low[i]+10**(-3)))
-        ax.plot3D(x_c_n[:,i], y_kld[:,i], z_y_n[:,i], linestyle="dashed", color="k", zorder = 1/(idx_bc_low[i]+10**(-3)))
+    # for i in np.arange(0,len(idx_bc_low)):
+    #     ax.plot(x_c[:,i], z_y[:,i], color=color_rgb_zesty_neg, zorder = 1/(idx_bc_low[i]+10**(-3)))
+    #     ax.plot(x_c_n[:,i], z_y_n[:,i], linestyle="dashed", color="k", zorder = 1/(idx_bc_low[i]+10**(-3)))
+    #     #ax.plot3D(x_c[:,i], y_kld[:,i], z_y[:,i], color=color_rgb_zesty_neg, zorder = 1/(idx_bc_low[i]+10**(-3)))
+    #     #ax.plot3D(x_c_n[:,i], y_kld[:,i], z_y_n[:,i], linestyle="dashed", color="k", zorder = 1/(idx_bc_low[i]+10**(-3)))
 
-    ax.set_zlabel("Count")
-    ax.set_ylabel("KL-divergence")
-    ax.set_xlabel("Field value [mT]")
-    ax.set_xlim(xlim)
-    ax.set_xticks([-4,-3,-2,-1,0,1,1,2,3,4])
-    ax.grid(b=None)
-    ax.view_init(30, -40)
-    leg1 = mpatches.Patch(color=color_rgb_zesty_neg, label="Sampled marginal posterior")
-    leg2 = mpatches.Patch(color="k", label="Equivalent Gaussian")
-    ax.legend(handles=[leg1,leg2], numpoints=1, 
-            labelspacing=1, loc='best', fontsize=leg_size, frameon=False)
-
-    # KL LINE PLOT
-    ax = fig.add_subplot(gs[1, :])
-    ax.semilogy(kld[idx_kld_all],color=(0.6,0.6,0.6))
-    ax.vlines(idx_bc_low, -2, kld[idx_kld_low], colors=color_rgb_zesty_neg, zorder = 10)
-    ax.vlines(idx_bc_high, -2, kld[idx_kld_high], colors=color_rgb_zesty_pos, zorder = 10)
-    ax.set_ylabel("Kullback-Leibler divergence")
-    ax.set_xlabel("Sorted model parameter index")
-    leg1 = mpatches.Patch(color=color_rgb_zesty_neg, label="Samples from low KL-divergence")
-    leg2 = mpatches.Patch(color=color_rgb_zesty_pos, label="Samples from high KL-divergence")
-    leg3 = mpatches.Patch(color=(0.6,0.6,0.6), label="KL-divergence")
-    ax.legend(handles=[leg1,leg2,leg3], numpoints=1, 
-            labelspacing=1, loc='best', fontsize=leg_size, frameon=False)
+    # ax.set_ylabel("Count")
+    # ax.set_xlabel("Field value [mT]")
+    # ax.set_xlim(xlim)
+    # ax.set_xticks(xlim_ticks)
+    # ax.grid(b=None)
+    # leg1 = mpatches.Patch(color=color_rgb_zesty_neg, label="Sampled marginal posterior")
+    # leg2 = mpatches.Patch(color="k", label="Equivalent Gaussian")
+    # ax.legend(handles=[leg1,leg2], numpoints=1, 
+    #         labelspacing=1, loc='upper left', fontsize=leg_size, frameon=False)
 
     if savefig == True:
-        fig.savefig('{}local_dist_KL_{}.pdf'.format(save_path,save_string), bbox_inches='tight', dpi = save_dpi) 
+        fig.savefig('{}local_dist_KL_alt_{}.pdf'.format(save_path,save_string), bbox_inches='tight', dpi = save_dpi) 
 
     fig.show()
 
