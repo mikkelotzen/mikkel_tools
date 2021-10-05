@@ -914,10 +914,13 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, m_mode = N
             n_max = seqsim_obj.N_SH
 
             # g ensemble and parameters
-            if np.logical_or(seqsim_obj.sim_type == "core_ens", seqsim_obj.sim_type == "core_alt"):
+            if seqsim_obj.sim_type == "core_ens":
                 g_ens = np.genfromtxt("mikkel_tools/models_shc/gnm_midpath.dat").T*10**9
                 g_ens = g_ens[:shc_vec_len(seqsim_obj.N_SH),:]
                 g_cut = g_ens[:n_max*(2+n_max),200:] # Truncate g
+            elif seqsim_obj.sim_type == "core_alt":
+                import hdf5storage
+                g_cut = -(hdf5storage.loadmat("mikkel_tools/models_shc/Gauss_Bsurf_2021.mat")["gnm"].T)[:,:].copy()
             elif seqsim_obj.sim_type == "lith_ens":
                 g_ens = np.load("mikkel_tools/models_shc/lithosphere_g_in_rotated.npy")
                 g_cut = g_ens[:shc_vec_len(n_max),::20]
