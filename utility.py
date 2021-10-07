@@ -459,7 +459,7 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, m_mode = N
                           hist_truth_res = False,
                           res_bins = 200, res_limit = None, spec_use = True, spec_step = 5, spec_r_at = None, spec_r_ref = 6371.2, spec_show_differences = True, spec_mag = True, sv_pos_mean = True,
                           sv_use = True, spec_ti_ens = False, res_use = True, unit_transform_n_to_m = False, patch_legend = False, ens_prior = False,
-                          res_title = "Observation estimate residuals",
+                          res_title = "Observation residuals",
                           model_dict = None, spec_chaos_time = [2020,1,1], unit_var = "[nT²]", unit_lag = "[km]", unit_field = "[nT]", unit_res = "[nT]",
                           left=0.08, bottom=0.12, right=0.92, top=0.95, wspace = 0.2, hspace=0.25, label_fontsize = "small", res_power_format = False, res_print_f = 2, power_limit = 6,
                           tile_size_row = 3, tile_size_column = 2, figsize=(9,14), savefig = False, save_string = "", save_ftype = "pdf", save_dpi = 300, save_path = ""):
@@ -1105,7 +1105,7 @@ def plot_ensemble_map_tiles(lon, lat, ensemble_fields, field_uncon = None, field
     SF.set_powerlimits((6, 6)) # Set sci exponent used    
 
     fig = plt.figure(figsize=figsize, constrained_layout=False, dpi = save_dpi) # Initiate figure with constrained layout
-    if field_uncon is None:
+    if np.logical_and(field_uncon is None, tile_size_row != 1):
         fig.suptitle("Posterior realizations")
 
     # Generate ratio lists
@@ -1118,6 +1118,13 @@ def plot_ensemble_map_tiles(lon, lat, ensemble_fields, field_uncon = None, field
         gs = fig.add_gridspec(tile_size_row, tile_size_column, height_ratios=h_ratio, width_ratios=w_ratio) # Add x-by-y grid
         #field_max = np.max(ensemble_fields)
         #field_min = np.min(ensemble_fields)
+        field_max_true = np.max(ensemble_fields)
+        field_min_true = np.min(ensemble_fields)
+        field_max = cbar_mm_factor*np.max((abs(field_max_true),abs(field_min_true)))
+        field_min = -field_max
+    elif field_sample is not None:
+        h_ratio.append(cbar_h)
+        gs = fig.add_gridspec(tile_size_row+1, tile_size_column, height_ratios=h_ratio, width_ratios=w_ratio) # Add x-by-y grid
         field_max_true = np.max(ensemble_fields)
         field_min_true = np.min(ensemble_fields)
         field_max = cbar_mm_factor*np.max((abs(field_max_true),abs(field_min_true)))
@@ -1147,6 +1154,8 @@ def plot_ensemble_map_tiles(lon, lat, ensemble_fields, field_uncon = None, field
         field_max = np.max(cbar_limit)
         field_min = np.min(cbar_limit)
 
+    #print(h_ratio)
+
     ens_n = 0
     for i in np.arange(0,tile_size_row):
         for j in np.arange(0,tile_size_column):
@@ -1157,12 +1166,18 @@ def plot_ensemble_map_tiles(lon, lat, ensemble_fields, field_uncon = None, field
             if np.logical_and.reduce((i == tile_size_row-1, j == 0, field_compare is not None, field_mean is not None)):
                 plot_field = field_mean
                 ax.set_title("Posterior mean")
+            elif np.logical_and.reduce((i == tile_size_row-1, j == 0, field_sample is not None)):
+                plot_field = field_mean
+                ax.set_title("Posterior mean")
             elif np.logical_and.reduce((i == tile_size_row-1, j == 0, field_compare is None, field_mean is not None)):
                 ax = fig.add_subplot(gs[i+1, j], projection=projection)
                 ax.set_global()
                 plot_field = field_mean
                 ax.set_title("Posterior mean")
             elif np.logical_and.reduce((i == tile_size_row-1, j == tile_size_column-1, field_compare is not None, field_mean is not None)):
+                plot_field = np.std(ensemble_fields,axis=1)
+                ax.set_title("Posterior std. deviation")
+            elif np.logical_and.reduce((i == tile_size_row-1, j == tile_size_column-1, field_sample is not None)):
                 plot_field = np.std(ensemble_fields,axis=1)
                 ax.set_title("Posterior std. deviation")
             elif np.logical_and.reduce((i == tile_size_row-1, j == tile_size_column-1, field_compare is None, field_mean is not None)):
@@ -1217,7 +1232,9 @@ def plot_ensemble_map_tiles(lon, lat, ensemble_fields, field_uncon = None, field
                     gl.left_labels = True
                     gl.ylabel_style = {'size': 7, 'color': 'gray'}
 
-    if field_compare is None:
+    if tile_size_row == 1:
+        cbax = plt.subplot(gs[tile_size_row,:]) # Set colorbar position
+    elif field_compare is None:
         cbax = plt.subplot(gs[tile_size_row-1,:]) # Set colorbar position
     else:
         cbax = plt.subplot(gs[tile_size_row,:]) # Set colorbar position
