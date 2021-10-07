@@ -1072,7 +1072,7 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, m_mode = N
     fig.show()
     
 
-def plot_ensemble_map_tiles(lon, lat, ensemble_fields, field_uncon = None, field_compare = None, field_lsq = None, field_mean = None, tile_size_row = 3, tile_size_column = 3, figsize=(8,8), limit_for_SF = 10**6, point_size = 0.1,
+def plot_ensemble_map_tiles(lon, lat, ensemble_fields, field_uncon = None, field_compare = None, field_lsq = None, field_mean = None, field_sample = None, tile_size_row = 3, tile_size_column = 3, figsize=(8,8), limit_for_SF = 10**6, point_size = 0.1,
                             left=0.03, bottom=0.12, right=0.97, top=0.95, wspace = 0.05, hspace=0.25, coast_width = 0.4, coast_color = "grey", cbar_mm_factor = 1, unit_transform_n_to_m = False,
                             savefig = False, save_string = "", save_dpi = 100,  save_path = "", save_ftype = "pdf", projection = ccrs.Mollweide(), cbar_limit = None, cbar_h = 0.1, cbar_text = "nT", cbar_text_color = "grey", use_gridlines = False, gridlines_width = 0.4, gridlines_alpha = 0.4):
     import numpy as np
@@ -1186,6 +1186,9 @@ def plot_ensemble_map_tiles(lon, lat, ensemble_fields, field_uncon = None, field
                 plot_field = ensemble_fields[:,ens_n]
 
             im = ax.scatter(lon, lat, s=point_size, c=plot_field, transform=ccrs.PlateCarree(), rasterized=True, vmin = field_min, vmax = field_max, cmap=cm_zesty_cbf, norm = MidpointNormalize(midpoint=0.))
+            if field_sample is not None:
+                ax.scatter(field_sample[0], field_sample[1], s=0.1, c="k", marker="o", transform=ccrs.PlateCarree(), rasterized=True, zorder = 10)
+            
             ax.coastlines(linewidth = coast_width, color = coast_color)
             ens_n += 1
 
@@ -1271,6 +1274,9 @@ def plot_ensemble_map_tiles(lon, lat, ensemble_fields, field_uncon = None, field
             ax = fig.add_subplot(gs[-1, :], projection=projection)
             ax.set_global()
             im = ax.scatter(lon, lat, s=point_size, c=field_compare, transform=ccrs.PlateCarree(), rasterized=True, vmin = field_min, vmax = field_max, cmap=cm_zesty_cbf, norm = MidpointNormalize(midpoint=0.))
+            if field_sample is not None:
+                ax.scatter(field_sample[0], field_sample[1], s=0.1, c="k", marker="o", transform=ccrs.PlateCarree(), rasterized=True, zorder = 10)
+            
             ax.set_title("Synthetic truth")
             ax.coastlines(linewidth = coast_width, color = coast_color)
             if use_gridlines == True:
