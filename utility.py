@@ -1124,7 +1124,12 @@ def plot_ensemble_map_tiles(lon, lat, ensemble_fields, field_uncon = None, field
         field_min = -field_max
     elif field_sample is not None:
         h_ratio.append(cbar_h)
-        gs = fig.add_gridspec(tile_size_row+1, tile_size_column, height_ratios=h_ratio, width_ratios=w_ratio) # Add x-by-y grid
+        if field_compare is not None:
+            h_ratio.append(0.01)
+            h_ratio.append(1.1)
+            gs = fig.add_gridspec(tile_size_row+3, tile_size_column, height_ratios=h_ratio, width_ratios=w_ratio) # Add x-by-y grid
+        else:
+            gs = fig.add_gridspec(tile_size_row+1, tile_size_column, height_ratios=h_ratio, width_ratios=w_ratio) # Add x-by-y grid
         field_max_true = np.max(ensemble_fields)
         field_min_true = np.min(ensemble_fields)
         field_max = cbar_mm_factor*np.max((abs(field_max_true),abs(field_min_true)))
