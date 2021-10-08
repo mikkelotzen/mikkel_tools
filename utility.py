@@ -554,31 +554,35 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, m_mode = N
         for i in np.arange(0,N_sim):
             y,binEdges=np.histogram(seqsim_res[:,[i]],bins=res_bins,range=hist_range)
             bincenters = 0.5*(binEdges[1:]+binEdges[:-1])
+            i_nz = y != 0
             if i == 0:
-                ax.plot(bincenters, y, '-', color = color_rgb_zesty_pos, label='Posterior', linewidth = lwidth) 
+                ax.plot(bincenters[i_nz], y[i_nz], '-', color = color_rgb_zesty_pos, label='Posterior', linewidth = lwidth) 
             else:
-                ax.plot(bincenters, y, '-', color = color_rgb_zesty_pos, linewidth = lwidth) 
+                ax.plot(bincenters[i_nz], y[i_nz], '-', color = color_rgb_zesty_pos, linewidth = lwidth) 
         leg1 = mpatches.Patch(color=color_rgb_zesty_pos, label='Posterior')
         leg_handle = [leg1]
 
         if pos_mean_res is not None:
             y,binEdges=np.histogram(pos_mean_res,bins=res_bins,range=hist_range)
             bincenters = 0.5*(binEdges[1:]+binEdges[:-1])
-            ax.plot(bincenters, y, '-', color = color_rgb_zesty_neg, label='Posterior mean', linewidth = lwidth_mult*lwidth)
+            i_nz = y != 0
+            ax.plot(bincenters[i_nz], y[i_nz], '-', color = color_rgb_zesty_neg, label='Posterior mean', linewidth = lwidth_mult*lwidth)
             legpm = mpatches.Patch(color=color_rgb_zesty_neg, label='Posterior mean')
             leg_handle.append(legpm)
 
         if m_equiv_lsq is not None:
             y,binEdges=np.histogram(lsq_equiv_res,bins=res_bins,range=hist_range)
             bincenters = 0.5*(binEdges[1:]+binEdges[:-1])
-            ax.plot(bincenters, y, '-', color = "C3", label='Equivalent LSQ', linewidth = lwidth_mult*lwidth)
+            i_nz = y != 0
+            ax.plot(bincenters[i_nz], y[i_nz], '-', color = "C3", label='Equivalent LSQ', linewidth = lwidth_mult*lwidth)
             leg2 = mpatches.Patch(color="C3", label='Equivalent LSQ')
             leg_handle.append(leg2)
 
         if m_mode is not None:
             y,binEdges=np.histogram(mode_res,bins=res_bins,range=hist_range)
             bincenters = 0.5*(binEdges[1:]+binEdges[:-1])
-            ax.plot(bincenters, y, '-', color = "C4", label='Maximum of marginal posterior', linewidth = lwidth_mult*lwidth) #,linestyle = "dashed"
+            i_nz = y != 0
+            ax.plot(bincenters[i_nz], y[i_nz], '-', color = "C4", label='Maximum of marginal posterior', linewidth = lwidth_mult*lwidth) #,linestyle = "dashed"
             legmode = mpatches.Patch(color="C4", label='Maximum of marginal posterior')
             leg_handle.append(legmode)
 
@@ -611,20 +615,22 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, m_mode = N
         for i in np.arange(0,uncon_obj.N_sim):
             y,binEdges=np.histogram(uncon_posterior[:,[i]], bins=hist_bins, density = hist_density, range = hist_range)
             bincenters = 0.5*(binEdges[1:]+binEdges[:-1])
+            i_nz = y != 0
             if i == 0:
-                ax.plot(bincenters,y,'-', color = color_rgb, label='Prior', linewidth = lwidth/lwidth_div, zorder=0)  
+                ax.plot(bincenters[i_nz],y[i_nz],'-', color = color_rgb, label='Prior', linewidth = lwidth/lwidth_div, zorder=0)  
             else:
-                ax.plot(bincenters,y,'-', color = color_rgb, linewidth = lwidth/lwidth_div, zorder=0)     
+                ax.plot(bincenters[i_nz],y[i_nz],'-', color = color_rgb, linewidth = lwidth/lwidth_div, zorder=0)     
         leg0 = mpatches.Patch(color=color_rgb, label='Prior')
 
     # Posterior
     for i in np.arange(0,N_sim):
         y,binEdges=np.histogram(posterior_fields[:,[i]], bins=hist_bins, density = hist_density, range = hist_range)
         bincenters = 0.5*(binEdges[1:]+binEdges[:-1])
+        i_nz = y != 0
         if i == 0:
-            ax.plot(bincenters,y,'-', color = color_rgb_zesty_pos, label='Posterior', linewidth = lwidth)  
+            ax.plot(bincenters[i_nz],y[i_nz],'-', color = color_rgb_zesty_pos, label='Posterior', linewidth = lwidth)  
         else:
-            ax.plot(bincenters,y,'-', color = color_rgb_zesty_pos, linewidth = lwidth)     
+            ax.plot(bincenters[i_nz],y[i_nz],'-', color = color_rgb_zesty_pos, linewidth = lwidth)     
     leg1 = mpatches.Patch(color=color_rgb_zesty_pos, label='Posterior')
 
     # Local posterior
@@ -632,31 +638,35 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, m_mode = N
         for i in np.arange(0,len(posterior_fields)):
             y,binEdges=np.histogram(posterior_fields[[i],:], bins=hist_bins, density = hist_density, range = hist_range)
             bincenters = 0.5*(binEdges[1:]+binEdges[:-1])
+            i_nz = y != 0
             if i == 0:
-                ax.plot(bincenters,y,'-', color = color_rgb_zesty_neg, label='Local posterior', linewidth = lwidth)  
+                ax.plot(bincenters[i_nz],y[i_nz],'-', color = color_rgb_zesty_neg, label='Local posterior', linewidth = lwidth)  
             else:
-                ax.plot(bincenters,y,'-', color = color_rgb_zesty_neg, linewidth = lwidth)   
+                ax.plot(bincenters[i_nz],y[i_nz],'-', color = color_rgb_zesty_neg, linewidth = lwidth)   
         leg2 = mpatches.Patch(color=color_rgb_zesty_neg, label='Local posterior')
 
     # Posterior mean
     if hist_pos_mean == True:
         y,binEdges=np.histogram(np.mean(posterior_fields,axis=1), bins=hist_bins, density = hist_density, range = hist_range)
         bincenters = 0.5*(binEdges[1:]+binEdges[:-1])
-        ax.plot(bincenters, y, '-', color = color_rgb_zesty_neg, label='Posterior mean', linewidth = lwidth_mult*lwidth)  
+        i_nz = y != 0
+        ax.plot(bincenters[i_nz], y[i_nz], '-', color = color_rgb_zesty_neg, label='Posterior mean', linewidth = lwidth_mult*lwidth)  
         leg2 = mpatches.Patch(color=color_rgb_zesty_neg, label='Posterior mean')
 
     # Equivalent lsq
     if m_equiv_lsq is not None:
         y,binEdges=np.histogram(np.array(m_equiv_lsq), bins=hist_bins, density = hist_density, range = hist_range)
         bincenters = 0.5*(binEdges[1:]+binEdges[:-1])
-        ax.plot(bincenters, y, '--', color = 'C3', label='Equivalent LSQ', linestyle = "dashed", linewidth = lwidth_mult*lwidth) 
+        i_nz = y != 0
+        ax.plot(bincenters[i_nz], y[i_nz], '--', color = 'C3', label='Equivalent LSQ', linestyle = "dashed", linewidth = lwidth_mult*lwidth) 
         leglsq = mpatches.Patch(color="C3", label='Equivalent LSQ')
 
     # Posterior mode
     if m_mode is not None:
         y,binEdges=np.histogram(m_mode, bins=hist_bins, density = hist_density, range = hist_range)
         bincenters = 0.5*(binEdges[1:]+binEdges[:-1])
-        ax.plot(bincenters, y, '-', color = 'C4', label='Maximum of marginal posterior', linewidth = lwidth_mult*lwidth) 
+        i_nz = y != 0
+        ax.plot(bincenters[i_nz], y[i_nz], '-', color = 'C4', label='Maximum of marginal posterior', linewidth = lwidth_mult*lwidth) 
         legmode = mpatches.Patch(color="C4", label='Maximum of marginal posterior')
 
     ti_label = "Training ensemble"
@@ -678,22 +688,25 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, m_mode = N
             hist_ens_plot = ti_hist_data[:,[i]]
             y,binEdges=np.histogram(hist_ens_plot,bins=hist_bins, density = hist_density, range = hist_range)
             bincenters = 0.5*(binEdges[1:]+binEdges[:-1])
+            i_nz = y != 0
             if i == 0:
-                ax.plot(bincenters,y, color = color_rgb, label=ti_label, linewidth = lwidth/lwidth_div,zorder=0.01)  
+                ax.plot(bincenters[i_nz],y[i_nz], color = color_rgb, label=ti_label, linewidth = lwidth/lwidth_div,zorder=0.01)  
             else:
-                ax.plot(bincenters,y, color = color_rgb, linewidth = lwidth/lwidth_div,zorder=0.01)
+                ax.plot(bincenters[i_nz],y[i_nz], color = color_rgb, linewidth = lwidth/lwidth_div,zorder=0.01)
         leg3 = mpatches.Patch(color=color_rgb, label=ti_label)
     else:
         y,binEdges=np.histogram(ti_hist_data,bins=hist_bins, density = hist_density, range = hist_range)
         bincenters = 0.5*(binEdges[1:]+binEdges[:-1])
-        ax.plot(bincenters,y, color = 'k', label=ti_label, linewidth = lwidth_mult*lwidth)
+        i_nz = y != 0
+        ax.plot(bincenters[i_nz],y[i_nz], color = 'k', label=ti_label, linewidth = lwidth_mult*lwidth)
         leg3 = mpatches.Patch(color="k", label=ti_label)
 
     # Synthetic truth
     if truth_obj is not None:
         y,binEdges=np.histogram(truth_data, bins=hist_bins, density = hist_density, range = hist_range)
         bincenters = 0.5*(binEdges[1:]+binEdges[:-1])
-        ax.plot(bincenters,y,'C2', label='Synthetic truth', linewidth = lwidth_mult*lwidth)
+        i_nz = y != 0
+        ax.plot(bincenters[i_nz],y[i_nz],'C2', label='Synthetic truth', linewidth = lwidth_mult*lwidth)
         leg4 = mpatches.Patch(color="C2", label="Synthetic truth")
 
     # Residuals between posterior and synthetic truth
@@ -702,10 +715,11 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, m_mode = N
             hist_res_plot = truth_data.reshape(-1,)-posterior_fields[:,[i]].reshape(-1,)
             y,binEdges=np.histogram(hist_res_plot, bins=hist_bins, density = hist_density, range = hist_range)
             bincenters = 0.5*(binEdges[1:]+binEdges[:-1])
+            i_nz = y != 0
             if i == 0:
-                ax.plot(bincenters,y, color = "k", label=ti_label, linewidth = lwidth/lwidth_div,zorder=0.0)  
+                ax.plot(bincenters[i_nz],y[i_nz], color = "k", label=ti_label, linewidth = lwidth/lwidth_div,zorder=0.0)  
             else:
-                ax.plot(bincenters,y, color = "k", linewidth = lwidth/lwidth_div,zorder=0.0)
+                ax.plot(bincenters[i_nz],y[i_nz], color = "k", linewidth = lwidth/lwidth_div,zorder=0.0)
         leghistres = mpatches.Patch(color="k", label="Truth-Posterior")
 
     ax.set_title('({}) Histogram reproduction'.format(plot_letter))
