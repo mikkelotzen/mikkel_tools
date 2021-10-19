@@ -41,8 +41,18 @@ def plot_while_learning(epoch):
     #ax1.set_ylim([0.0,np.max([E_valid_collect,E_train_collect])])
     
     ax1.grid()
-    ax1.semilogy(epoch_range, E_train_collect[:,0], '-', color="C0", label = "training")
-    ax1.semilogy(epoch_range, E_valid_collect[:,0], '--', color="C1", label = "validation")
+    ax1.semilogy(epoch_range, E_train_collect[:,0], '-', color="C0", label = "E training")
+    ax1.semilogy(epoch_range, E_valid_collect[:,0], '--', color="C0", label = "E validation")
+
+    ax1.semilogy(epoch_range, C_train_collect[:,0], '-', color="C1", label = "C training")
+    ax1.semilogy(epoch_range, C_valid_collect[:,0], '--', color="C1", label = "C validation")
+
+    ax1.semilogy(epoch_range, Li_train_collect[:,0], '-', color="C2", label = "Li training")
+    ax1.semilogy(epoch_range, Li_valid_collect[:,0], '--', color="C2", label = "Li validation")
+
+    ax1.semilogy(epoch_range, sat_train_collect[:,0], '-', color="C3", label = "sat training")
+    ax1.semilogy(epoch_range, sat_valid_collect[:,0], '--', color="C3", label = "sat validation")
+
     ax1.text(0.5, 0.9, "Current lr: " + str(optimizer.param_groups[0]["lr"]),
             horizontalalignment='center', verticalalignment='center', transform=ax1.transAxes)
     ax1.legend(loc="upper right")
