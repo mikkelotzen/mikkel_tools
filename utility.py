@@ -469,7 +469,7 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, m_mode = N
     import scipy.io as spio
     import pyshtools
     import matplotlib.ticker as tick
-
+    
     # ChaosMagPy modules
     from chaosmagpy import load_CHAOS_matfile
     from chaosmagpy.model_utils import synth_values
@@ -556,9 +556,9 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, m_mode = N
             bincenters = 0.5*(binEdges[1:]+binEdges[:-1])
             i_nz = y != 0
             if i == 0:
-                ax.plot(bincenters[i_nz], y[i_nz], '-', color = color_rgb_zesty_pos, label='Posterior', linewidth = lwidth) 
+                ax.plot(bincenters[i_nz], y[i_nz]/len(i_nz), '-', color = color_rgb_zesty_pos, label='Posterior', linewidth = lwidth) 
             else:
-                ax.plot(bincenters[i_nz], y[i_nz], '-', color = color_rgb_zesty_pos, linewidth = lwidth) 
+                ax.plot(bincenters[i_nz], y[i_nz]/len(i_nz), '-', color = color_rgb_zesty_pos, linewidth = lwidth) 
         leg1 = mpatches.Patch(color=color_rgb_zesty_pos, label='Posterior')
         leg_handle = [leg1]
 
@@ -589,7 +589,8 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, m_mode = N
         ax.set_title('(a) {}'.format(res_title))
         ax.annotate("Mean RMSE: {:.{}f}".format(np.mean(rmse_leg), res_print_f), (0.05, 0.5), xycoords='axes fraction', va='center', fontsize = label_fontsize)
         ax.set_xlabel("Field residuals {}".format(unit_res))
-        ax.set_ylabel("Count")
+        #ax.set_ylabel("Count")
+        ax.yaxis.set_major_formatter(tick.PercentFormatter(1))
 
         if patch_legend == True:
             ax.legend(handles=leg_handle, numpoints=1, labelspacing=1, loc='best', fontsize=label_fontsize, frameon=False)
