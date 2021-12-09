@@ -936,8 +936,10 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, m_mode = N
                 import hdf5storage
                 g_cut = -(hdf5storage.loadmat("mikkel_tools/models_shc/Gauss_Bsurf_2021.mat")["gnm"].T)[:,:].copy()
             elif seqsim_obj.sim_type == "lith_ens":
-                g_ens = np.load("mikkel_tools/models_shc/lithosphere_g_in_rotated.npy")
-                g_cut = g_ens[:shc_vec_len(n_max),::20]
+                #g_ens = np.load("mikkel_tools/models_shc/lithosphere_g_in_rotated.npy")
+                g_ens = np.load("mikkel_tools/models_shc/LiP_ensemble_N500_n120_p05_vary_crust.npy")
+                #g_cut = g_ens[:shc_vec_len(n_max),::20]
+                g_cut = g_ens[:shc_vec_len(n_max),:]
 
             R = lowe_shspec(n_max,spec_r_at,seqsim_obj.a,g_cut)
 
