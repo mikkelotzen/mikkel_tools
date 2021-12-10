@@ -551,14 +551,22 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, m_mode = N
         else:
             hist_range = (np.min(seqsim_res),np.max(seqsim_res))
 
+        max_on_y = 0
+
         for i in np.arange(0,N_sim):
             y,binEdges=np.histogram(seqsim_res[:,[i]],bins=res_bins,range=hist_range)
             bincenters = 0.5*(binEdges[1:]+binEdges[:-1])
             i_nz = y != 0
             if i == 0:
-                ax.plot(bincenters[i_nz], y[i_nz]/len(i_nz), '-', color = color_rgb_zesty_pos, label='Posterior', linewidth = lwidth) 
+                test_max_on_y = np.max(y[i_nz]/np.sum(y[i_nz]))
+                if test_max_on_y>max_on_y:
+                    max_on_y = test_max_on_y
+                ax.plot(bincenters[i_nz], y[i_nz]/np.sum(y[i_nz]), '-', color = color_rgb_zesty_pos, label='Posterior', linewidth = lwidth) 
             else:
-                ax.plot(bincenters[i_nz], y[i_nz]/len(i_nz), '-', color = color_rgb_zesty_pos, linewidth = lwidth) 
+                test_max_on_y = np.max(y[i_nz]/np.sum(y[i_nz]))
+                if test_max_on_y>max_on_y:
+                    max_on_y = test_max_on_y
+                ax.plot(bincenters[i_nz], y[i_nz]/np.sum(y[i_nz]), '-', color = color_rgb_zesty_pos, linewidth = lwidth) 
         leg1 = mpatches.Patch(color=color_rgb_zesty_pos, label='Posterior')
         leg_handle = [leg1]
 
@@ -566,7 +574,10 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, m_mode = N
             y,binEdges=np.histogram(pos_mean_res,bins=res_bins,range=hist_range)
             bincenters = 0.5*(binEdges[1:]+binEdges[:-1])
             i_nz = y != 0
-            ax.plot(bincenters[i_nz], y[i_nz], '-', color = color_rgb_zesty_neg, label='Posterior mean', linewidth = lwidth_mult*lwidth)
+            test_max_on_y = np.max(y[i_nz]/np.sum(y[i_nz]))
+            if test_max_on_y>max_on_y:
+                max_on_y = test_max_on_y
+            ax.plot(bincenters[i_nz], y[i_nz]/np.sum(y[i_nz]), '-', color = color_rgb_zesty_neg, label='Posterior mean', linewidth = lwidth_mult*lwidth)
             legpm = mpatches.Patch(color=color_rgb_zesty_neg, label='Posterior mean')
             leg_handle.append(legpm)
 
@@ -574,7 +585,10 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, m_mode = N
             y,binEdges=np.histogram(lsq_equiv_res,bins=res_bins,range=hist_range)
             bincenters = 0.5*(binEdges[1:]+binEdges[:-1])
             i_nz = y != 0
-            ax.plot(bincenters[i_nz], y[i_nz], '-', color = "C3", label='Equivalent LSQ', linewidth = lwidth_mult*lwidth)
+            test_max_on_y = np.max(y[i_nz]/np.sum(y[i_nz]))
+            if test_max_on_y>max_on_y:
+                max_on_y = test_max_on_y
+            ax.plot(bincenters[i_nz], y[i_nz]/np.sum(y[i_nz]), '-', color = "C3", label='Equivalent LSQ', linewidth = lwidth_mult*lwidth)
             leg2 = mpatches.Patch(color="C3", label='Equivalent LSQ')
             leg_handle.append(leg2)
 
@@ -582,15 +596,21 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, m_mode = N
             y,binEdges=np.histogram(mode_res,bins=res_bins,range=hist_range)
             bincenters = 0.5*(binEdges[1:]+binEdges[:-1])
             i_nz = y != 0
-            ax.plot(bincenters[i_nz], y[i_nz], '-', color = "C4", label='Maximum of marginal posterior', linewidth = lwidth_mult*lwidth) #,linestyle = "dashed"
+            test_max_on_y = np.max(y[i_nz]/np.sum(y[i_nz]))
+            if test_max_on_y>max_on_y:
+                max_on_y = test_max_on_y
+            ax.plot(bincenters[i_nz], y[i_nz]/np.sum(y[i_nz]), '-', color = "C4", label='Maximum of marginal posterior', linewidth = lwidth_mult*lwidth) #,linestyle = "dashed"
             legmode = mpatches.Patch(color="C4", label='Maximum of marginal posterior')
             leg_handle.append(legmode)
 
         ax.set_title('(a) {}'.format(res_title))
         ax.annotate("Mean RMSE: {:.{}f}".format(np.mean(rmse_leg), res_print_f), (0.05, 0.5), xycoords='axes fraction', va='center', fontsize = label_fontsize)
         ax.set_xlabel("Field residuals {}".format(unit_res))
-        #ax.set_ylabel("Count")
-        ax.yaxis.set_major_formatter(tick.PercentFormatter(1))
+        ax.set_ylabel("Frequency (%)")
+        use_ypercs = np.linspace(0,np.round(0.9*max_on_y,decimals=2),5)
+        ax.set_yticks(use_ypercs)
+        ax.yaxis.set_major_formatter(tick.PercentFormatter(1,symbol=""))
+
 
         if patch_legend == True:
             ax.legend(handles=leg_handle, numpoints=1, labelspacing=1, loc='best', fontsize=label_fontsize, frameon=False)
@@ -610,6 +630,8 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, m_mode = N
         hist_range = (hist_ti_ens_limit[0],hist_ti_ens_limit[1])
     else:
         hist_range = (np.min(posterior_fields),np.max(posterior_fields))
+    
+    max_on_y = 0
 
     # Unconditional posterior / Prior
     if uncon_obj is not None:
@@ -618,9 +640,15 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, m_mode = N
             bincenters = 0.5*(binEdges[1:]+binEdges[:-1])
             i_nz = y != 0
             if i == 0:
-                ax.plot(bincenters[i_nz],y[i_nz],'-', color = color_rgb, label='Prior', linewidth = lwidth/lwidth_div, zorder=0)  
+                test_max_on_y = np.max(y[i_nz]/np.sum(y[i_nz]))
+                if test_max_on_y>max_on_y:
+                    max_on_y = test_max_on_y
+                ax.plot(bincenters[i_nz],y[i_nz]/np.sum(y[i_nz]),'-', color = color_rgb, label='Prior', linewidth = lwidth/lwidth_div, zorder=0)  
             else:
-                ax.plot(bincenters[i_nz],y[i_nz],'-', color = color_rgb, linewidth = lwidth/lwidth_div, zorder=0)     
+                test_max_on_y = np.max(y[i_nz]/np.sum(y[i_nz]))
+                if test_max_on_y>max_on_y:
+                    max_on_y = test_max_on_y
+                ax.plot(bincenters[i_nz],y[i_nz]/np.sum(y[i_nz]),'-', color = color_rgb, linewidth = lwidth/lwidth_div, zorder=0)     
         leg0 = mpatches.Patch(color=color_rgb, label='Prior')
 
     # Posterior
@@ -629,9 +657,15 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, m_mode = N
         bincenters = 0.5*(binEdges[1:]+binEdges[:-1])
         i_nz = y != 0
         if i == 0:
-            ax.plot(bincenters[i_nz],y[i_nz],'-', color = color_rgb_zesty_pos, label='Posterior', linewidth = lwidth)  
+            test_max_on_y = np.max(y[i_nz]/np.sum(y[i_nz]))
+            if test_max_on_y>max_on_y:
+                max_on_y = test_max_on_y
+            ax.plot(bincenters[i_nz],y[i_nz]/np.sum(y[i_nz]),'-', color = color_rgb_zesty_pos, label='Posterior', linewidth = lwidth)  
         else:
-            ax.plot(bincenters[i_nz],y[i_nz],'-', color = color_rgb_zesty_pos, linewidth = lwidth)     
+            test_max_on_y = np.max(y[i_nz]/np.sum(y[i_nz]))
+            if test_max_on_y>max_on_y:
+                max_on_y = test_max_on_y
+            ax.plot(bincenters[i_nz],y[i_nz]/np.sum(y[i_nz]),'-', color = color_rgb_zesty_pos, linewidth = lwidth)     
     leg1 = mpatches.Patch(color=color_rgb_zesty_pos, label='Posterior')
 
     # Local posterior
@@ -641,9 +675,15 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, m_mode = N
             bincenters = 0.5*(binEdges[1:]+binEdges[:-1])
             i_nz = y != 0
             if i == 0:
-                ax.plot(bincenters[i_nz],y[i_nz],'-', color = color_rgb_zesty_neg, label='Local posterior', linewidth = lwidth)  
+                test_max_on_y = np.max(y[i_nz]/np.sum(y[i_nz]))
+                if test_max_on_y>max_on_y:
+                    max_on_y = test_max_on_y
+                ax.plot(bincenters[i_nz],y[i_nz]/np.sum(y[i_nz]),'-', color = color_rgb_zesty_neg, label='Local posterior', linewidth = lwidth)  
             else:
-                ax.plot(bincenters[i_nz],y[i_nz],'-', color = color_rgb_zesty_neg, linewidth = lwidth)   
+                test_max_on_y = np.max(y[i_nz]/np.sum(y[i_nz]))
+                if test_max_on_y>max_on_y:
+                    max_on_y = test_max_on_y
+                ax.plot(bincenters[i_nz],y[i_nz]/np.sum(y[i_nz]),'-', color = color_rgb_zesty_neg, linewidth = lwidth)   
         leg2 = mpatches.Patch(color=color_rgb_zesty_neg, label='Local posterior')
 
     # Posterior mean
@@ -651,7 +691,10 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, m_mode = N
         y,binEdges=np.histogram(np.mean(posterior_fields,axis=1), bins=hist_bins, density = hist_density, range = hist_range)
         bincenters = 0.5*(binEdges[1:]+binEdges[:-1])
         i_nz = y != 0
-        ax.plot(bincenters[i_nz], y[i_nz], '-', color = color_rgb_zesty_neg, label='Posterior mean', linewidth = lwidth_mult*lwidth)  
+        test_max_on_y = np.max(y[i_nz]/np.sum(y[i_nz]))
+        if test_max_on_y>max_on_y:
+            max_on_y = test_max_on_y
+        ax.plot(bincenters[i_nz], y[i_nz]/np.sum(y[i_nz]), '-', color = color_rgb_zesty_neg, label='Posterior mean', linewidth = lwidth_mult*lwidth)  
         leg2 = mpatches.Patch(color=color_rgb_zesty_neg, label='Posterior mean')
 
     # Equivalent lsq
@@ -659,7 +702,10 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, m_mode = N
         y,binEdges=np.histogram(np.array(m_equiv_lsq), bins=hist_bins, density = hist_density, range = hist_range)
         bincenters = 0.5*(binEdges[1:]+binEdges[:-1])
         i_nz = y != 0
-        ax.plot(bincenters[i_nz], y[i_nz], '--', color = 'C3', label='Equivalent LSQ', linestyle = "dashed", linewidth = lwidth_mult*lwidth) 
+        test_max_on_y = np.max(y[i_nz]/np.sum(y[i_nz]))
+        if test_max_on_y>max_on_y:
+            max_on_y = test_max_on_y
+        ax.plot(bincenters[i_nz], y[i_nz]/np.sum(y[i_nz]), '--', color = 'C3', label='Equivalent LSQ', linestyle = "dashed", linewidth = lwidth_mult*lwidth) 
         leglsq = mpatches.Patch(color="C3", label='Equivalent LSQ')
 
     # Posterior mode
@@ -667,7 +713,10 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, m_mode = N
         y,binEdges=np.histogram(m_mode, bins=hist_bins, density = hist_density, range = hist_range)
         bincenters = 0.5*(binEdges[1:]+binEdges[:-1])
         i_nz = y != 0
-        ax.plot(bincenters[i_nz], y[i_nz], '-', color = 'C4', label='Maximum of marginal posterior', linewidth = lwidth_mult*lwidth) 
+        test_max_on_y = np.max(y[i_nz]/np.sum(y[i_nz]))
+        if test_max_on_y>max_on_y:
+            max_on_y = test_max_on_y
+        ax.plot(bincenters[i_nz], y[i_nz]/np.sum(y[i_nz]), '-', color = 'C4', label='Maximum of marginal posterior', linewidth = lwidth_mult*lwidth) 
         legmode = mpatches.Patch(color="C4", label='Maximum of marginal posterior')
 
     ti_label = "Training ensemble"
@@ -691,15 +740,24 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, m_mode = N
             bincenters = 0.5*(binEdges[1:]+binEdges[:-1])
             i_nz = y != 0
             if i == 0:
-                ax.plot(bincenters[i_nz],y[i_nz], color = color_rgb, label=ti_label, linewidth = lwidth/lwidth_div,zorder=0.01)  
+                test_max_on_y = np.max(y[i_nz]/np.sum(y[i_nz]))
+                if test_max_on_y>max_on_y:
+                    max_on_y = test_max_on_y
+                ax.plot(bincenters[i_nz],y[i_nz]/np.sum(y[i_nz]), color = color_rgb, label=ti_label, linewidth = lwidth/lwidth_div,zorder=0.01)  
             else:
-                ax.plot(bincenters[i_nz],y[i_nz], color = color_rgb, linewidth = lwidth/lwidth_div,zorder=0.01)
+                test_max_on_y = np.max(y[i_nz]/np.sum(y[i_nz]))
+                if test_max_on_y>max_on_y:
+                    max_on_y = test_max_on_y
+                ax.plot(bincenters[i_nz],y[i_nz]/np.sum(y[i_nz]), color = color_rgb, linewidth = lwidth/lwidth_div,zorder=0.01)
         leg3 = mpatches.Patch(color=color_rgb, label=ti_label)
     else:
         y,binEdges=np.histogram(ti_hist_data,bins=hist_bins, density = hist_density, range = hist_range)
         bincenters = 0.5*(binEdges[1:]+binEdges[:-1])
         i_nz = y != 0
-        ax.plot(bincenters[i_nz],y[i_nz], color = 'k', label=ti_label, linewidth = lwidth_mult*lwidth)
+        test_max_on_y = np.max(y[i_nz]/np.sum(y[i_nz]))
+        if test_max_on_y>max_on_y:
+            max_on_y = test_max_on_y
+        ax.plot(bincenters[i_nz],y[i_nz]/np.sum(y[i_nz]), color = 'k', label=ti_label, linewidth = lwidth_mult*lwidth)
         leg3 = mpatches.Patch(color="k", label=ti_label)
 
     # Synthetic truth
@@ -707,7 +765,10 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, m_mode = N
         y,binEdges=np.histogram(truth_data, bins=hist_bins, density = hist_density, range = hist_range)
         bincenters = 0.5*(binEdges[1:]+binEdges[:-1])
         i_nz = y != 0
-        ax.plot(bincenters[i_nz],y[i_nz],'C2', label='Synthetic truth', linewidth = lwidth_mult*lwidth)
+        test_max_on_y = np.max(y[i_nz]/np.sum(y[i_nz]))
+        if test_max_on_y>max_on_y:
+            max_on_y = test_max_on_y
+        ax.plot(bincenters[i_nz],y[i_nz]/np.sum(y[i_nz]),'C2', label='Synthetic truth', linewidth = lwidth_mult*lwidth)
         leg4 = mpatches.Patch(color="C2", label="Synthetic truth")
 
     # Residuals between posterior and synthetic truth
@@ -718,9 +779,15 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, m_mode = N
             bincenters = 0.5*(binEdges[1:]+binEdges[:-1])
             i_nz = y != 0
             if i == 0:
-                ax.plot(bincenters[i_nz],y[i_nz], color = "k", label=ti_label, linewidth = lwidth/lwidth_div,zorder=0.0)  
+                test_max_on_y = np.max(y[i_nz]/np.sum(y[i_nz]))
+                if test_max_on_y>max_on_y:
+                    max_on_y = test_max_on_y
+                ax.plot(bincenters[i_nz],y[i_nz]/np.sum(y[i_nz]), color = "k", label=ti_label, linewidth = lwidth/lwidth_div,zorder=0.0)  
             else:
-                ax.plot(bincenters[i_nz],y[i_nz], color = "k", linewidth = lwidth/lwidth_div,zorder=0.0)
+                test_max_on_y = np.max(y[i_nz]/np.sum(y[i_nz]))
+                if test_max_on_y>max_on_y:
+                    max_on_y = test_max_on_y
+                ax.plot(bincenters[i_nz],y[i_nz]/np.sum(y[i_nz]), color = "k", linewidth = lwidth/lwidth_div,zorder=0.0)
         leghistres = mpatches.Patch(color="k", label="Truth-Posterior")
 
     ax.set_title('({}) Histogram reproduction'.format(plot_letter))
@@ -748,7 +815,11 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, m_mode = N
     if hist_density == True:
         ax.set_ylabel('Density')
     else:
-        ax.set_ylabel('Count')
+        ax.set_ylabel('Frequency (%)')
+        use_ypercs = np.linspace(0,np.round(0.9*max_on_y,decimals=2),5)
+        ax.set_yticks(use_ypercs)
+        ax.yaxis.set_major_formatter(tick.PercentFormatter(1,symbol=""))
+        
 
     #### SEMI-VARIOGRAM ####
     if sv_use == True:
@@ -1610,7 +1681,8 @@ def plot_local_dist_KL(zs_DSS, skip = 1, N_bins = 21, idx_high_start = -401, idx
                        xlim = [-2,2], hist_range = [-2,2], hist_density = False, save_dpi = 100, savefig = False, save_path = "", save_string = "", figsize = (11,8), random_seed = None, leg_size = "small"):
     from scipy import stats
     from mpl_toolkits import mplot3d
-
+    import matplotlib.ticker as tick
+    
     if random_seed is not None:
         np.random.seed(random_seed)
 
@@ -1716,15 +1788,16 @@ def plot_local_dist_KL(zs_DSS, skip = 1, N_bins = 21, idx_high_start = -401, idx
         y_kld_p_n = y_kld[:,i][idx_z_y_n]
         x_c_n_p = x_c_n[:,i][idx_z_y_n]
 
-        ax.plot3D(x_c_p, y_kld_p, z_y_p, color=color_rgb_zesty_pos, zorder = 1/(idx_bc_high[i]+10**(-3)))
-        ax.plot3D(x_c_n_p, y_kld_p_n, z_y_n_p, linestyle="dashed", color="k", zorder = 1/(idx_bc_high[i]+10**(-3)))
+        ax.plot3D(x_c_p, y_kld_p, z_y_p/np.sum(z_y_p), color=color_rgb_zesty_pos, zorder = 1/(idx_bc_high[i]+10**(-3)))
+        ax.plot3D(x_c_n_p, y_kld_p_n, z_y_n_p/np.sum(z_y_n_p), linestyle="dashed", color="k", zorder = 1/(idx_bc_high[i]+10**(-3)))
         #ax.plot3D(x_c[:,i], y_kld[:,i], z_y[:,i], color=color_rgb_zesty_pos, zorder = 1/(idx_bc_high[i]+10**(-3)))
         #ax.plot3D(x_c_n[:,i], y_kld[:,i], z_y_n[:,i], linestyle="dashed", color="k", zorder = 1/(idx_bc_high[i]+10**(-3)))
         
         #ax.plot3D(x_c, y_kld[:,i], z_y[:,i], color=color_rgb_zesty_pos, zorder = 1/(idx_bc_high[i]+10**(-3)))
         #ax.plot3D(x_c_n, y_kld[:,i], z_y_n[:,i], linestyle="dashed", color="k", zorder = 1/(idx_bc_high[i]+10**(-3)))
 
-    ax.set_zlabel("Count")
+    ax.set_zlabel("Frequency (%)")
+    ax.zaxis.set_major_formatter(tick.PercentFormatter(1,symbol=""))
     ax.set_ylabel("KL-divergence")
     ax.set_xlabel("Field value [mT]")
     ax.set_xlim(xlim)
@@ -1765,13 +1838,14 @@ def plot_local_dist_KL(zs_DSS, skip = 1, N_bins = 21, idx_high_start = -401, idx
         y_kld_p_n = y_kld[:,i][idx_z_y_n]
         x_c_n_p = x_c_n[:,i][idx_z_y_n]
 
-        ax.plot3D(x_c_p, y_kld_p, z_y_p, color=color_rgb_zesty_neg, zorder = 1/(idx_bc_low[i]+10**(-3)))
-        ax.plot3D(x_c_n_p, y_kld_p_n, z_y_n_p, linestyle="dashed", color="k", zorder = 1/(idx_bc_low[i]+10**(-3)))
+        ax.plot3D(x_c_p, y_kld_p, z_y_p/np.sum(z_y_p), color=color_rgb_zesty_neg, zorder = 1/(idx_bc_low[i]+10**(-3)))
+        ax.plot3D(x_c_n_p, y_kld_p_n, z_y_n_p/np.sum(z_y_n_p), linestyle="dashed", color="k", zorder = 1/(idx_bc_low[i]+10**(-3)))
 
         #ax.plot3D(x_c[:,i], y_kld[:,i], z_y[:,i], color=color_rgb_zesty_neg, zorder = 1/(idx_bc_low[i]+10**(-3)))
         #ax.plot3D(x_c_n[:,i], y_kld[:,i], z_y_n[:,i], linestyle="dashed", color="k", zorder = 1/(idx_bc_low[i]+10**(-3)))
 
-    ax.set_zlabel("Count")
+    ax.set_zlabel("Frequency (%)")
+    ax.zaxis.set_major_formatter(tick.PercentFormatter(1,symbol=""))
     ax.set_ylabel("KL-divergence")
     ax.set_xlabel("Field value [mT]")
     ax.set_xlim(xlim)
