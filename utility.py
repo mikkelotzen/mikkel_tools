@@ -2545,6 +2545,48 @@ def sh_expand_glq(glq_field, glq_nmax, glq_w, glq_zero, set_nmax, set_norm = 1, 
     
     return C_vec, C_cilm
 
+def healpix_Br_to_g(B_r, nmax, r_at, nside, iter = 20, show_sht_error = False, r_ref =6371.2):
+    import healpy as hp
+    import pyshtools as pysh
+    import numpy as np
+    
+    # healpy SH transform 
+    alm = hp.sphtfunc.map2alm(B_r,iter=iter,lmax=nmax,pol=True,use_weights=False)
+    
+    # RMSE from back transform
+    if show_sht_error == True:
+        B_r_back = hp.sphtfunc.alm2map(alm, nside, lmax=30)
+        rmse = np.sqrt(np.sum((B_r - B_r_back)**2)/len(B_r))
+        print("Transform field RMSE:", rmse)
+    
+    # idx switch from healpy to pyshtools
+    nm = array_nm(nmax)
+    idx_alm = np.hstack((np.zeros(1,),hp.sphtfunc.Alm.getidx(nmax,nm[:,0],nm[:,1]))).astype(int)
+    
+    # Set pyshtools index style
+    alm_to_pysh = np.stack((np.real(alm), np.imag(alm)))
+    Cindex = alm_to_pysh[:,idx_alm]
+    
+    # Transform to pyshtools Cilm style SHC format
+    Cilm = pysh.shio.SHCindexToCilm(Cindex)
+    
+    # From healpix style complex coeffs to real
+    Cilm = pysh.shio.SHctor(Cilm,nmax)
+    
+    # From healpix orthonormal with Condon-Shortley phase factor to Schmidt semi-normalized without the factor
+    Cilm_schmidt = pysh.shio.convert(Cilm,'ortho','schmidt',-1,1)
+
+    # Back to index style
+    Cindex = np.transpose(pysh.shio.SHCilmToCindex(Cilm_schmidt))
+    
+    # Add geomagnetic reference frame scaling and remove monopole degree
+    C_corr_sh = 1/(nm[:,[0]]+1)*1/((r_ref/r_at)**(nm[:,[0]]+2))
+    Cindex = Cindex[1:,:]*C_corr_sh
+    
+    # Compute SHC vector
+    g = gauss_vector(Cindex, nmax)
+    
+    return g
 
 def sh_makegrid_glq(C_vec, glq_nmax, glq_zero, set_nmax, set_norm = 1):        
     import pyshtools
