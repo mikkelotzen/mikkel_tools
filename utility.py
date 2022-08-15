@@ -110,7 +110,7 @@ def plot_cartopy_global(lat = None, lon = None, data=None, limits_data = None, s
                         unit = "[nT]", cmap = plt.cm.RdBu_r, projection_transformation = "Mollweide", figsize=(10,10),
                         title='Cartopy Earth plot', lat_0 = 0.0, lon_0 = 0.0, point_size=2, showfig=True, norm_class = False,
                         scale_uneven = False, flip_shape = False, flip_grid = True, transpose_grid = False, shift_grid = False,
-                        savefig = False, dpi = 100, path = None, saveformat = ".png"):
+                        savefig = False, dpi = 100, path = None, saveformat = ".png", cmap=None):
 
     import cartopy.crs as ccrs
     from cartopy.mpl.geoaxes import GeoAxes
@@ -151,6 +151,10 @@ def plot_cartopy_global(lat = None, lon = None, data=None, limits_data = None, s
             return np.ma.masked_array(r)
     
     # Plotting ranges and norms
+
+    if cmap is None:
+        cmap = cm_zesty_cbf
+
     if limits_data is None:
         vmin = np.min(data)
         vmax = np.max(data)
@@ -197,10 +201,10 @@ def plot_cartopy_global(lat = None, lon = None, data=None, limits_data = None, s
         axgr[0].set_global()
         
         if data is None:
-            axgr[0].scatter(lon, lat, s=point_size, transform=ccrs.PlateCarree(), cmap=cm_zesty_cbf)
+            axgr[0].scatter(lon, lat, s=point_size, transform=ccrs.PlateCarree(), cmap=cmap)
 
         else:
-            cb = axgr[0].scatter(lon, lat, s=point_size, c=data, transform=ccrs.PlateCarree(), vmin = vmin, vmax = vmax, cmap=cm_zesty_cbf, norm = norm_in)
+            cb = axgr[0].scatter(lon, lat, s=point_size, c=data, transform=ccrs.PlateCarree(), vmin = vmin, vmax = vmax, cmap=cmap, norm = norm_in)
 
             cax,kw = matplotlib.colorbar.make_axes(axgr[0],location='bottom', shrink=0.7, aspect=40, fraction = 0.23)
             out=fig.colorbar(cb,cax=cax,extend='neither',**kw)
@@ -232,7 +236,7 @@ def plot_cartopy_global(lat = None, lon = None, data=None, limits_data = None, s
             shift_axis = np.min(shape)
             data_in = np.hstack((data_in[:,shift_axis:],data_in[:,:shift_axis]))
 
-        cs = ax.imshow(data_in,  vmin = vmin, vmax = vmax, cmap = cm_zesty_cbf, norm=norm_in, transform=ccrs.PlateCarree(), extent=[-180, 180, -90, 90])
+        cs = ax.imshow(data_in,  vmin = vmin, vmax = vmax, cmap=cmap, norm=norm_in, transform=ccrs.PlateCarree(), extent=[-180, 180, -90, 90])
 
         cax,kw = matplotlib.colorbar.make_axes(ax,location='bottom', pad=0.02, shrink=0.7, aspect=60)
         out=fig.colorbar(cs,cax=cax,extend='neither',**kw)
@@ -246,7 +250,11 @@ def plot_cartopy_global(lat = None, lon = None, data=None, limits_data = None, s
         plt.show()
     return
 
-def plot_cartopy_animation(lat = None, lon = None, data=None, limits_data = None, shape = (360,720), animation_quality = None, frames = 2, interval = 200, projection_transformation = "Mollweide", unit = "[nT]", title = "Cartopy Earth Plot", cmap = plt.cm.RdBu_r, figsize=(10,10), point_size=1, norm_class = False, scale_uneven = False, flip_shape = False, flip_grid = True, transpose_grid = False, shift_grid = False, animation_output = "javascript", filename = "", path_save_mp4 = "images/"):
+def plot_cartopy_animation(lat = None, lon = None, data=None, limits_data = None, shape = (360,720), animation_quality = None, 
+                           frames = 2, interval = 200, projection_transformation = "Mollweide", unit = "[nT]", title = "Cartopy Earth Plot", 
+                           cmap = None, figsize=(10,10), point_size=1, norm_class = False, 
+                           scale_uneven = False, flip_shape = False, flip_grid = True, transpose_grid = False, 
+                           shift_grid = False, animation_output = "javascript", filename = "", path_save_mp4 = "images/"):
 
     import cartopy.crs as ccrs
     from cartopy.mpl.geoaxes import GeoAxes
@@ -306,6 +314,9 @@ def plot_cartopy_animation(lat = None, lon = None, data=None, limits_data = None
             return np.ma.masked_array(r)
     
     # Plotting ranges and norms
+    if cmap is None:
+        cmap = cm_zesty_cbf
+
     if limits_data is None:
         vmin = np.min(data)
         vmax = np.max(data)
@@ -353,7 +364,7 @@ def plot_cartopy_animation(lat = None, lon = None, data=None, limits_data = None
         axgr[0].set_global()
         
 
-        cb = axgr[0].scatter(lon, lat, s=point_size, c=limits_data, transform=ccrs.PlateCarree(), vmin = vmin, vmax = vmax, cmap=cm_zesty_cbf, norm = norm_in)
+        cb = axgr[0].scatter(lon, lat, s=point_size, c=limits_data, transform=ccrs.PlateCarree(), vmin = vmin, vmax = vmax, cmap=cmap, norm = norm_in)
 
         cax,kw = matplotlib.colorbar.make_axes(axgr[0],location='bottom', shrink=0.7, aspect=40, fraction = 0.23)
         out=fig.colorbar(cb,cax=cax,extend='neither',**kw)
@@ -387,7 +398,7 @@ def plot_cartopy_animation(lat = None, lon = None, data=None, limits_data = None
         # out.set_label('%s %s' %(title,unit), size=10)
 
         def animate(i):
-            cb = axgr[0].scatter(lon, lat, s=point_size, c=data[:,i], transform=ccrs.PlateCarree(), cmap=cm_zesty_cbf, norm = norm_in, vmin = vmin, vmax = vmax)
+            cb = axgr[0].scatter(lon, lat, s=point_size, c=data[:,i], transform=ccrs.PlateCarree(), cmap=cmap, norm = norm_in, vmin = vmin, vmax = vmax)
             return (cb,)
         
     else:
@@ -412,7 +423,7 @@ def plot_cartopy_animation(lat = None, lon = None, data=None, limits_data = None
         if shift_grid == True:
             data_init = np.hstack((data_init[:,shape[0]:],data_init[:,:shape[0]]))
 
-        cs = ax.imshow(data_init,  vmin = vmin, vmax = vmax, cmap = cm_zesty_cbf, norm=norm_in, transform=ccrs.PlateCarree(), extent=[-180, 180, -90, 90])
+        cs = ax.imshow(data_init,  vmin = vmin, vmax = vmax, cmap=cmap, norm=norm_in, transform=ccrs.PlateCarree(), extent=[-180, 180, -90, 90])
 
         cax,kw = matplotlib.colorbar.make_axes(ax,location='bottom', pad=0.02, shrink=0.7, aspect=60)
         out=fig.colorbar(cs,cax=cax,extend='neither',**kw)
@@ -432,7 +443,7 @@ def plot_cartopy_animation(lat = None, lon = None, data=None, limits_data = None
             #data_i = np.flipud(np.ravel(data_i).reshape(shape[0],shape[1]))
             if shift_grid == True:
                 data_i = np.hstack((data_i[:,shape[0]:],data_i[:,:shape[0]]))
-            cs = ax.imshow(data_i,  vmin = vmin, vmax = vmax, cmap = cm_zesty_cbf, norm=norm_in, transform=ccrs.PlateCarree(), extent=[-180, 180, -90, 90])
+            cs = ax.imshow(data_i,  vmin = vmin, vmax = vmax, cmap=cmap, norm=norm_in, transform=ccrs.PlateCarree(), extent=[-180, 180, -90, 90])
             return (cs,)
 
     anim = animation.FuncAnimation(fig, animate, frames=frames, interval=interval)
@@ -1162,7 +1173,7 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, m_mode = N
 
 def plot_ensemble_map_tiles(lon, lat, ensemble_fields, field_uncon = None, field_compare = None, field_lsq = None, field_mean = None, field_sample = None, tile_size_row = 3, tile_size_column = 3, figsize=(8,8), limit_for_SF = 10**6, point_size = 0.1,
                             left=0.03, bottom=0.12, right=0.97, top=0.95, wspace = 0.05, hspace=0.25, coast_width = 0.4, coast_color = "grey", cbar_mm_factor = 1, unit_transform_n_to_m = False,
-                            savefig = False, save_string = "", save_dpi = 100,  save_path = "", save_ftype = "pdf", projection = ccrs.Mollweide(), cbar_limit = None, cbar_h = 0.1, cbar_text = "nT", cbar_text_color = "grey", use_gridlines = False, gridlines_width = 0.4, gridlines_alpha = 0.4):
+                            savefig = False, save_string = "", save_dpi = 100,  save_path = "", save_ftype = "pdf", projection = ccrs.Mollweide(), cbar_limit = None, cbar_h = 0.1, cbar_text = "nT", cbar_text_color = "grey", use_gridlines = False, gridlines_width = 0.4, gridlines_alpha = 0.4, cmap = None):
     import numpy as np
     import matplotlib.pyplot as plt
     import matplotlib.ticker as tick
@@ -1179,6 +1190,8 @@ def plot_ensemble_map_tiles(lon, lat, ensemble_fields, field_uncon = None, field
             if field_lsq is not None:
                 field_lsq = field_lsq*10**(-6)
             
+    if cmap is None:
+        cmap = cm_zesty_cbf
 
     class MidpointNormalize(colors.Normalize):
         def __init__(self, vmin=None, vmax=None, midpoint=None, clip=False):
@@ -1293,7 +1306,7 @@ def plot_ensemble_map_tiles(lon, lat, ensemble_fields, field_uncon = None, field
             else:
                 plot_field = ensemble_fields[:,ens_n]
 
-            im = ax.scatter(lon, lat, s=point_size, c=plot_field, transform=ccrs.PlateCarree(), rasterized=True, vmin = field_min, vmax = field_max, cmap=cm_zesty_cbf, norm = MidpointNormalize(midpoint=0.))
+            im = ax.scatter(lon, lat, s=point_size, c=plot_field, transform=ccrs.PlateCarree(), rasterized=True, vmin = field_min, vmax = field_max, cmap=cmap, norm = MidpointNormalize(midpoint=0.))
             if field_sample is not None:
                 ax.scatter(field_sample[0], field_sample[1], s=0.1, c="k", marker="o", transform=ccrs.PlateCarree(), rasterized=True, zorder = 10)
             
@@ -1347,12 +1360,12 @@ def plot_ensemble_map_tiles(lon, lat, ensemble_fields, field_uncon = None, field
                 ax.set_global()
 
                 if i == tile_size_column-1:
-                    im = ax.scatter(lon, lat, s=point_size, c=field_compare, transform=ccrs.PlateCarree(), rasterized=True, vmin = field_min, vmax = field_max, cmap=cm_zesty_cbf, norm = MidpointNormalize(midpoint=0.))
+                    im = ax.scatter(lon, lat, s=point_size, c=field_compare, transform=ccrs.PlateCarree(), rasterized=True, vmin = field_min, vmax = field_max, cmap=cmap, norm = MidpointNormalize(midpoint=0.))
                     #ax.annotate('Training model', (0.4, -0.1), xycoords='axes fraction', va='center')
                     ax.set_title("Synthetic truth")
                     #ax.set_xlabel("Training model")
                 elif i == 0:
-                    im = ax.scatter(lon, lat, s=point_size, c=field_lsq, transform=ccrs.PlateCarree(), rasterized=True, vmin = field_min, vmax = field_max, cmap=cm_zesty_cbf, norm = MidpointNormalize(midpoint=0.))
+                    im = ax.scatter(lon, lat, s=point_size, c=field_lsq, transform=ccrs.PlateCarree(), rasterized=True, vmin = field_min, vmax = field_max, cmap=cmap, norm = MidpointNormalize(midpoint=0.))
                     #ax.annotate('Equivalent LSQ', (0.4, -0.1), xycoords='axes fraction', va='center')
                     ax.set_title("Equivalent LSQ")
                     #ax.set_xlabel("Equivalent LSQ")
@@ -1383,7 +1396,7 @@ def plot_ensemble_map_tiles(lon, lat, ensemble_fields, field_uncon = None, field
         else:
             ax = fig.add_subplot(gs[-1, :], projection=projection)
             ax.set_global()
-            im = ax.scatter(lon, lat, s=point_size, c=field_compare, transform=ccrs.PlateCarree(), rasterized=True, vmin = field_min, vmax = field_max, cmap=cm_zesty_cbf, norm = MidpointNormalize(midpoint=0.))
+            im = ax.scatter(lon, lat, s=point_size, c=field_compare, transform=ccrs.PlateCarree(), rasterized=True, vmin = field_min, vmax = field_max, cmap=cmap, norm = MidpointNormalize(midpoint=0.))
             if field_sample is not None:
                 ax.scatter(field_sample[0], field_sample[1], s=0.1, c="k", marker="o", transform=ccrs.PlateCarree(), rasterized=True, zorder = 10)
             
@@ -1484,7 +1497,7 @@ def plot_map_compare_tiles(lon, lat, ul, ur, ll, lr, tile_size_row = 2, tile_siz
 
         ax.set_title(tile_letter[i]+tile[i][0])
 
-        im = ax.scatter(lon, lat, s=point_size, c=tile[i][1], transform=ccrs.PlateCarree(), rasterized=True, vmin = field_min, vmax = field_max, cmap=cm_zesty_cbf, norm = MidpointNormalize(midpoint=0.))
+        im = ax.scatter(lon, lat, s=point_size, c=tile[i][1], transform=ccrs.PlateCarree(), rasterized=True, vmin = field_min, vmax = field_max, cmap=cmap, norm = MidpointNormalize(midpoint=0.))
         ax.coastlines(linewidth = coast_width, color = coast_color)
         
 
@@ -1621,7 +1634,7 @@ def plot_global(lat = None, lon = None, data=None, limits_data = None, cbar_use 
             im = ax.scatter(lon, lat, s=point_size, c=data, marker = "o", transform=ccrs.PlateCarree(), rasterized=True, vmin = field_min, vmax = field_max, cmap=cmap, norm = MidpointNormalize(midpoint=midnorm))
 
         
-    #im = ax.imshow(data, transform=ccrs.PlateCarree(), cmap=cm_zesty_cbf, vmin = field_min, vmax = field_max, norm = MidpointNormalize(midpoint=0.))
+    #im = ax.imshow(data, transform=ccrs.PlateCarree(), cmap=cmap, vmin = field_min, vmax = field_max, norm = MidpointNormalize(midpoint=0.))
     
     
     #ax.stock_img()
@@ -2361,7 +2374,7 @@ def plot_ensemble_histogram(ensemble, N_ensemble, target = None, figsize=(10,10)
     plt.show()
 
 
-def plot_CLiP_data(key, ens_s_sat, ens_Li, ens_C, labels, transform_to_map = False, shape_s = None, shape_Li = None, shape_C = None, figsize=(16,10)):
+def plot_CLiP_data(key, ens_s_sat, ens_Li, ens_C, labels, transform_to_map = False, shape_s = None, shape_Li = None, shape_C = None, figsize=(16,10), cmap=None):
     # Easy random plot synth sat, lithosphere, core
 
     import matplotlib.pyplot as plt
@@ -2376,6 +2389,8 @@ def plot_CLiP_data(key, ens_s_sat, ens_Li, ens_C, labels, transform_to_map = Fal
         plot_Li = ens_Li[labels[key][0],:,:]
         plot_C = ens_C[labels[key][1],:,:]
 
+    if cmap is None:
+        cmap = cm_zesty_cbf
 
     SF = tick.ScalarFormatter() # Formatter for colorbar
     SF.set_powerlimits((3, 3)) # Set sci exponent used
@@ -2385,17 +2400,17 @@ def plot_CLiP_data(key, ens_s_sat, ens_Li, ens_C, labels, transform_to_map = Fal
 
     ax1 = fig.add_subplot(gs[0, :]) # Use full row
     ax1.set_title('Synth sat obs, B_r [nT]')
-    im1 = ax1.imshow(plot_s, cmap = cm_zesty_cbf)
+    im1 = ax1.imshow(plot_s, cmap=cmap)
     fig.colorbar(im1, ax=ax1, orientation = "horizontal", shrink=0.3, format = SF)
 
     ax2 = fig.add_subplot(gs[1, 0]) # Use one 
     ax2.set_title('Lithosphere, B_r [nT]')
-    im2 = ax2.imshow(plot_Li, cmap = cm_zesty_cbf)
+    im2 = ax2.imshow(plot_Li, cmap=cmap)
     fig.colorbar(im2, ax=ax2, orientation = "horizontal", shrink=0.6)
 
     ax3 = fig.add_subplot(gs[1, 1])
     ax3.set_title('Core, B_r [nT]')
-    im3 = ax3.imshow(plot_C, cmap = cm_zesty_cbf)
+    im3 = ax3.imshow(plot_C, cmap=cmap)
     fig.colorbar(im3, ax=ax3, orientation = "horizontal", shrink=0.6, format = SF)
     plt.show()
 
@@ -2725,7 +2740,7 @@ def plot_clip_loss(epoch, train_loss, valid_loss, train_L_Li, train_L_C, valid_L
 
     plt.show()
 
-def plot_clip_grid_comparison(epoch_i, Li_out, C_out, sat_in, batch_labels, clip, map_shape = False, equal_amp = False, show_diff = False, figsize=(8,8), limit_for_SF = 10**6, shrink_factor = 1.0):
+def plot_clip_grid_comparison(epoch_i, Li_out, C_out, sat_in, batch_labels, clip, map_shape = False, equal_amp = False, show_diff = False, figsize=(8,8), limit_for_SF = 10**6, shrink_factor = 1.0, cmap=None):
     import numpy as np
     import matplotlib.pyplot as plt
     import matplotlib.ticker as tick
@@ -2740,6 +2755,9 @@ def plot_clip_grid_comparison(epoch_i, Li_out, C_out, sat_in, batch_labels, clip
         def __call__(self, value, clip=None):
             x, y = [self.vmin, self.midpoint, self.vmax], [0.0, 0.5, 1.0]
             return np.ma.masked_array(np.interp(value, x, y))
+
+    if cmap is None:
+        cmap = cm_zesty_cbf
 
     size_lat_in_Li = clip.ens_Li_shape[0]
     size_lon_in_Li = clip.ens_Li_shape[1]
@@ -2821,7 +2839,7 @@ def plot_clip_grid_comparison(epoch_i, Li_out, C_out, sat_in, batch_labels, clip
     ax01 = fig.add_subplot(gs[0, 0], projection=ccrs.PlateCarree())
     ax01.set_global()
     ax01.set_title('Input synthetic sat')
-    im01 = ax01.imshow(batch_sat_plot.reshape((size_lat_in_s,size_lon_in_s)), norm = MidpointNormalize(midpoint=0.), cmap = cm_zesty_cbf, transform=ccrs.PlateCarree(), extent=[-180, 180, 90, -90])
+    im01 = ax01.imshow(batch_sat_plot.reshape((size_lat_in_s,size_lon_in_s)), norm = MidpointNormalize(midpoint=0.), cmap=cmap, transform=ccrs.PlateCarree(), extent=[-180, 180, 90, -90])
 
     ax02 = fig.add_subplot(gs[0, 1], projection=ccrs.PlateCarree()) 
     ax02.set_global()
@@ -2838,12 +2856,12 @@ def plot_clip_grid_comparison(epoch_i, Li_out, C_out, sat_in, batch_labels, clip
     ax4 = fig.add_subplot(gs[1, 0], projection=ccrs.PlateCarree())
     ax4.set_global()  
     ax4.set_title('Label Lithosphere')
-    im4 = ax4.imshow(Li_in_plot, norm = MidpointNormalize(midpoint=0.), cmap = cm_zesty_cbf, transform=ccrs.PlateCarree(), extent=[-180, 180, 90, -90])
+    im4 = ax4.imshow(Li_in_plot, norm = MidpointNormalize(midpoint=0.), cmap=cmap, transform=ccrs.PlateCarree(), extent=[-180, 180, 90, -90])
     
     ax5 = fig.add_subplot(gs[2, 0], projection=ccrs.PlateCarree())
     ax5.set_global()
     ax5.set_title('Label Core')
-    im5 = ax5.imshow(C_in_plot, norm = MidpointNormalize(midpoint=0.), cmap = cm_zesty_cbf, transform=ccrs.PlateCarree(), extent=[-180, 180, 90, -90])
+    im5 = ax5.imshow(C_in_plot, norm = MidpointNormalize(midpoint=0.), cmap=cmap, transform=ccrs.PlateCarree(), extent=[-180, 180, 90, -90])
 
     if show_diff == True:
         ax6 = fig.add_subplot(gs[0, 2], projection=ccrs.PlateCarree())
@@ -2889,14 +2907,14 @@ def plot_clip_grid_comparison(epoch_i, Li_out, C_out, sat_in, batch_labels, clip
     #    im8 = ax3.imshow(C_in_plot-C_out_plot, norm = MidpointNormalize(midpoint=0.), cmap = plt.cm.RdBu_r, transform=ccrs.PlateCarree(), extent=[-180, 180, 90, -90], vmin = vmin_C, vmax = vmax_C)
     #
     #else:
-    im02 = ax02.imshow(sat_plot.reshape((size_lat_in_s,size_lon_in_s)), norm = MidpointNormalize(midpoint=0.), cmap = cm_zesty_cbf, transform=ccrs.PlateCarree(), extent=[-180, 180, 90, -90], vmin = vmin_sat, vmax = vmax_sat)
-    im2 = ax2.imshow(Li_out_plot, norm = MidpointNormalize(midpoint=0.), cmap = cm_zesty_cbf, transform=ccrs.PlateCarree(), extent=[-180, 180, 90, -90], vmin = vmin_Li, vmax = vmax_Li)
-    im3 = ax3.imshow(C_out_plot, norm = MidpointNormalize(midpoint=0.), cmap = cm_zesty_cbf, transform=ccrs.PlateCarree(), extent=[-180, 180, 90, -90], vmin = vmin_C, vmax = vmax_C)
+    im02 = ax02.imshow(sat_plot.reshape((size_lat_in_s,size_lon_in_s)), norm = MidpointNormalize(midpoint=0.), cmap=cmap, transform=ccrs.PlateCarree(), extent=[-180, 180, 90, -90], vmin = vmin_sat, vmax = vmax_sat)
+    im2 = ax2.imshow(Li_out_plot, norm = MidpointNormalize(midpoint=0.), cmap=cmap, transform=ccrs.PlateCarree(), extent=[-180, 180, 90, -90], vmin = vmin_Li, vmax = vmax_Li)
+    im3 = ax3.imshow(C_out_plot, norm = MidpointNormalize(midpoint=0.), cmap=cmap, transform=ccrs.PlateCarree(), extent=[-180, 180, 90, -90], vmin = vmin_C, vmax = vmax_C)
     
     if show_diff == True:
         im6 = ax6.imshow(batch_sat_plot.reshape((size_lat_in_s,size_lon_in_s))-sat_plot.reshape((size_lat_in_s,size_lon_in_s)), norm = MidpointNormalize(midpoint=0.), cmap = plt.cm.RdBu_r, transform=ccrs.PlateCarree(), extent=[-180, 180, 90, -90])
-        im7 = ax7.imshow(Li_in_plot-Li_out_plot, norm = MidpointNormalize(midpoint=0.), cmap = cm_zesty_cbf, transform=ccrs.PlateCarree(), extent=[-180, 180, 90, -90])
-        im8 = ax8.imshow(C_in_plot-C_out_plot, norm = MidpointNormalize(midpoint=0.), cmap = cm_zesty_cbf, transform=ccrs.PlateCarree(), extent=[-180, 180, 90, -90])
+        im7 = ax7.imshow(Li_in_plot-Li_out_plot, norm = MidpointNormalize(midpoint=0.), cmap=cmap, transform=ccrs.PlateCarree(), extent=[-180, 180, 90, -90])
+        im8 = ax8.imshow(C_in_plot-C_out_plot, norm = MidpointNormalize(midpoint=0.), cmap=cmap, transform=ccrs.PlateCarree(), extent=[-180, 180, 90, -90])
         #ax6.coastlines()
         #ax7.coastlines()
         #ax8.coastlines()
