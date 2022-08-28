@@ -107,7 +107,7 @@ def printProgressBar (iteration, total, *args, subject='', prefix = '', suffix =
 
 
 def plot_cartopy_global(lat = None, lon = None, data=None, limits_data = None, shape = (360,720), plot_quality = None,
-                        unit = "[nT]", cmap = plt.cm.RdBu_r, projection_transformation = "Mollweide", figsize=(10,10),
+                        unit = "[nT]", projection_transformation = "Mollweide", figsize=(10,10),
                         title='Cartopy Earth plot', lat_0 = 0.0, lon_0 = 0.0, point_size=2, showfig=True, norm_class = False,
                         scale_uneven = False, flip_shape = False, flip_grid = True, transpose_grid = False, shift_grid = False,
                         savefig = False, dpi = 100, path = None, saveformat = ".png", cmap=None):
@@ -469,11 +469,11 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, m_mode = N
                           lags_use = 300, hist_bins = 100, hist_pos_mean = True, hist_ti_ens = False, hist_density = False, hist_local_posterior = False, hist_ti_ens_limit = None,
                           hist_truth_res = False,
                           res_bins = 200, res_limit = None, spec_use = True, spec_step = 5, spec_r_at = None, spec_r_ref = 6371.2, spec_show_differences = True, spec_mag = True, sv_pos_mean = True,
-                          sv_use = True, spec_ti_ens = False, res_use = True, unit_transform_n_to_m = False, patch_legend = False, ens_prior = False,
-                          res_title = "Observation residuals",
+                          sv_use = True, sv_training_model = True, spec_ti_ens = False, res_use = True, unit_transform_n_to_m = False, patch_legend = False, ens_prior = False,
+                          res_title = "Observation residuals", 
                           model_dict = None, spec_chaos_time = [2020,1,1], unit_var = "[nT²]", unit_lag = "[km]", unit_field = "[nT]", unit_res = "[nT]",
                           left=0.08, bottom=0.12, right=0.92, top=0.95, wspace = 0.2, hspace=0.25, label_fontsize = "small", res_power_format = False, res_print_f = 2, power_limit = 6,
-                          tile_size_row = 3, tile_size_column = 2, figsize=(9,14), savefig = False, save_string = "", save_ftype = "pdf", save_dpi = 300, save_path = ""):
+                          tile_size_row = 3, tile_size_column = 2, figsize=(9,14), savefig = False, save_string = "", save_ftype = "png", save_dpi = 300, save_path = ""):
     import numpy as np
     import matplotlib.pyplot as plt
     import scipy as sp
@@ -868,12 +868,13 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, m_mode = N
         ax.plot(plot_model_lag, plot_model_sv, color='k', label='Semi-variogram model', linewidth = lwidth_mult*lwidth) #linestyle = "dashed"
         leg2 = mpatches.Patch(color='k', linestyle = "-", label='Semi-variogram model')
 
-        # Training model
-        seqsim_obj.sv_m_DSS(len(seqsim_data), 1, seqsim_data.reshape(-1,1), seqsim_obj.sort_d, seqsim_obj.n_lags, seqsim_obj.max_cloud)
-        ax.plot(seqsim_obj.lags[:lags_use], seqsim_obj.pics_m_DSS[:lags_use,0], "x", color = 'k', label='Training model', linewidth = lwidth_mult*lwidth) # marker = "x"
-        #leg3 = mpatches.Patch(color="k", hatch = "x", label='Training model')
-        #leg3 = mpatches.Circle((0,0), color="k", label='Training model')
-        leg3 = mlines.Line2D([], [], color='k', linestyle = '', marker='x', markersize=8, label='Training model')
+        if sv_training_model == True:
+            # Training model
+            seqsim_obj.sv_m_DSS(len(seqsim_data), 1, seqsim_data.reshape(-1,1), seqsim_obj.sort_d, seqsim_obj.n_lags, seqsim_obj.max_cloud)
+            ax.plot(seqsim_obj.lags[:lags_use], seqsim_obj.pics_m_DSS[:lags_use,0], "x", color = 'k', label='Training model', linewidth = lwidth_mult*lwidth) # marker = "x"
+            #leg3 = mpatches.Patch(color="k", hatch = "x", label='Training model')
+            #leg3 = mpatches.Circle((0,0), color="k", label='Training model')
+            leg3 = mlines.Line2D([], [], color='k', linestyle = '', marker='x', markersize=8, label='Training model')
 
         if sv_pos_mean == True:
             # Realization mean
@@ -897,7 +898,9 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, m_mode = N
         ax.set_xlabel('Lag {}'.format(unit_lag))
 
         if patch_legend == True:
-            leg_handle = [leg1,leg3,leg2]
+            leg_handle = [leg1,leg2]
+            if sv_training_model == True:
+                leg_handle.insert(1,leg3)
             if sv_pos_mean == True:
                 leg_handle.insert(1,leg4)
             if truth_obj is not None:
@@ -1022,6 +1025,9 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, m_mode = N
                 #g_ens = np.load("mikkel_tools/models_shc/lithosphere_g_in_rotated.npy")
                 g_ens = np.load("mikkel_tools/models_shc/LiP_ensemble_N500_n120_p05_vary_crust.npy")
                 #g_cut = g_ens[:shc_vec_len(n_max),::20]
+                g_cut = g_ens[:shc_vec_len(n_max),:]
+            elif seqsim_obj.sim_type == "lith_ens_alt":
+                g_ens = np.load("mikkel_tools/models_shc/LiP_ensemble_N50000_n120_p05_vary_crust_sh.npy")[:,::10]
                 g_cut = g_ens[:shc_vec_len(n_max),:]
 
             R = lowe_shspec(n_max,spec_r_at,seqsim_obj.a,g_cut)
@@ -1173,7 +1179,7 @@ def plot_sdssim_reproduce(seqsim_obj, seqsim_res, m_equiv_lsq = None, m_mode = N
 
 def plot_ensemble_map_tiles(lon, lat, ensemble_fields, field_uncon = None, field_compare = None, field_lsq = None, field_mean = None, field_sample = None, tile_size_row = 3, tile_size_column = 3, figsize=(8,8), limit_for_SF = 10**6, point_size = 0.1,
                             left=0.03, bottom=0.12, right=0.97, top=0.95, wspace = 0.05, hspace=0.25, coast_width = 0.4, coast_color = "grey", cbar_mm_factor = 1, unit_transform_n_to_m = False,
-                            savefig = False, save_string = "", save_dpi = 100,  save_path = "", save_ftype = "pdf", projection = ccrs.Mollweide(), cbar_limit = None, cbar_h = 0.1, cbar_text = "nT", cbar_text_color = "grey", use_gridlines = False, gridlines_width = 0.4, gridlines_alpha = 0.4, cmap = None):
+                            savefig = False, save_string = "", save_dpi = 100,  save_path = "", save_ftype = "png", projection = ccrs.Mollweide(), cbar_limit = None, cbar_h = 0.1, cbar_text = "nT", cbar_text_color = "grey", use_gridlines = False, gridlines_width = 0.4, gridlines_alpha = 0.4, cmap = None):
     import numpy as np
     import matplotlib.pyplot as plt
     import matplotlib.ticker as tick
@@ -1430,8 +1436,8 @@ def plot_ensemble_map_tiles(lon, lat, ensemble_fields, field_uncon = None, field
 
 def plot_map_compare_tiles(lon, lat, ul, ur, ll, lr, tile_size_row = 2, tile_size_column = 2, figsize=(8,8), limit_for_SF = 10**6, point_size = 0.1,
                             left=0.03, bottom=0.12, right=0.97, top=0.95, wspace = 0.05, hspace=0.25, coast_width = 0.4, coast_color = "grey", unit_transform_n_to_m = False,
-                            savefig = False, save_string = "", save_ftype = "pdf", save_dpi = 100,  save_path = "", projection = ccrs.Mollweide(), project_ortho = False, cbar_limit = None, cbar_h = 0.1, cbar_text = "nT", 
-                            cbar_text_color = "grey", use_gridlines = False, gridlines_width = 0.4, gridlines_alpha = 0.4):
+                            savefig = False, save_string = "", save_ftype = "png", save_dpi = 100,  save_path = "", projection = ccrs.Mollweide(), project_ortho = False, cbar_limit = None, cbar_h = 0.1, cbar_text = "nT", 
+                            cbar_text_color = "grey", use_gridlines = False, gridlines_width = 0.4, gridlines_alpha = 0.4, cmap=None):
     import numpy as np
     import matplotlib.pyplot as plt
     import matplotlib.ticker as tick
@@ -1448,6 +1454,9 @@ def plot_map_compare_tiles(lon, lat, ul, ur, ll, lr, tile_size_row = 2, tile_siz
 
     tile = [ul,ur,ll,lr]
     tile_letter = ["(a) ", "(b) ", "(c) ", "(d) "]
+
+    if cmap is None:
+        cmap = cm_zesty_cbf
 
     class MidpointNormalize(colors.Normalize):
         def __init__(self, vmin=None, vmax=None, midpoint=None, clip=False):
@@ -1545,7 +1554,7 @@ def plot_global(lat = None, lon = None, data=None, limits_data = None, cbar_use 
                 coast_width = 0.4, coast_color = "grey", limit_for_SF = 10**6, extent = None,
                 left=0.03, bottom=0.35, right=0.97, top=0.95, wspace = 0.05, hspace=0.01,
                 title="", lat_0 = 0.0, lon_0 = 0.0, point_size=1, save_bg_color = "w",
-                savefig = False, save_dpi = 100, save_string ="", save_path = "", save_ftype = "pdf", save_transparent = False, rasterize = True,
+                savefig = False, save_dpi = 100, save_string ="", save_path = "", save_ftype = "png", save_transparent = False, rasterize = True,
                 use_gridlines = False, gridlines_width = 0.4, gridlines_alpha = 0.4,
                 data_on_top = False, color_bg = None, color_bg_transparent = False, color_points = "C0", cmap = None, midnorm = 0.0):
 
