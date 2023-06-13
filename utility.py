@@ -1638,9 +1638,16 @@ def plot_global(lat = None, lon = None, data=None, limits_data = None, cbar_use 
 
         # Plotting
         if data_on_top == True:
-            im = ax.scatter(lon, lat, s=point_size, c=data, marker = "o", transform=ccrs.PlateCarree(), rasterized=True, vmin = field_min, vmax = field_max, cmap=cmap, norm = MidpointNormalize(midpoint=midnorm), zorder = 10)
+            if field_min is not None:
+                im = ax.scatter(lon, lat, s=point_size, c=data, marker = "o", transform=ccrs.PlateCarree(), rasterized=True, cmap=cmap, norm = MidpointNormalize(vmin=field_min, vmax=field_max, midpoint=midnorm), zorder = 10)
+            else:
+                im = ax.scatter(lon, lat, s=point_size, c=data, marker = "o", transform=ccrs.PlateCarree(), rasterized=True, vmin = field_min, vmax = field_max, cmap=cmap, zorder = 10)
         else:
-            im = ax.scatter(lon, lat, s=point_size, c=data, marker = "o", transform=ccrs.PlateCarree(), rasterized=True, vmin = field_min, vmax = field_max, cmap=cmap, norm = MidpointNormalize(midpoint=midnorm))
+            if field_min is not None:
+                im = ax.scatter(lon, lat, s=point_size, c=data, marker = "o", transform=ccrs.PlateCarree(), rasterized=True, cmap=cmap, norm = MidpointNormalize(vmin=field_min, vmax=field_max, midpoint=midnorm))
+            else:
+                im = ax.scatter(lon, lat, s=point_size, c=data, marker = "o", transform=ccrs.PlateCarree(), rasterized=True, vmin = field_min, vmax = field_max, cmap=cmap)
+
 
         
     #im = ax.imshow(data, transform=ccrs.PlateCarree(), cmap=cmap, vmin = field_min, vmax = field_max, norm = MidpointNormalize(midpoint=0.))
